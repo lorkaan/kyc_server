@@ -4,11 +4,7 @@ import pghistory
 from base.models import BaseModel
 
 # Create your models here.
-@pghistory.track(
-    pghistory.Snapshot("person_snapshot"),
-    pghistory.InsertEvent("person_created"),
-    pghistory.UpdateEvent("person_updated"),
-)
+@pghistory.track()
 class Person(BaseModel):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -17,3 +13,4 @@ class Person(BaseModel):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+

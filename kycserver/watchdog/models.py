@@ -1,5 +1,6 @@
 from django.db import models
 
+import pghistory
 from base.models import BaseModel, GenericTargetMixin
 
 class AlertStatus(models.Model):
@@ -35,6 +36,7 @@ class AlertReason(models.Model):
     def __str__(self):
         return f"{self.code} – {self.name}"
 
+@pghistory.track()
 class Alert(BaseModel, GenericTargetMixin):
     reason = models.ForeignKey(AlertReason, on_delete=models.PROTECT)
     severity = models.ForeignKey(AlertSeverity, on_delete=models.PROTECT)

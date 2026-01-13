@@ -6,11 +6,7 @@ from django.db import models
 
 from base.models import BaseModel
 
-@pghistory.track(
-    pghistory.Snapshot("company_snapshot"),
-    pghistory.InsertEvent("company_created"),
-    pghistory.UpdateEvent("company_updated"),
-)
+@pghistory.track()
 class Company(BaseModel):
     name = models.CharField(max_length=255)
     registration_number = models.CharField(max_length=100, unique=True)
@@ -19,3 +15,4 @@ class Company(BaseModel):
 
     def __str__(self):
         return self.name
+
