@@ -43,3 +43,21 @@ class Alert(BaseModel, GenericTargetMixin):
     status = models.ForeignKey(AlertStatus, on_delete=models.PROTECT)
     message = models.TextField()
     triggered_at = models.DateTimeField(auto_now_add=True)
+
+class SignalSeverity(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=50)
+    rank = models.PositiveSmallIntegerField()  # sorting / escalation
+
+    def __str__(self):
+        return self.name
+    
+class SignalType(models.Model):
+    label = models.CharField(max_length=50)
+
+@pghistory.track()
+class Signal(BaseModel):
+    signal_type = models.ForeignKey(SignalType, on_delete=models.PROTECT)
+    severity = models.ForeignKey(SignalSeverity, on_delete=models.PROTECT)
+    metadata = models.JSONField(default=dict, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)

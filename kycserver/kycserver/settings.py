@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     "kyc.apps.KycConfig",
     "person.apps.PersonConfig",
     "watchdog.apps.WatchdogConfig",
+    "users.apps.UsersConfig",
+    "storedquery.apps.StoredqueryConfig",
     "pghistory",
     "pgtrigger",
     "rest_framework",
