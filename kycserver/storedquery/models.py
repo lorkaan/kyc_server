@@ -1,7 +1,8 @@
 from django.db import models
+from django.db.models import Q
 
-from kycserver.base.models import BaseModel
-from kycserver.users.models import User
+from base.models import BaseModel
+from users.models import User
 
 # Create your models here.
 class SavedQuery(BaseModel):
@@ -31,13 +32,19 @@ class SavedQuery(BaseModel):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=(
-                    models.Q(is_system=True, owner__isnull=True) |
-                    models.Q(is_system=False)
+                condition=(
+                    Q(is_system=True, owner__isnull=True) |
+                    Q(is_system=False)
                 ),
                 name="system_queries_have_no_owner"
             )
         ]
+
+    def to_ast_payload(self):
+        return {
+            "query": self.query,
+            "model": self.model
+        }
 
 # I need to change the choices I think and check the target_type and target_id, 
 # I dont know why I cant just use the Permissions

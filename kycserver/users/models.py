@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
 
-from kycserver.base.models import BaseModel
+from base.models import BaseModel
 
 # Create your models here.
 # Users

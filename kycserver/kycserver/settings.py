@@ -29,31 +29,57 @@ SECRET_KEY = 'django-insecure-gzi+fy8r+w*xqzbx*iq3!#3v@g5p(s6t)e&ml-qx#_*4y=#p2l
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Unsure if necessary for session and cors interaction with VUE login
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
+
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+]
+
+AUTH_USER_MODEL = "users.User"
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+]
+
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
+
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    "users.apps.UsersConfig",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'base.apps.BaseConfig',
     "company.apps.CompanyConfig",
     "kyc.apps.KycConfig",
     "person.apps.PersonConfig",
     "watchdog.apps.WatchdogConfig",
-    "users.apps.UsersConfig",
     "storedquery.apps.StoredqueryConfig",
     "pghistory",
     "pgtrigger",
+    "corsheaders",
     "rest_framework",
     "django_filters"
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

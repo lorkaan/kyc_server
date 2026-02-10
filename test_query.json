@@ -1,0 +1,58 @@
+[
+    {
+        "name": "current_alerts",
+        "description": "A Query to get all active alerts",
+        "query": {
+            "model": "watchdog.Alert",
+            "params": {
+                "before_time": {
+                    "type": "datetime",
+                    "required": true
+                }
+            },
+            "query":{
+                "where":{
+                    "and": [
+                        {"field": "status__is_terminal", "op": "eq", "value": false},
+                        {"field": "created_at", "op": "lt", "value": {"$param": "before_time"}}
+                    ]
+                }
+            }
+        },
+        "is_system": true
+    },
+    {
+        "name": "all_current_kyc_records",
+        "description": "Gets all the KYC Records that are current",
+        "query": {
+            "model": "kyc.KYCRecord",
+            "params": {},
+            "query": {
+                "where": {
+                    "field": "is_current",
+                    "op": "eq",
+                    "value": true
+                }
+            }
+        },
+        "is_system": true
+    },
+    {
+        "name": "current_kyc_by_person_id",
+        "description": "Get the current KYC by Person",
+        "is_system": true,
+        "query": {
+            "model": "kyc.KYCRecord",
+            "params": {
+                "person_id": { "type": "uuid", "required": true }
+            },
+            "query": {
+                "where": {
+                    "field": "person__id",
+                    "op": "eq",
+                    "value": { "$param": "person_id" }
+                }
+            }
+        }
+    }
+]

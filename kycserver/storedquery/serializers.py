@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import SavedQuery, SavedQueryPermission
-from kycserver.users.models import User
+from users.models import User
 
 class SavedQueryPermissionSerializer(serializers.ModelSerializer):
     target_type_display = serializers.CharField(

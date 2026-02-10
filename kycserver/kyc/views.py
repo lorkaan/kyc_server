@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from ..base.serializers import HistoryEventSerializer
+from base.serializers import HistoryEventSerializer
 from .models import KYCRecord
 from .serializers import KYCRecordSerializer
 

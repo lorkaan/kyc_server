@@ -1,4 +1,5 @@
-from django.db import models
+from django.db import models, transaction
+from django.db.models import Q
 from django.forms import ValidationError
 import pghistory
 
@@ -73,25 +74,80 @@ class KYCRecord(BaseModel):
     notes = models.TextField(blank=True)
     verified_at = models.DateTimeField(null=True, blank=True)
 
+    is_current = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["person"],
+                condition=Q(is_current=True),
+                name="one_current_kyc_per_person"
+            )
+        ]
+
+    def clean(self):
+        """
+        Enforce KYC current-record semantics.
+        """
+        existing_current = (
+            KYCRecord.objects
+            .filter(person=self.person, is_current=True)
+            .exclude(pk=self.pk)
+            .exists()
+        )
+
+        if existing_current and not self.is_current:
+            raise ValidationError(
+                "A current KYC record already exists for this person. "
+                "You must explicitly set is_current=True to replace it."
+            )
+    
+    def save(self, *args, **kwargs):
+        """
+        Atomic enforcement of:
+        - default current if none exists
+        - demotion of previous current when replacing
+        """
+        with transaction.atomic():
+            is_new = self.pk is None
+
+            if is_new:
+                has_current = (
+                    KYCRecord.objects
+                    .filter(person=self.person, is_current=True)
+                    .exists()
+                )
+
+                # Rule 1: auto-promote if none exists
+                if not has_current and self.is_current is False:
+                    self.is_current = True
+
+            # Run validation
+            self.full_clean()
+
+            super().save(*args, **kwargs)
+
+            # Rule 3: demote all others if explicitly current
+            if self.is_current:
+                (
+                    KYCRecord.objects
+                    .filter(person=self.person, is_current=True)
+                    .exclude(pk=self.pk)
+                    .update(is_current=False)
+                )
+
 @pghistory.track()
 class KycQuestion(models.Model):
-    NUMBER = "number"
-    TEXT = "text"
-    BOOL = "bool"
-    SINGLE = "single"
-    MULTI = "multi"
-
-    ANSWER_TYPE_CHOICES = [
-        (NUMBER, "N"),
-        (TEXT, "T"),
-        (BOOL, "B"),
-        (SINGLE, "S"),
-        (MULTI, "M"),
-    ]
+    class AnswerTypeEnum(models.TextChoices):
+        NUMBER = "N", "number"
+        TEXT   = "T", "text"
+        BOOL   = "B", "bool"
+        SINGLE = "S", "single"
+        MULTI  = "M", "multi"
 
     key = models.SlugField(unique=True)
     label = models.CharField(max_length=255)
-    answer_type = models.CharField(max_length=1, choices=ANSWER_TYPE_CHOICES)
+    answer_type = models.CharField(max_length=1, choices=AnswerTypeEnum)
     required = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
 
