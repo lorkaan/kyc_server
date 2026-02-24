@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
 from rest_framework import routers
 
@@ -23,8 +24,12 @@ from kyc.views import KYCRecordViewSet
 router = routers.DefaultRouter()
 router.register("kyc", KYCRecordViewSet)
 
+def health(request):
+    return JsonResponse({"status": "ok"})
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('health/', health),
     path('api/', include([
         path('', include(router.urls)), 
         path('', include('storedquery.urls')),
