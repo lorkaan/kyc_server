@@ -20,6 +20,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 TEST_FLAG = envloader.get("TEST_FLAG", "1").lower() in ("1", "true", "yes")
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'http')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -36,6 +38,7 @@ CSRF_COOKIE_HTTPONLY = False
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
+    "django"
 ]
 
 AUTH_USER_MODEL = "users.User"
