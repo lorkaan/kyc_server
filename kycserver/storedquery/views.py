@@ -12,6 +12,11 @@ from utils.queryAstHandler import QueryAstHandler
 
 from .models import SavedQuery, SavedQueryPermission
 from .serializers import SavedQuerySerializer, SavedQueryPermissionSerializer
+from utils.type_utils import isList
+import csv
+from django.http import HttpResponse
+from django.utils import timezone
+import re
 
 ALLOWED_MODELS = {
     "kyc.RelationshipRole",
@@ -38,6 +43,10 @@ def run_saved_query(saved_query):
 class SavedQueryViewSet(ModelViewSet):
 
     permission_classes = [IsAuthenticated]
+
+    @classmethod
+    def sanitize_filename(cls, name):
+        return re.sub(r"[^A-Za-z0-9_-]", "_", name)
 
     queryset = SavedQuery.objects.all()
     serializer_class = SavedQuerySerializer
@@ -99,8 +108,7 @@ class SavedQueryViewSet(ModelViewSet):
         )
         return Response(serializer.data)
     
-    @action(detail=True, methods=['post'])
-    def run(self, request, pk=None):
+    def execute_query(self, request):
         query = self.get_object()
         params = request.data.get("params", {})       # Bind params into AST
         extra_options = {
@@ -111,8 +119,39 @@ class SavedQueryViewSet(ModelViewSet):
 
         query_results = QueryAstHandler.run(query.to_ast_payload(), params)
 
+        return list(self.__class__.apply_extra_options(query_results, extra_options).values())
+    
+    @action(detail=True, methods=['post'])
+    def run(self, request, pk=None):
         data = {}
-        data["results"] = list(self.__class__.apply_extra_options(query_results, extra_options).values())
-
+        data["results"] = self.execute_query(request)
         return Response(data)
+    
+    @action(detail=True, methods=['post'])
+    def download(self, request, pk=None):
+        rows = self.execute_query(request)
+        name = request.data.get("name", "Untitled")
+        timestamp = timezone.localtime().strftime("%Y%m%d_%H%M%S")
+        if isList(rows):
+            response = HttpResponse(
+                content_type="text/csv"
+            )
+
+            filename = f"{self.__class__.sanitize_filename(name)}_{timestamp}.csv"
+
+            response["Content-Disposition"] = (
+                f'attachment; filename="{filename}"'
+            )
+
+            writer = csv.writer(response)
+
+            headers = list(rows[0].keys())
+            writer.writerow(headers)
+
+            for row in rows:
+                writer.writerow([row.get(h, "") for h in headers])
+
+            return response
+        else:
+            return HttpResponse(status=404)
 
