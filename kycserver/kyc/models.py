@@ -2,9 +2,11 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.forms import ValidationError
 import pghistory
+from django.core.exceptions import ValidationError
 
 from base.models import BaseModel
 from company.models import Company
+from users.models import User
 from person.models import Person
 
 # Create your models here.
@@ -150,6 +152,7 @@ class KycQuestion(models.Model):
     answer_type = models.CharField(max_length=1, choices=AnswerTypeEnum)
     required = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
+    requires_document = models.BooleanField(default=False)
 
     def __str__(self):
         return self.label
@@ -206,6 +209,10 @@ class KycAnswer(models.Model):
         super().clean()
 
         t = self.question.answer_type
+
+        if self.question.requires_document:
+            if not self.attachments.exists():
+                raise ValidationError("Supporting document required")
 
         has_multi = self.pk and self.selected_options.exists()
 
@@ -268,3 +275,57 @@ class KycAnswerOption(models.Model):
 
     class Meta:
         unique_together = ("answer", "option")
+
+"""
+Validation for a file
+"""
+def validate_file(file):
+
+    max_size = 10 * 1024 * 1024  # 10MB
+
+    if file.size > max_size:
+        raise ValidationError("File too large (max 10MB)")
+
+    allowed = [
+        "application/pdf",
+        "image/jpeg",
+        "image/png"
+    ]
+
+    if file.content_type not in allowed:
+        raise ValidationError("Unsupported file type")
+
+@pghistory.track()
+class KycAnswerAttachment(BaseModel):
+
+    answer = models.ForeignKey(
+        KycAnswer,
+        on_delete=models.CASCADE,
+        related_name="attachments"
+    )
+
+    file = models.FileField(
+        upload_to="kyc/answers/%Y/%m/%d/",
+        validators=[validate_file]
+    )
+
+    original_name = models.CharField(max_length=255)
+
+    content_type = models.CharField(max_length=100)
+
+    size = models.BigIntegerField()
+
+    uploaded_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+
+    description = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["created_at", "updated_at"]
+
+    def __str__(self):
+        return self.original_name

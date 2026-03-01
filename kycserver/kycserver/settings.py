@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "person.apps.PersonConfig",
     "watchdog.apps.WatchdogConfig",
     "storedquery.apps.StoredqueryConfig",
+    "modellabels.apps.ModellabelsConfig",
     "pghistory",
     "pgtrigger",
     "corsheaders",
@@ -176,3 +177,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+MEDIA_ROOT = "/app/media"
+MEDIA_URL = "/media/"

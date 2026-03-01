@@ -17,6 +17,7 @@ import csv
 from django.http import HttpResponse
 from django.utils import timezone
 import re
+from modellabels.utils import get_field_label
 
 ALLOWED_MODELS = {
     "kyc.RelationshipRole",
@@ -133,23 +134,31 @@ class SavedQueryViewSet(ModelViewSet):
         name = request.data.get("name", "Untitled")
         timestamp = timezone.localtime().strftime("%Y%m%d_%H%M%S")
         if isList(rows):
+            field_labels_override = request.data.get("field_labels", {})
+            selected_fields = request.data.get("selected_fields", [])
+            if not isList(selected_fields):
+                selected_fields = list(rows[0].keys())
+
+            model_class = self.get_object().get_model_class()  # You should have a method returning the Django model for this query
+            headers = [
+                get_field_label(model_class, f, override=field_labels_override)
+                for f in selected_fields
+            ]
+
             response = HttpResponse(
                 content_type="text/csv"
             )
-
             filename = f"{self.__class__.sanitize_filename(name)}_{timestamp}.csv"
-
             response["Content-Disposition"] = (
                 f'attachment; filename="{filename}"'
             )
 
             writer = csv.writer(response)
 
-            headers = list(rows[0].keys())
             writer.writerow(headers)
 
             for row in rows:
-                writer.writerow([row.get(h, "") for h in headers])
+                writer.writerow([row.get(f, "") for f in selected_fields])
 
             return response
         else:
