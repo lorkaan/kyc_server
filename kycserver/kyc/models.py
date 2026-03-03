@@ -3,6 +3,7 @@ from django.db.models import Q
 import pghistory
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
+from django.utils import timezone
 
 from base.models import BaseModel
 from company.models import Company
@@ -46,7 +47,7 @@ class KycRuleConstant(models.Model):
 
     is_active = models.BooleanField(default=True)
 
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(default=timezone.now)
 
     def get_value(self):
 
@@ -216,7 +217,7 @@ class ReferenceSet(models.Model):
     is_active = models.BooleanField(default=True)
     version = models.PositiveIntegerField(default=1)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.name
@@ -382,7 +383,7 @@ class KycCondition(models.Model):
 
     priority = models.PositiveIntegerField(default=0)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ["priority", "id"]
@@ -732,10 +733,11 @@ class KycAnswerOption(models.Model):
     reference_value = models.ForeignKey(
         ReferenceValue,
         on_delete=models.PROTECT,
-        related_name="multi_answers"
+        related_name="multi_answers",
+        null=True,   # temporary
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
 

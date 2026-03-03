@@ -1,13 +1,14 @@
 from rest_framework import serializers
+from django.db import transaction
 from .models import (
     KYCRecord,
     KycAnswer,
     KycAnswerOption,
     PersonCompanyRelationship,
+    ReferenceValue,
     RelationshipRole,
     KYCStatus,
     KycQuestion,
-    KycQuestionOption,
 )
 
 class RelationshipRoleSerializer(serializers.ModelSerializer):
@@ -41,25 +42,6 @@ class PersonCompanyRelationshipSerializer(serializers.ModelSerializer):
             "end_date",
         ]
 
-class KycQuestionOptionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = KycQuestionOption
-        fields = ["id", "value", "label", "order"]
-
-class KycQuestionSerializer(serializers.ModelSerializer):
-    options = KycQuestionOptionSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = KycQuestion
-        fields = [
-            "id",
-            "key",
-            "label",
-            "answer_type",
-            "required",
-            "order",
-            "options",
-        ]
 
 class KycAnswerOptionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -68,8 +50,8 @@ class KycAnswerOptionSerializer(serializers.ModelSerializer):
 
 class KycAnswerSerializer(serializers.ModelSerializer):
     selected_options = serializers.PrimaryKeyRelatedField(
+        queryset=ReferenceValue.objects.all(),
         many=True,
-        queryset=KycQuestionOption.objects.all(),
         required=False
     )
 
@@ -77,27 +59,67 @@ class KycAnswerSerializer(serializers.ModelSerializer):
         model = KycAnswer
         fields = [
             "id",
+            "kyc_record",
             "question",
+            "repeat_index",
+            # scalar values
             "value_number",
             "value_text",
             "value_bool",
-            "value_option",
+            "value_reference",
+            "value_date",
+            "value_date_from",
+            "value_date_to",
+            "value_email",
+            "value_phone",
+            # multi-select
             "selected_options",
         ]
 
-    def create(self, validated_data):
-        selected = validated_data.pop("selected_options", [])
-        answer = KycAnswer(**validated_data)
-        answer.full_clean()
-        answer.save()
+    # -------------------------------------------------
+    # VALIDATION
+    # -------------------------------------------------
 
-        for option in selected:
-            KycAnswerOption.objects.create(answer=answer, option=option)
+    def validate(self, attrs):
+        """
+        Let the model handle validation logic via clean().
+        We construct an instance and call full_clean().
+        """
+        instance = self.instance or KycAnswer(**attrs)
+
+        # If updating, merge existing values
+        if self.instance:
+            for attr, value in attrs.items():
+                setattr(instance, attr, value)
+
+        try:
+            instance.full_clean()
+        except Exception as e:
+            raise serializers.ValidationError(e.message_dict if hasattr(e, "message_dict") else str(e))
+
+        return attrs
+
+    # -------------------------------------------------
+    # CREATE
+    # -------------------------------------------------
+
+    @transaction.atomic
+    def create(self, validated_data):
+        selected_options = validated_data.pop("selected_options", [])
+        answer = KycAnswer.objects.create(**validated_data)
+
+        if selected_options:
+            answer.selected_options.set(selected_options)
 
         return answer
 
+    # -------------------------------------------------
+    # UPDATE
+    # -------------------------------------------------
+
+    @transaction.atomic
     def update(self, instance, validated_data):
-        selected = validated_data.pop("selected_options", None)
+        selected_options = validated_data.pop("selected_options", None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -105,10 +127,8 @@ class KycAnswerSerializer(serializers.ModelSerializer):
         instance.full_clean()
         instance.save()
 
-        if selected is not None:
-            instance.selected_options.all().delete()
-            for option in selected:
-                KycAnswerOption.objects.create(answer=instance, option=option)
+        if selected_options is not None:
+            instance.selected_options.set(selected_options)
 
         return instance
 
