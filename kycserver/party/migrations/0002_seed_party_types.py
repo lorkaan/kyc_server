@@ -4,16 +4,17 @@ def create_party_types(apps, schema_editor):
     PartyType = apps.get_model("party", "PartyType")
 
     defaults = [
-        ("person", "Person", "An individual human being"),
-        ("company", "Company", "A registered company")
+        ("person", "Person", "An individual human being", "person.serializers.PersonSerializer"),
+        ("company", "Company", "A registered company", "company.serializers.CompanySerializer")
     ]
 
-    for code, name, description in defaults:
+    for code, name, description, serializer_path in defaults:
         PartyType.objects.get_or_create(
             code=code,
             defaults={
                 "name": name,
-                "description": description
+                "description": description,
+                "serializer_path": serializer_path
             }
         )
 
