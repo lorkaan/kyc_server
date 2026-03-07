@@ -156,6 +156,7 @@ class KYCRecordViewSet(ModelViewSet):
             party=party,
             defaults={
                 "status": KYCStatus.objects.get(code="pending"),
+                "risk_score": 0
             }
         )
 
