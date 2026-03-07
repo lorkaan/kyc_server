@@ -21,7 +21,6 @@ from modellabels.utils import get_field_label
 
 ALLOWED_MODELS = {
     "kyc.RelationshipRole",
-    "kyc.PersonCompanyRelationship",
     "kyc.KYCStatus",
     "kyc.KYCRecord",
     "kyc.KycAnswer",

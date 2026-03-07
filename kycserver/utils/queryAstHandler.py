@@ -6,7 +6,7 @@ from .dict_utils import dictToStr, isDict
 from .type_utils import isFloat, isInteger, isList, isNumber, isString
 
 from company.models import Company
-from kyc.models import KYCRecord, KYCStatus, KycAnswer, KycAnswerOption, KycQuestion, PersonCompanyRelationship, RelationshipRole
+from kyc.models import KYCRecord, KYCStatus, KycAnswer, KycAnswerOption, KycQuestion, RelationshipRole
 from person.models import Person
 from watchdog.models import Alert, AlertReason, AlertSeverity, AlertStatus, Signal, SignalSeverity, SignalType
 
@@ -40,7 +40,6 @@ class QueryAstHandler:
         Company,
         Person,
         RelationshipRole,
-        PersonCompanyRelationship,
         KYCStatus,
         KYCRecord,
         KycQuestion,

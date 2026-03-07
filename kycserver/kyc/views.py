@@ -12,7 +12,6 @@ from .models import (
     KYCRecord,
     KycAnswer,
     KycAnswerOption,
-    PersonCompanyRelationship,
     ReferenceValue,
     RelationshipRole,
     KYCStatus,
@@ -22,7 +21,6 @@ from .serializers import (
     KYCRecordSerializer,
     KycAnswerSerializer,
     KycAnswerOptionSerializer,
-    PersonCompanyRelationshipSerializer,
     RelationshipRoleSerializer,
     KYCStatusSerializer,
 )
@@ -219,14 +217,6 @@ class KycAnswerOptionViewSet(ModelViewSet):
     serializer_class = KycAnswerOptionSerializer
     permission_classes = [IsAuthenticated]
 
-
-# -------------------------------------------------
-# PersonCompanyRelationship ViewSet
-# -------------------------------------------------
-class PersonCompanyRelationshipViewSet(ModelViewSet):
-    queryset = PersonCompanyRelationship.objects.all()
-    serializer_class = PersonCompanyRelationshipSerializer
-    permission_classes = [IsAuthenticated]
 
 
 # -------------------------------------------------

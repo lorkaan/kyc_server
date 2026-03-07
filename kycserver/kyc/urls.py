@@ -5,7 +5,6 @@ from .views import (
     KYCRecordViewSet,
     KycAnswerViewSet,
     KycAnswerOptionViewSet,
-    PersonCompanyRelationshipViewSet,
     RelationshipRoleViewSet,
     KYCStatusViewSet,
     KycQuestionViewSet
@@ -15,7 +14,6 @@ from .views import (
 router = routers.DefaultRouter()
 router.register(r'records', KYCRecordViewSet, basename='kyc-record')
 router.register(r'answer-options', KycAnswerOptionViewSet, basename='kyc-answer-option')
-router.register(r'relationships', PersonCompanyRelationshipViewSet, basename='person-company-relationship')
 router.register(r'roles', RelationshipRoleViewSet, basename='relationship-role')
 router.register(r'statuses', KYCStatusViewSet, basename='kyc-status')
 router.register(r'questions', KycQuestionViewSet, basename='kyc-question')

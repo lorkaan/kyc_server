@@ -1,10 +1,9 @@
 from django.contrib import admin
 
-from .models import KYCRecord, KYCStatus, KycAnswer, KycAnswerOption, KycQuestion, PersonCompanyRelationship, ReferenceSet, ReferenceValue, RelationshipRole
+from .models import KYCRecord, KYCStatus, KycAnswer, KycAnswerOption, KycQuestion, ReferenceSet, ReferenceValue, RelationshipRole
 
 # Register your models here.
 admin.site.register(RelationshipRole)
-admin.site.register(PersonCompanyRelationship)
 admin.site.register(KYCStatus)
 admin.site.register(KYCRecord)
 admin.site.register(KycQuestion)

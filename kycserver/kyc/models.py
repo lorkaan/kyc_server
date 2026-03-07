@@ -104,27 +104,6 @@ class RelationshipRole(models.Model):
     def __str__(self):
         return self.name
 
-"""
-Depreciated by the PartyRelationship model
-"""
-@pghistory.track()
-class PersonCompanyRelationship(BaseModel):
-    person = models.ForeignKey(Person, on_delete=models.CASCADE)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    role = models.ForeignKey(
-        RelationshipRole,
-        on_delete=models.PROTECT,
-        related_name="relationships"
-    )
-    ownership_percentage = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True
-    )
-    start_date = models.DateField()
-    end_date = models.DateField(null=True, blank=True)
-
-    class Meta:
-        unique_together = ("person", "company", "role", "start_date")
-
 class KYCStatus(models.Model):
     """
     Reference table for KYC lifecycle statuses
@@ -150,7 +129,9 @@ class KYCRecord(BaseModel):
         related_name="kyc_records",
     )
     party = models.ForeignKey(
-        Party, on_delete=models.CASCADE, related_name="kyc_records"
+        Party, on_delete=models.CASCADE, related_name="kyc_records",
+        null=True,
+        blank=True
     )
     risk_score = models.IntegerField()
     notes = models.TextField(blank=True)
@@ -270,7 +251,9 @@ class KycQuestion(models.Model):
     party_type = models.ForeignKey(
         PartyType,
         on_delete=models.PROTECT,
-        related_name="kyc_questions"
+        related_name="kyc_questions",
+        null=True,
+        blank=True
     )
 
     group = models.ForeignKey(

@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     "watchdog.apps.WatchdogConfig",
     "storedquery.apps.StoredqueryConfig",
     "modellabels.apps.ModellabelsConfig",
+    "party.apps.PartyConfig",
     "pghistory",
     "pgtrigger",
     "corsheaders",

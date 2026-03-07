@@ -4,7 +4,6 @@ from .models import (
     KYCRecord,
     KycAnswer,
     KycAnswerOption,
-    PersonCompanyRelationship,
     ReferenceValue,
     RelationshipRole,
     KYCStatus,
@@ -20,28 +19,6 @@ class KYCStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = KYCStatus
         fields = "__all__"
-
-class PersonCompanyRelationshipSerializer(serializers.ModelSerializer):
-    role = RelationshipRoleSerializer(read_only=True)
-    role_id = serializers.PrimaryKeyRelatedField(
-        queryset=RelationshipRole.objects.all(),
-        source="role",
-        write_only=True
-    )
-
-    class Meta:
-        model = PersonCompanyRelationship
-        fields = [
-            "id",
-            "person",
-            "company",
-            "role",
-            "role_id",
-            "ownership_percentage",
-            "start_date",
-            "end_date",
-        ]
-
 
 class KycAnswerOptionSerializer(serializers.ModelSerializer):
     class Meta:
