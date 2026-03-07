@@ -12,7 +12,6 @@ class PersonSerializer(serializers.ModelSerializer):
             "last_name",
             "full_name",
             "date_of_birth",
-            "nationality",
             "created_at",
             "updated_at",
         ]
