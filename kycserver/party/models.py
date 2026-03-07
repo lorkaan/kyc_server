@@ -1,0 +1,87 @@
+from django.db import models
+from django.utils import timezone
+from base.models import BaseModel, GenericTargetMixin
+from django.utils.module_loading import import_string
+import pghistory
+
+# Create your models here.
+class PartyType(models.Model):
+
+    code = models.SlugField(unique=True)
+
+    name = models.CharField(max_length=100)
+
+    description = models.TextField(blank=True)
+
+    serializer_path = models.CharField(max_length=255)
+
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def get_serializer(self):
+        return import_string(self.serializer_path)
+
+    def create_entity(self, data):
+        Serializer = self.get_serializer()
+        serializer = Serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        return serializer.save()
+
+    def __str__(self):
+        return self.name
+    
+@pghistory.track()
+class Party(GenericTargetMixin, BaseModel):
+
+    party_type = models.ForeignKey(
+        PartyType,
+        on_delete=models.PROTECT,
+        related_name="parties"
+    )
+
+    display_name = models.CharField(max_length=255)
+
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.display_name
+    
+    class Meta:
+        constraints = [
+            # prevent multiple Party rows pointing to the same entity
+            models.UniqueConstraint(
+                fields=["content_type", "object_id"],
+                name="unique_party_entity"
+            )
+        ]
+    
+"""
+Links a party to another party. Such as a Person to a Company
+"""
+@pghistory.track()
+class PartyRelationship(BaseModel):
+    party = models.ForeignKey(
+        Party,
+        on_delete=models.CASCADE,
+        related_name="memberships"
+    )
+
+    # This party is the participant in another party (e.g., a person in a company)
+    target_party = models.ForeignKey(
+        Party,
+        on_delete=models.CASCADE,
+        related_name="participants"
+    )
+
+    role = models.ForeignKey(
+        "kyc.RelationshipRole",
+        on_delete=models.PROTECT,
+        related_name="relationships"
+    )
+
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ("party", "target_party", "role", "start_date")

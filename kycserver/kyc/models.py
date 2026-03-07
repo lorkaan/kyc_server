@@ -1,5 +1,6 @@
 from django.db import models, transaction
 from django.db.models import Q
+from party.models import Party, PartyType
 import pghistory
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -103,6 +104,9 @@ class RelationshipRole(models.Model):
     def __str__(self):
         return self.name
 
+"""
+Depreciated by the PartyRelationship model
+"""
 @pghistory.track()
 class PersonCompanyRelationship(BaseModel):
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
@@ -145,8 +149,8 @@ class KYCRecord(BaseModel):
         on_delete=models.PROTECT,
         related_name="kyc_records",
     )
-    person = models.ForeignKey(
-        Person, on_delete=models.CASCADE, related_name="kyc_records"
+    party = models.ForeignKey(
+        Party, on_delete=models.CASCADE, related_name="kyc_records"
     )
     risk_score = models.IntegerField()
     notes = models.TextField(blank=True)
@@ -157,22 +161,22 @@ class KYCRecord(BaseModel):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["person"],
+                fields=["party"],
                 condition=Q(is_current=True),
-                name="one_current_kyc_per_person"
+                name="one_current_kyc_per_party"
             )
         ]
 
     def clean(self):
         existing_current = (
             KYCRecord.objects
-            .filter(person=self.person, is_current=True)
+            .filter(party=self.party, is_current=True)
             .exclude(pk=self.pk)
             .exists()
         )
         if existing_current and not self.is_current:
             raise ValidationError(
-                "A current KYC record already exists for this person. "
+                "A current KYC record already exists for this party. "
                 "You must explicitly set is_current=True to replace it."
             )
 
@@ -181,7 +185,7 @@ class KYCRecord(BaseModel):
             is_new = self.pk is None
             if is_new:
                 has_current = KYCRecord.objects.filter(
-                    person=self.person, is_current=True
+                    party=self.party, is_current=True
                 ).exists()
                 if not has_current and self.is_current is False:
                     self.is_current = True
@@ -191,7 +195,7 @@ class KYCRecord(BaseModel):
 
             if self.is_current:
                 KYCRecord.objects.filter(
-                    person=self.person, is_current=True
+                    party=self.party, is_current=True
                 ).exclude(pk=self.pk).update(is_current=False)
 
 @pghistory.track()
@@ -262,6 +266,12 @@ class KycQuestion(models.Model):
 
     key = models.SlugField(unique=True)
     label = models.CharField(max_length=255)
+
+    party_type = models.ForeignKey(
+        PartyType,
+        on_delete=models.PROTECT,
+        related_name="kyc_questions"
+    )
 
     group = models.ForeignKey(
         KycQuestionGroup,

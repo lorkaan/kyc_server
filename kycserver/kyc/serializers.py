@@ -146,7 +146,7 @@ class KYCRecordSerializer(serializers.ModelSerializer):
         model = KYCRecord
         fields = [
             "id",
-            "person",
+            "party",
             "status",
             "status_id",
             "risk_score",
