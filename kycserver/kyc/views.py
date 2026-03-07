@@ -199,10 +199,11 @@ class KycAnswerViewSet(ModelViewSet):
             "name": attachment.original_name
         })
     
-    @action(detail=True, methods=["post"])
-    def submit(self, request, pk=None):
+    @action(detail=False, methods=["post"])
+    def submit(self, request):
         """Submit multiple answers for a KYC record"""
-        kyc_record = self.get_object()
+        kyc_record_id = request.data.get("kyc_record")
+        kyc_record = KYCRecord.objects.get(pk=kyc_record_id)
         answers_data = request.data.get("answers", [])
         serializer = self.get_serializer(data=answers_data, many=True)
         serializer.is_valid(raise_exception=True)
