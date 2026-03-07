@@ -20,7 +20,7 @@ def seed_statuses(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("kyc", "XXXX_previous_migration"),
+        ("kyc", "0008_kycquestion_party_type_kycquestionevent_party_type_and_more"),
     ]
 
     operations = [
