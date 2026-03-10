@@ -133,3 +133,190 @@ class KYCRecordSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+class KycBulkAnswerSerializer(serializers.Serializer):
+    """
+    Serializer representing a single KYC answer inside
+    the bulk submission payload.
+    """
+
+    question = serializers.IntegerField()
+    repeat_index = serializers.IntegerField(required=False, default=0)
+
+    # Scalar values
+    value_number = serializers.DecimalField(
+        max_digits=20,
+        decimal_places=2,
+        required=False,
+        allow_null=True
+    )
+
+    value_text = serializers.CharField(required=False, allow_null=True)
+
+    value_bool = serializers.BooleanField(required=False, allow_null=True)
+
+    value_reference = serializers.PrimaryKeyRelatedField(
+        queryset=ReferenceValue.objects.all(),
+        required=False,
+        allow_null=True
+    )
+
+    value_date = serializers.DateField(required=False, allow_null=True)
+
+    value_date_from = serializers.DateField(required=False, allow_null=True)
+    value_date_to = serializers.DateField(required=False, allow_null=True)
+
+    value_email = serializers.EmailField(required=False, allow_null=True)
+
+    value_phone = serializers.CharField(required=False, allow_null=True)
+
+    # Multi-select options
+    selected_options = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        allow_empty=True
+    )
+
+    # -------------------------------------------------
+    # VALIDATION
+    # -------------------------------------------------
+
+    def validate(self, attrs):
+
+        question_id = attrs["question"]
+
+        try:
+            question = KycQuestion.objects.select_related(
+                "reference_set"
+            ).get(pk=question_id)
+        except KycQuestion.DoesNotExist:
+            raise serializers.ValidationError(
+                f"Question {question_id} does not exist"
+            )
+
+        attrs["question_obj"] = question
+
+        answer_type = question.answer_type
+
+        # -------------------------------------------------
+        # TYPE CHECKING
+        # -------------------------------------------------
+
+        if answer_type == KycQuestion.AnswerTypeEnum.NUMBER:
+            if attrs.get("value_number") is None:
+                raise serializers.ValidationError(
+                    "value_number required for NUMBER question"
+                )
+
+        elif answer_type == KycQuestion.AnswerTypeEnum.TEXT:
+            if not attrs.get("value_text"):
+                raise serializers.ValidationError(
+                    "value_text required for TEXT question"
+                )
+
+        elif answer_type == KycQuestion.AnswerTypeEnum.BOOL:
+            if attrs.get("value_bool") is None:
+                raise serializers.ValidationError(
+                    "value_bool required for BOOL question"
+                )
+
+        elif answer_type == KycQuestion.AnswerTypeEnum.SINGLE:
+
+            if attrs.get("value_reference") is None:
+                raise serializers.ValidationError(
+                    "value_reference required for SINGLE question"
+                )
+
+        elif answer_type == KycQuestion.AnswerTypeEnum.MULTI:
+
+            options = attrs.get("selected_options", [])
+
+            if not options and question.required:
+                raise serializers.ValidationError(
+                    "At least one selected_option required"
+                )
+
+        elif answer_type == KycQuestion.AnswerTypeEnum.DATE:
+
+            if attrs.get("value_date") is None:
+                raise serializers.ValidationError(
+                    "value_date required"
+                )
+
+        elif answer_type == KycQuestion.AnswerTypeEnum.RANGE:
+
+            start = attrs.get("value_date_from")
+            end = attrs.get("value_date_to")
+
+            if not start or not end:
+                raise serializers.ValidationError(
+                    "value_date_from and value_date_to required"
+                )
+
+            if start > end:
+                raise serializers.ValidationError(
+                    "Start date must be before end date"
+                )
+
+        elif answer_type == KycQuestion.AnswerTypeEnum.EMAIL:
+
+            if not attrs.get("value_email"):
+                raise serializers.ValidationError(
+                    "value_email required"
+                )
+
+        elif answer_type == KycQuestion.AnswerTypeEnum.PHONE:
+
+            if not attrs.get("value_phone"):
+                raise serializers.ValidationError(
+                    "value_phone required"
+                )
+
+        # -------------------------------------------------
+        # REFERENCE SET VALIDATION
+        # -------------------------------------------------
+
+        if "selected_options" in attrs and question.reference_set:
+
+            valid_ids = set(
+                ReferenceValue.objects.filter(
+                    reference_set=question.reference_set
+                ).values_list("id", flat=True)
+            )
+
+            for opt in attrs["selected_options"]:
+                if opt not in valid_ids:
+                    raise serializers.ValidationError(
+                        f"Invalid reference option {opt}"
+                    )
+
+        return attrs
+
+
+class KycBulkSubmitSerializer(serializers.Serializer):
+    """
+    Root serializer for bulk KYC submission
+    """
+
+    answers = KycBulkAnswerSerializer(many=True)
+
+    def validate_answers(self, answers):
+
+        seen = set()
+
+        for ans in answers:
+
+            key = (
+                ans["question"],
+                ans.get("repeat_index", 0)
+            )
+
+            if key in seen:
+                raise serializers.ValidationError(
+                    f"Duplicate answer for question {key[0]} "
+                    f"repeat {key[1]}"
+                )
+
+            seen.add(key)
+
+        return answers
