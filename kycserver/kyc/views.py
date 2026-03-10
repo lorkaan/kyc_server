@@ -201,14 +201,70 @@ class KycAnswerViewSet(ModelViewSet):
     
     @action(detail=False, methods=["post"])
     def submit(self, request, record_pk=None):
-        """Submit multiple answers for a KYC record"""
-        kyc_record_id = request.data.get("kyc_record", record_pk)
-        kyc_record = KYCRecord.objects.get(pk=kyc_record_id)
-        answers_data = request.data.get("answers", [])
-        serializer = self.get_serializer(data=answers_data, many=True)
+
+        serializer = KycBulkSubmitSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(kyc_record=kyc_record)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        answers_data = serializer.validated_data["answers"]
+
+        answer_rows = []
+        option_rows = []
+
+        for item in answers_data:
+
+            options = item.pop("selected_options", [])
+
+            answer = KycAnswer(
+                kyc_record_id=record_pk,
+                question_id=item["question"],
+                repeat_index=item.get("repeat_index", 0),
+
+                value_number=item.get("value_number"),
+                value_text=item.get("value_text"),
+                value_bool=item.get("value_bool"),
+                value_reference_id=item.get("value_reference"),
+
+                value_date=item.get("value_date"),
+                value_date_from=item.get("value_date_from"),
+                value_date_to=item.get("value_date_to"),
+
+                value_email=item.get("value_email"),
+                value_phone=item.get("value_phone"),
+            )
+
+            answer_rows.append((answer, options))
+
+        with transaction.atomic():
+
+            created_answers = KycAnswer.objects.bulk_create(
+                [a for a, _ in answer_rows],
+                batch_size=500
+            )
+
+            option_objects = []
+
+            for created, (_, options) in zip(created_answers, answer_rows):
+
+                for ref_id in options:
+
+                    option_objects.append(
+                        KycAnswerOption(
+                            answer_id=created.id,
+                            reference_value_id=ref_id
+                        )
+                    )
+
+            if option_objects:
+                KycAnswerOption.objects.bulk_create(
+                    option_objects,
+                    batch_size=1000
+                )
+
+        return Response({
+            "status": "saved",
+            "answers": len(created_answers),
+            "options": len(option_objects),
+        })
 
 
 # -------------------------------------------------
