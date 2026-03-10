@@ -200,9 +200,9 @@ class KycAnswerViewSet(ModelViewSet):
         })
     
     @action(detail=False, methods=["post"])
-    def submit(self, request):
+    def submit(self, request, record_pk=None):
         """Submit multiple answers for a KYC record"""
-        kyc_record_id = request.data.get("kyc_record")
+        kyc_record_id = request.data.get("kyc_record", record_pk)
         kyc_record = KYCRecord.objects.get(pk=kyc_record_id)
         answers_data = request.data.get("answers", [])
         serializer = self.get_serializer(data=answers_data, many=True)
