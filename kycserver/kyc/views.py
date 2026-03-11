@@ -1,3 +1,5 @@
+import datetime
+
 from person.models import Person
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -201,35 +203,54 @@ class KycAnswerViewSet(ModelViewSet):
         })
     
     @action(detail=False, methods=["post"])
-    def submit(self, request, record_pk=None):
+    def submit(self, request):
 
         serializer = KycBulkSubmitSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        kyc_record_id = serializer.validated_data["kyc_record"]
         answers_data = serializer.validated_data["answers"]
 
         answer_rows = []
-        option_rows = []
 
         for item in answers_data:
 
             options = item.pop("selected_options", [])
 
+            value_text = item.get("value_text")
+
+            value_date = item.get("value_date")
+            value_email = item.get("value_email")
+
+            # --- attempt to auto-detect date sent as value_text ---
+            if value_text and not value_date:
+                try:
+                    parsed = datetime.strptime(value_text, "%Y-%m-%d").date()
+                    value_date = parsed
+                    value_text = None
+                except Exception:
+                    pass
+
+            # --- attempt to auto-detect email sent as value_text ---
+            if value_text and "@" in value_text and not value_email:
+                value_email = value_text
+                value_text = None
+
             answer = KycAnswer(
-                kyc_record_id=record_pk,
+                kyc_record_id=kyc_record_id,
                 question_id=item["question"],
                 repeat_index=item.get("repeat_index", 0),
 
                 value_number=item.get("value_number"),
-                value_text=item.get("value_text"),
+                value_text=value_text,
                 value_bool=item.get("value_bool"),
                 value_reference_id=item.get("value_reference"),
 
-                value_date=item.get("value_date"),
+                value_date=value_date,
                 value_date_from=item.get("value_date_from"),
                 value_date_to=item.get("value_date_to"),
 
-                value_email=item.get("value_email"),
+                value_email=value_email,
                 value_phone=item.get("value_phone"),
             )
 
@@ -242,32 +263,29 @@ class KycAnswerViewSet(ModelViewSet):
                 batch_size=500
             )
 
-            option_objects = []
+            option_rows = []
 
             for created, (_, options) in zip(created_answers, answer_rows):
 
                 for ref_id in options:
-
-                    option_objects.append(
+                    option_rows.append(
                         KycAnswerOption(
                             answer_id=created.id,
                             reference_value_id=ref_id
                         )
                     )
 
-            if option_objects:
+            if option_rows:
                 KycAnswerOption.objects.bulk_create(
-                    option_objects,
+                    option_rows,
                     batch_size=1000
                 )
 
         return Response({
             "status": "saved",
-            "answers": len(created_answers),
-            "options": len(option_objects),
+            "answers_created": len(created_answers),
+            "options_created": len(option_rows),
         })
-
-
 # -------------------------------------------------
 # KYC Answer Option ViewSet
 # -------------------------------------------------
