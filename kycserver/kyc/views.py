@@ -21,6 +21,7 @@ from .serializers import (
     KYCRecordSerializer,
     KycAnswerSerializer,
     KycAnswerOptionSerializer,
+    KycBulkSubmitSerializer,
     RelationshipRoleSerializer,
     KYCStatusSerializer,
 )
