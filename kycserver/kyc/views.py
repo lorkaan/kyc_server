@@ -1,4 +1,5 @@
 import datetime
+import traceback
 
 from person.models import Person
 from rest_framework.viewsets import ModelViewSet
@@ -204,88 +205,163 @@ class KycAnswerViewSet(ModelViewSet):
     
     @action(detail=False, methods=["post"])
     def submit(self, request):
+        try:
 
-        serializer = KycBulkSubmitSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+            payload = request.data
 
-        kyc_record_id = serializer.validated_data["kyc_record"]
-        answers_data = serializer.validated_data["answers"]
+            kyc_record_id = payload.get("kyc_record")
+            answers_data = payload.get("answers", [])
 
-        answer_rows = []
-
-        for item in answers_data:
-
-            options = item.pop("selected_options", [])
-
-            value_text = item.get("value_text")
-
-            value_date = item.get("value_date")
-            value_email = item.get("value_email")
-
-            # --- attempt to auto-detect date sent as value_text ---
-            if value_text and not value_date:
-                try:
-                    parsed = datetime.strptime(value_text, "%Y-%m-%d").date()
-                    value_date = parsed
-                    value_text = None
-                except Exception:
-                    pass
-
-            # --- attempt to auto-detect email sent as value_text ---
-            if value_text and "@" in value_text and not value_email:
-                value_email = value_text
-                value_text = None
-
-            answer = KycAnswer(
-                kyc_record_id=kyc_record_id,
-                question_id=item["question"],
-                repeat_index=item.get("repeat_index", 0),
-
-                value_number=item.get("value_number"),
-                value_text=value_text,
-                value_bool=item.get("value_bool"),
-                value_reference_id=item.get("value_reference"),
-
-                value_date=value_date,
-                value_date_from=item.get("value_date_from"),
-                value_date_to=item.get("value_date_to"),
-
-                value_email=value_email,
-                value_phone=item.get("value_phone"),
-            )
-
-            answer_rows.append((answer, options))
-
-        with transaction.atomic():
-
-            created_answers = KycAnswer.objects.bulk_create(
-                [a for a, _ in answer_rows],
-                batch_size=500
-            )
-
-            option_rows = []
-
-            for created, (_, options) in zip(created_answers, answer_rows):
-
-                for ref_id in options:
-                    option_rows.append(
-                        KycAnswerOption(
-                            answer_id=created.id,
-                            reference_value_id=ref_id
-                        )
-                    )
-
-            if option_rows:
-                KycAnswerOption.objects.bulk_create(
-                    option_rows,
-                    batch_size=1000
+            if not kyc_record_id:
+                return Response(
+                    {"error": "kyc_record is required"},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
-        return Response({
-            "status": "saved",
-            "answers_created": len(created_answers),
-            "options_created": len(option_rows),
-        })
+            questions = {
+                q.id: q
+                for q in KycQuestion.objects.select_related("reference_set")
+            }
+
+            answer_rows = []
+            option_rows_buffer = []
+
+            for item in answers_data:
+
+                question_id = item.get("question")
+
+                if not question_id:
+                    continue
+
+                question = questions.get(question_id)
+
+                if not question:
+                    continue
+
+                repeat_index = item.get("repeat_index", 0)
+
+                value_number = item.get("value_number")
+                value_text = item.get("value_text")
+                value_bool = item.get("value_bool")
+                value_reference_id = item.get("value_reference")
+                value_date = item.get("value_date")
+                value_email = item.get("value_email")
+                value_phone = item.get("value_phone")
+
+                value_date_from = item.get("value_date_from")
+                value_date_to = item.get("value_date_to")
+
+                selected_options = item.get("selected_options", [])
+
+                # -------------------------
+                # Auto-detect conversions
+                # -------------------------
+
+                if value_text and question.answer_type == "D":
+                    parsed = parse_date(value_text)
+                    if parsed:
+                        value_date = parsed
+                        value_text = None
+
+                if value_text and question.answer_type == "E":
+                    value_email = value_text
+                    value_text = None
+
+                if value_text and question.answer_type == "P":
+                    value_phone = value_text
+                    value_text = None
+
+                # -------------------------
+                # Skip completely empty answers
+                # -------------------------
+
+                has_value = any([
+                    value_number is not None,
+                    value_text,
+                    value_bool is not None,
+                    value_reference_id,
+                    value_date,
+                    value_date_from,
+                    value_date_to,
+                    value_email,
+                    value_phone,
+                    selected_options
+                ])
+
+                if not has_value:
+                    continue
+
+                answer = KycAnswer(
+                    kyc_record_id=kyc_record_id,
+                    question_id=question_id,
+                    repeat_index=repeat_index,
+
+                    value_number=value_number,
+                    value_text=value_text,
+                    value_bool=value_bool,
+                    value_reference_id=value_reference_id,
+
+                    value_date=value_date,
+                    value_date_from=value_date_from,
+                    value_date_to=value_date_to,
+
+                    value_email=value_email,
+                    value_phone=value_phone,
+                )
+
+                answer_rows.append((answer, selected_options))
+
+            created_answers = []
+            option_rows = []
+
+            with transaction.atomic():
+
+                created_answers = KycAnswer.objects.bulk_create(
+                    [a for a, _ in answer_rows],
+                    batch_size=500,
+                    ignore_conflicts=True,
+                )
+
+                for created, (_, options) in zip(created_answers, answer_rows):
+
+                    for ref_id in options:
+
+                        option_rows.append(
+                            KycAnswerOption(
+                                answer_id=created.id,
+                                reference_value_id=ref_id
+                            )
+                        )
+
+                if option_rows:
+                    KycAnswerOption.objects.bulk_create(
+                        option_rows,
+                        batch_size=1000,
+                        ignore_conflicts=True
+                    )
+
+            return Response({
+                "status": "saved",
+                "answers_created": len(created_answers),
+                "options_created": len(option_rows)
+            })
+
+        except Exception as e:
+
+            print("\n================ KYC SUBMIT ERROR ================")
+            print("Payload:")
+            print(request.data)
+            print("\nTraceback:")
+            traceback.print_exc()
+            print("==================================================\n")
+
+            return Response(
+                {
+                    "error": "Internal server error",
+                    "message": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 # -------------------------------------------------
 # KYC Answer Option ViewSet
 # -------------------------------------------------
