@@ -204,128 +204,58 @@ class KycAnswerViewSet(ModelViewSet):
         })
     
     @action(detail=False, methods=["post"])
-    def submit(self, request):
+    def submit(self, request, record_pk=None, *args, **kwargs):
+
         try:
 
             payload = request.data
-
-            kyc_record_id = payload.get("kyc_record")
             answers_data = payload.get("answers", [])
 
-            if not kyc_record_id:
+            if not record_pk:
                 return Response(
-                    {"error": "kyc_record is required"},
+                    {"error": "record_pk missing in URL"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            questions = {
-                q.id: q
-                for q in KycQuestion.objects.select_related("reference_set")
-            }
-
             answer_rows = []
-            option_rows_buffer = []
 
             for item in answers_data:
 
-                question_id = item.get("question")
-
-                if not question_id:
-                    continue
-
-                question = questions.get(question_id)
-
-                if not question:
-                    continue
-
-                repeat_index = item.get("repeat_index", 0)
-
-                value_number = item.get("value_number")
-                value_text = item.get("value_text")
-                value_bool = item.get("value_bool")
-                value_reference_id = item.get("value_reference")
-                value_date = item.get("value_date")
-                value_email = item.get("value_email")
-                value_phone = item.get("value_phone")
-
-                value_date_from = item.get("value_date_from")
-                value_date_to = item.get("value_date_to")
-
-                selected_options = item.get("selected_options", [])
-
-                # -------------------------
-                # Auto-detect conversions
-                # -------------------------
-
-                if value_text and question.answer_type == "D":
-                    parsed = parse_date(value_text)
-                    if parsed:
-                        value_date = parsed
-                        value_text = None
-
-                if value_text and question.answer_type == "E":
-                    value_email = value_text
-                    value_text = None
-
-                if value_text and question.answer_type == "P":
-                    value_phone = value_text
-                    value_text = None
-
-                # -------------------------
-                # Skip completely empty answers
-                # -------------------------
-
-                has_value = any([
-                    value_number is not None,
-                    value_text,
-                    value_bool is not None,
-                    value_reference_id,
-                    value_date,
-                    value_date_from,
-                    value_date_to,
-                    value_email,
-                    value_phone,
-                    selected_options
-                ])
-
-                if not has_value:
-                    continue
+                options = item.get("selected_options", [])
 
                 answer = KycAnswer(
-                    kyc_record_id=kyc_record_id,
-                    question_id=question_id,
-                    repeat_index=repeat_index,
+                    kyc_record_id=record_pk,
+                    question_id=item.get("question"),
+                    repeat_index=item.get("repeat_index", 0),
 
-                    value_number=value_number,
-                    value_text=value_text,
-                    value_bool=value_bool,
-                    value_reference_id=value_reference_id,
+                    value_number=item.get("value_number"),
+                    value_text=item.get("value_text"),
+                    value_bool=item.get("value_bool"),
+                    value_reference_id=item.get("value_reference"),
 
-                    value_date=value_date,
-                    value_date_from=value_date_from,
-                    value_date_to=value_date_to,
+                    value_date=item.get("value_date"),
+                    value_date_from=item.get("value_date_from"),
+                    value_date_to=item.get("value_date_to"),
 
-                    value_email=value_email,
-                    value_phone=value_phone,
+                    value_email=item.get("value_email"),
+                    value_phone=item.get("value_phone"),
                 )
 
-                answer_rows.append((answer, selected_options))
-
-            created_answers = []
-            option_rows = []
+                answer_rows.append((answer, options))
 
             with transaction.atomic():
 
                 created_answers = KycAnswer.objects.bulk_create(
                     [a for a, _ in answer_rows],
                     batch_size=500,
-                    ignore_conflicts=True,
+                    ignore_conflicts=True
                 )
+
+                option_rows = []
 
                 for created, (_, options) in zip(created_answers, answer_rows):
 
                     for ref_id in options:
-
                         option_rows.append(
                             KycAnswerOption(
                                 answer_id=created.id,
@@ -342,24 +272,20 @@ class KycAnswerViewSet(ModelViewSet):
 
             return Response({
                 "status": "saved",
-                "answers_created": len(created_answers),
-                "options_created": len(option_rows)
+                "answers": len(created_answers),
+                "options": len(option_rows)
             })
 
-        except Exception as e:
+        except Exception:
 
-            print("\n================ KYC SUBMIT ERROR ================")
-            print("Payload:")
-            print(request.data)
-            print("\nTraceback:")
+            print("\n========== KYC SUBMIT ERROR ==========")
+            print("URL record_pk:", record_pk)
+            print("Payload:", request.data)
             traceback.print_exc()
-            print("==================================================\n")
+            print("======================================\n")
 
             return Response(
-                {
-                    "error": "Internal server error",
-                    "message": str(e)
-                },
+                {"error": "internal server error"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 # -------------------------------------------------
