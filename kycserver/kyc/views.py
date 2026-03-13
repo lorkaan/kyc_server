@@ -227,9 +227,9 @@ class KycAnswerViewSet(ModelViewSet):
                 return False
     
     def _submit_single_answer(self, record_pk, item):
-        question_id = question_id=item.get("question", None)
+        question_id = item.get("question", None)
         if not self._validate_question_id(question_id, record_pk):
-            raise Exception("Can not validate the Question/Record Pair")
+            raise Exception(f"Can not validate the Question/Record Pair: \n\tRecord: {record_pk}\n\tQuestion: {question_id}")
         else:
             values = {
                 "value_number": item.get("value_number"),
