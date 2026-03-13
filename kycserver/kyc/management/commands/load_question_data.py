@@ -9,6 +9,7 @@ from kyc.models import (
     KycQuestionGroup,
     ReferenceSet,
 )
+from party.models import PartyType
 
 
 class Command(BaseCommand):
@@ -199,6 +200,20 @@ class Command(BaseCommand):
                 }
             )
 
+        party_type = None
+
+        party_code = row.get("party_type_code", "")
+
+        if party_code:
+
+            try:
+                party_type = PartyType.objects.get(code=party_code)
+
+            except PartyType.DoesNotExist:
+                raise ValueError(
+                    f"PartyType '{party_code}' does not exist"
+                )
+
 
         # -----------------------------
         # Question
@@ -213,6 +228,8 @@ class Command(BaseCommand):
                 "group": group,
 
                 "answer_type": row["answer_type"],
+
+                "party_type": party_type,
 
                 "required": to_bool(row["required"]),
 
