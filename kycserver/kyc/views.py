@@ -272,7 +272,7 @@ class KycAnswerViewSet(ModelViewSet):
     def bulk_add_answers(self, record_pk, answers_data):
         answer_ids = []
         for item in answers_data:
-            answer_ids.append(self._submit_single_answer(self, record_pk, item))
+            answer_ids.append(self._submit_single_answer(record_pk, item))
         return answer_ids
     
     @action(detail=False, methods=["post"])
@@ -289,7 +289,7 @@ class KycAnswerViewSet(ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            answer_rows = self.bulk_add_answers(self, record_pk, answers_data)
+            answer_rows = self.bulk_add_answers(record_pk, answers_data)
 
             return Response({
                 "status": "saved",
