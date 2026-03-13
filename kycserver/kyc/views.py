@@ -203,6 +203,78 @@ class KycAnswerViewSet(ModelViewSet):
             "name": attachment.original_name
         })
     
+    def _validate_question_id(self, question_id, record_pk):
+        if question_id == None:
+            return False
+        else:
+            try:
+                record_object = KYCRecord.objects.get(pk=record_pk)
+                try:
+                    kyc_question = KycQuestion.objects.get(pk=question_id)
+                    if record_object.party != None and kyc_question.party_type == record_object.party.party_type:
+                        return True
+                    else:
+                        return False
+                except KycQuestion.DoesNotExist:
+                    return False
+                except Exception as e:
+                    print(e)
+                    return False
+            except KycQuestion.DoesNotExist:
+                return False
+            except Exception as e:
+                print(e)
+                return False
+    
+    def _submit_single_answer(self, record_pk, item):
+        question_id = question_id=item.get("question", None)
+        if not self._validate_question_id(question_id, record_pk):
+            raise Exception("Can not validate the Question/Record Pair")
+        else:
+            values = {
+                "value_number": item.get("value_number"),
+                "value_text": item.get("value_text"),
+                "value_bool": item.get("value_bool"),
+                "value_reference_id": item.get("value_reference"),
+
+                "value_date": item.get("value_date"),
+                "value_date_from": item.get("value_date_from"),
+                "value_date_to": item.get("value_date_to"),
+
+                "value_email": item.get("value_email"),
+                "value_phone": item.get("value_phone"),
+            }
+
+            values = {k: v for k, v in values.items() if v is not None}
+            options = item.get("selected_options", [])
+            answer = KycAnswer(
+                        kyc_record_id=record_pk,
+                        question_id=question_id,
+                        repeat_index=item.get("repeat_index", 0),
+                        **values
+                    )
+            answer.save()
+            for opt in options:
+                try:
+                    cur_ans_value = ReferenceValue.objects.get(pk=opt)
+                    answer_option, created = KycAnswerOption.objects.get_or_create(answer=answer, reference_value=cur_ans_value)
+                    if not created:
+                        print(f"Answer Option already created: {answer_option}")
+                except ReferenceValue.DoesNotExist as e:
+                    print(f"Can not find the option: {opt}: {e}")
+                    continue
+                except Exception as e:
+                    print(f"Unknown Error with AnswerOption: {e}")
+                    continue
+            return answer.id
+
+    @transaction.atomic
+    def bulk_add_answers(self, record_pk, answers_data):
+        answer_ids = []
+        for item in answers_data:
+            answer_ids.append(self._submit_single_answer(self, record_pk, item))
+        return answer_ids
+    
     @action(detail=False, methods=["post"])
     def submit(self, request, record_pk=None, *args, **kwargs):
 
@@ -217,63 +289,11 @@ class KycAnswerViewSet(ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            answer_rows = []
-
-            for item in answers_data:
-
-                options = item.get("selected_options", [])
-
-                answer = KycAnswer(
-                    kyc_record_id=record_pk,
-                    question_id=item.get("question"),
-                    repeat_index=item.get("repeat_index", 0),
-
-                    value_number=item.get("value_number"),
-                    value_text=item.get("value_text"),
-                    value_bool=item.get("value_bool"),
-                    value_reference_id=item.get("value_reference"),
-
-                    value_date=item.get("value_date"),
-                    value_date_from=item.get("value_date_from"),
-                    value_date_to=item.get("value_date_to"),
-
-                    value_email=item.get("value_email"),
-                    value_phone=item.get("value_phone"),
-                )
-
-                answer_rows.append((answer, options))
-
-            with transaction.atomic():
-
-                created_answers = KycAnswer.objects.bulk_create(
-                    [a for a, _ in answer_rows],
-                    batch_size=500,
-                    ignore_conflicts=True
-                )
-
-                option_rows = []
-
-                for created, (_, options) in zip(created_answers, answer_rows):
-
-                    for ref_id in options:
-                        option_rows.append(
-                            KycAnswerOption(
-                                answer_id=created.id,
-                                reference_value_id=ref_id
-                            )
-                        )
-
-                if option_rows:
-                    KycAnswerOption.objects.bulk_create(
-                        option_rows,
-                        batch_size=1000,
-                        ignore_conflicts=True
-                    )
+            answer_rows = self.bulk_add_answers(self, record_pk, answers_data)
 
             return Response({
                 "status": "saved",
-                "answers": len(created_answers),
-                "options": len(option_rows)
+                "answers": answer_rows
             })
 
         except Exception:
