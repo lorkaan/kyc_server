@@ -1,4 +1,7 @@
-from django.db.models import Q, Exists, OuterRef, Subquery
+from django.db.models import Q, Exists, OuterRef
+
+from globalparams.models import GlobalParameter
+from utils.dsl_evaluator import DslEvaluator
 
 from .model_utils import getModelFromName
 
@@ -19,7 +22,9 @@ from copy import deepcopy
 from datetime import datetime
 import uuid
 
-class QueryAstHandler:
+class QueryAstHandler(DslEvaluator):
+
+    eval_statement_key = "query.where"
 
     MAX_DEPTH = 4 # To stop queries going too deep
 
@@ -133,45 +138,6 @@ class QueryAstHandler:
                 except ValueError:
                     raise ValueError(f"Param {name} must be a valid UUID")
         return True
-
-    @classmethod
-    def bind_params(cls, ast, params: dict):
-        """
-        Replace {$param: name} nodes with concrete values.
-        Optional params not provided are removed.
-        Also prunes empty logical nodes (and/or) recursively.
-        Returns a NEW AST (does not mutate input).
-        """
-        ast = deepcopy(ast)
-
-        def _bind(node):
-            if isinstance(node, dict):
-                # Parameter reference
-                if "$param" in node:
-                    name = node["$param"]
-                    return params.get(name)  # None if missing optional
-
-                # Recursive binding
-                bound = {k: _bind(v) for k, v in node.items()}
-                # Remove None values
-                bound = {k: v for k, v in bound.items() if v is not None}
-
-                # Prune empty logical nodes
-                if "and" in bound and not bound["and"]:
-                    return None
-                if "or" in bound and not bound["or"]:
-                    return None
-
-                return bound if bound else None
-
-            elif isinstance(node, list):
-                bound_list = [_bind(v) for v in node]
-                bound_list = [v for v in bound_list if v is not None]
-                return bound_list if bound_list else None
-
-            return node  # scalar
-
-        return _bind(ast)
 
     @classmethod
     def _get_history_model(model):
@@ -330,57 +296,37 @@ class QueryAstHandler:
         return Exists(subquery)
     
     @classmethod
-    def run(cls, query_def, params={}):
+    def evaluate(cls, ast_obj, **kwargs):
+        entity_name = kwargs.get("entity_name", None)
+        if not isString(entity_name):
+            raise ValueError(
+                f"Expected model to be a non-empty string, instead got: "
+                f"{type(entity_name)} ==> {entity_name}"
+            )
+        else:
+            try:
+                base_model = getModelFromName()
+            except Exception:
+                raise ValueError(f"Could not find a model for the given name: {entity_name}")
+            if not issubclass(base_model, models.Model) or base_model not in cls.ENTITY_REGISTRY:
+                raise ValueError(f"Model: {base_model} is not authorized to be queried")
+            else:
+                # ---- Compile + execute ----
+                predicate = cls.compile(base_model, ast_obj)
+
+                if predicate is None:
+                    # Explicit decision: no predicate means empty filter (allowed)
+                    return base_model.objects.all()
+
+                return base_model.objects.filter(predicate)
+    
+    @classmethod
+    def run(cls, query_def, params={}, **kwargs):
         # ---- Top-level validation ----
         if not isDict(query_def, keys=["query", "model"]):
             raise ValueError(
                 f"Expected a Dictionary with keys query, model, but got: "
                 f"{type(query_def)} ==> {dictToStr(query_def) if isinstance(query_def, dict) else query_def}"
             )
-
-        # ---- Resolve model ----
-        entity_name = query_def.get("model")
-        if not isString(entity_name):
-            raise ValueError(
-                f"Expected model to be a non-empty string, instead got: "
-                f"{type(entity_name)} ==> {entity_name}"
-            )
-
-        try:
-            base_model = getModelFromName(entity_name)
-        except Exception:
-            raise ValueError(f"Could not find a model for the given name: {entity_name}")
-
-        if not issubclass(base_model, models.Model) or base_model not in cls.ENTITY_REGISTRY:
-            raise ValueError(f"Model: {base_model} is not authorized to be queried")
-
-        # ---- Extract query block ----
-        query_block = query_def.get("query")
-        if not isDict(query_block):
-            raise ValueError(
-                f"Expected 'query' to be a dictionary, got: "
-                f"{type(query_block)} ==> {query_block}"
-            )
-
-        # ---- Unwrap WHERE ----
-        where_ast = query_block.get("where")
-        if where_ast is not None and not isDict(where_ast):
-            raise ValueError(
-                f"Expected 'where' to be a dictionary, got: "
-                f"{type(where_ast)} ==> {where_ast}"
-            )
-
-        # ---- Params handling ----
-        param_def = query_def.get("params")
-        if isDict(param_def):
-            cls.validate_params(param_def, params)
-            where_ast = cls.bind_params(where_ast, params)
-
-        # ---- Compile + execute ----
-        predicate = cls.compile(base_model, where_ast)
-
-        if predicate is None:
-            # Explicit decision: no predicate means empty filter (allowed)
-            return base_model.objects.all()
-
-        return base_model.objects.filter(predicate)
+        else:
+            return super().run(query_def, params, **kwargs)

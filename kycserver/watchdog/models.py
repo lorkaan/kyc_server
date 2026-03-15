@@ -1,7 +1,7 @@
 from django.db import models
 
 import pghistory
-from base.models import BaseModel, GenericTargetMixin
+from base.models import BaseModel, GenericTargetMixin, NullableGenericTargetMixin
 
 class AlertStatus(models.Model):
     code = models.CharField(max_length=20, unique=True)
@@ -56,8 +56,9 @@ class SignalType(models.Model):
     label = models.CharField(max_length=50)
 
 @pghistory.track()
-class Signal(BaseModel):
+class Signal(BaseModel, NullableGenericTargetMixin):
     signal_type = models.ForeignKey(SignalType, on_delete=models.PROTECT)
     severity = models.ForeignKey(SignalSeverity, on_delete=models.PROTECT)
     metadata = models.JSONField(default=dict, blank=True)
-    resolved_at = models.DateTimeField(null=True, blank=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
