@@ -3,7 +3,10 @@ import uuid
 
 from kyc.models import KYCRecord, KYCStatus
 from automation.tests.utils.automation_factory import AutomationTestFactory
+from person.models import Person
 from party.models import Party
+
+from django.contrib.contenttypes.models import ContentType
 
 
 class KycAutomationTests(TestCase):
@@ -17,8 +20,15 @@ class KycAutomationTests(TestCase):
             config={"title": "KYC Created"}
         )
 
+        person, _ = Person.objects.get_or_create(
+            first_name="Test",
+            last_name="Customer"
+        )
+
         party, _ = Party.objects.get_or_create(
             id=uuid.uuid4(),
+            object_id=person.id,
+            content_type=ContentType.objects.get_for_model(Person),
             name="Test Customer Party"
         )
 
