@@ -7,6 +7,7 @@ from person.models import Person
 from party.models import Party
 
 from django.contrib.contenttypes.models import ContentType
+from datetime import date
 
 
 class KycAutomationTests(TestCase):
@@ -22,7 +23,8 @@ class KycAutomationTests(TestCase):
 
         person, _ = Person.objects.get_or_create(
             first_name="Test",
-            last_name="Customer"
+            last_name="Customer",
+            date_of_birth=date(1990, 1, 1)
         )
 
         party, _ = Party.objects.get_or_create(
