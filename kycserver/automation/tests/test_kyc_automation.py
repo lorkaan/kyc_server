@@ -3,7 +3,7 @@ import uuid
 
 from kyc.models import KYCRecord, KYCStatus
 from automation.tests.utils.automation_factory import AutomationTestFactory
-from kycserver.party.models import Party
+from party.models import Party
 
 
 class KycAutomationTests(TestCase):
