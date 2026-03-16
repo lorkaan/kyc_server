@@ -4,7 +4,7 @@ import uuid
 from kyc.models import KYCRecord, KYCStatus
 from automation.tests.utils.automation_factory import AutomationTestFactory
 from person.models import Person
-from party.models import Party
+from party.models import Party, PartyType
 
 from django.contrib.contenttypes.models import ContentType
 from datetime import date
@@ -27,11 +27,22 @@ class KycAutomationTests(TestCase):
             date_of_birth=date(1990, 1, 1)
         )
 
+        party_type, _ = PartyType.objects.get_or_create(
+            code="person",
+            defaults={
+                "name": "Person",
+                "serializer_path": "person.serializers.PersonSerializer"
+            }
+        )
+
         party, _ = Party.objects.get_or_create(
             id=uuid.uuid4(),
             object_id=person.id,
             content_type=ContentType.objects.get_for_model(Person),
-            name="Test Customer Party"
+            defaults={
+                "name": "Test Customer Party",
+                "party_type": party_type,
+            }
         )
 
         kyc_status, _ = KYCStatus.objects.get_or_create(
