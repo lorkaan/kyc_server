@@ -1,8 +1,9 @@
 from django.test import TestCase
 import uuid
 
-from kyc.models import KYCRecord
+from kyc.models import KYCRecord, KYCStatus
 from automation.tests.utils.automation_factory import AutomationTestFactory
+from kycserver.party.models import Party
 
 
 class KycAutomationTests(TestCase):
@@ -16,22 +17,41 @@ class KycAutomationTests(TestCase):
             config={"title": "KYC Created"}
         )
 
-        # Create KYC record
-        kyc = KYCRecord.objects.create(
+        party, _ = Party.objects.get_or_create(
             id=uuid.uuid4(),
-            name="Test Customer"
+            name="Test Customer Party"
         )
 
-        # Emit signal
-        signal = AutomationTestFactory.emit_signal(
-            "kyc_record_created",
-            obj=kyc
+        kyc_status, _ = KYCStatus.objects.get_or_create(
+            id=uuid.uuid4(),
+            code="pending",
+            label="Pending",
+            description="Pending KYC"
         )
 
-        # Run automation
-        AutomationTestFactory.run_signal(signal)
-
-        # Verify alert
-        self.assertTrue(
-            AutomationTestFactory.alert_created()
+        # Now create the KYCRecord properly
+        kyc, created = KYCRecord.objects.get_or_create(
+            id=uuid.uuid4(),
+            party=party,
+            status=kyc_status,
+            risk_score=50,         # required integer
+            notes="Initial test KYC record",
+            is_current=True
         )
+
+        if created:
+            # Emit signal
+            signal = AutomationTestFactory.emit_signal(
+                "kyc_record_created",
+                obj=kyc
+            )
+
+            # Run automation
+            AutomationTestFactory.run_signal(signal)
+
+            # Verify alert
+            self.assertTrue(
+                AutomationTestFactory.alert_created()
+            )
+        else:
+            self.assertTrue(False)
