@@ -152,7 +152,7 @@ class KYCRecordViewSet(ModelViewSet):
             party_type=party_type,
             content_type=content_type,
             object_id=entity.pk,
-            defaults={"display_name": str(entity)}
+            defaults={"name": str(entity)}
         )
 
         # Step 3: Get or create KYCRecord for this Party
