@@ -10,7 +10,7 @@ class AutomationTestFactory:
 
     @staticmethod
     def signal_type(name):
-        signal_type, _ = SignalType.objects.get_or_create(name=name)
+        signal_type, _ = SignalType.objects.get_or_create(label=name)
         return signal_type
 
     @staticmethod
