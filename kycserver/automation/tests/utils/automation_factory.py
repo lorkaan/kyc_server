@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
-from watchdog.models import Signal, SignalSeverity, SignalType
+from watchdog.models import Alert, Signal, SignalSeverity, SignalType
 from automation.models import AutomationTrigger, AutomationAction, TriggerTypes
 from automation.tasks import evaluate_signal
 
@@ -91,13 +91,23 @@ class AutomationTestFactory:
         run_trigger(trigger.id)
 
     @staticmethod
-    def alert_created():
+    def signal_created(label):
         """
         Helper for create_alert action tests.
         Adjust if your alert model differs.
         """
         return Signal.objects.filter(
-            signal_type__label="create_alert"
+            signal_type__label=label
+        ).exists()
+
+    @staticmethod
+    def alert_created(reason):
+        """
+        Helper for create_alert action tests.
+        Adjust if your alert model differs.
+        """
+        return Alert.objects.filter(
+            reason__name=reason
         ).exists()
 
     @staticmethod

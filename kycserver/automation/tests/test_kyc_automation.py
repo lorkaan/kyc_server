@@ -65,8 +65,7 @@ class KycAutomationTests(TestCase):
 
         # Run automation
         AutomationTestFactory.run_signal(signal)
+    
 
         # Verify alert
-        self.assertTrue(
-            AutomationTestFactory.alert_created()
-        )
+        self.assertTrue(AutomationTestFactory.signal_created("kyc_record_created"))
