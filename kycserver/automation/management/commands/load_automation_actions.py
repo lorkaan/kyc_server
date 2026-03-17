@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from automation.models import AutomationAction, AutomationTrigger
-from automation.registry import action_registry
+from utils.action_runner import ActionRunner
 
 
 class Command(BaseCommand):
@@ -193,7 +193,7 @@ class Command(BaseCommand):
         if not action_type:
             raise ValueError("action_type is required")
 
-        if action_type not in action_registry:
+        if action_type not in ActionRunner.REGISTRY:
             raise ValueError(
                 f"Unknown action_type '{action_type}'"
             )

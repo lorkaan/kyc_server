@@ -65,7 +65,7 @@ class Command(BaseCommand):
     # Validation
     # --------------------------------------------------
     def validate_columns(self, df: pd.DataFrame):
-        required = {"signal_name", "trigger_name", "action_name"}
+        required = {"trigger_name", "trigger_type"}
         missing = required - set(df.columns)
         if missing:
             raise CommandError(f"Missing required columns: {', '.join(missing)}")
