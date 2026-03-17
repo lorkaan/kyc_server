@@ -46,7 +46,6 @@ class KycAutomationTests(TestCase):
         )
 
         kyc_status, _ = KYCStatus.objects.get_or_create(
-            id=uuid.uuid4(),
             code="pending",
             name="Pending"
         )
