@@ -3,7 +3,6 @@ import uuid
 
 from kyc.models import KYCRecord, KYCStatus
 from automation.tests.utils.automation_factory import AutomationTestFactory
-from kycserver.watchdog.models import SignalType
 from person.models import Person
 from party.models import Party, PartyType
 
