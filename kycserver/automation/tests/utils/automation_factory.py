@@ -97,7 +97,7 @@ class AutomationTestFactory:
         Adjust if your alert model differs.
         """
         return Signal.objects.filter(
-            signal_type__name="create_alert"
+            signal_type__label="create_alert"
         ).exists()
 
     @staticmethod
