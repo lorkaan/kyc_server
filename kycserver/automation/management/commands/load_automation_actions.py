@@ -6,9 +6,11 @@ from django.db import transaction
 
 from automation.models import AutomationAction, AutomationTrigger
 from utils.action_runner import ActionRunner
-
+import logging
 
 class Command(BaseCommand):
+
+    logger = logging.getLogger()
 
     help = "Import Automation Actions from CSV / Excel using Pandas with external JSON configs"
 
@@ -194,6 +196,7 @@ class Command(BaseCommand):
             raise ValueError("action_type is required")
 
         if action_type not in ActionRunner.REGISTRY:
+            self.__class__.logger.error(f"Action Type: {action_type} \n\t{ActionRunner.REGISTRY}")
             raise ValueError(
                 f"Unknown action_type '{action_type}'"
             )
