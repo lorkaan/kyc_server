@@ -66,6 +66,8 @@ class AutomationTrigger(BaseModel):
 
     locked_at = models.DateTimeField(null=True, blank=True)
 
+    name = models.CharField(max_length=255, null=True, blank=True)
+
     def clean(self):
         if self.trigger_type == TriggerTypes.SIGNAL and not self.signal_type:
             raise ValidationError("Signal trigger requires signal_type")
@@ -93,6 +95,11 @@ class AutomationTrigger(BaseModel):
                     models.Q(trigger_type=TriggerTypes.TIME, signal_type__isnull=True, schedule__isnull=False)
                 ),
                 name="valid_trigger_configuration"
+            ),
+            models.UniqueConstraint(
+                fields=['name'],
+                condition=models.Q(name__isnull=False),
+                name="unique_non_null_name"
             )
         ]
         indexes = [

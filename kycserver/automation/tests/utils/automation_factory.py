@@ -13,6 +13,14 @@ class AutomationTestFactory:
     default_signal_severity_rank = 10
 
     @staticmethod
+    def count_alerts():
+        return Alert.objects.count()
+    
+    @staticmethod
+    def count_signals():
+        return Signal.objects.count()
+
+    @staticmethod
     def signal_type(name):
         signal_type, _ = SignalType.objects.get_or_create(label=name)
         return signal_type

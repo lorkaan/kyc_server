@@ -3,6 +3,7 @@ import uuid
 
 from kyc.models import KYCRecord, KYCStatus
 from automation.tests.utils.automation_factory import AutomationTestFactory
+from kycserver.watchdog.models import SignalType
 from person.models import Person
 from party.models import Party, PartyType
 
@@ -14,12 +15,8 @@ class KycAutomationTests(TestCase):
 
     def test_kyc_creation_creates_alert(self):
 
-        # Create trigger + action
-        AutomationTestFactory.signal_trigger(
-            signal_type="kyc_record_created",
-            action_type="create_alert",
-            config={"title": "KYC Created"}
-        )
+        self.assertEqual(AutomationTestFactory.count_alerts(), 0)
+        self.assertEqual(AutomationTestFactory.count_signals(), 0)
 
         person, _ = Person.objects.get_or_create(
             first_name="Test",
@@ -62,10 +59,11 @@ class KycAutomationTests(TestCase):
             "kyc_record_created",
             obj=kyc
         )
+        self.assertTrue(AutomationTestFactory.signal_created("kyc_record_created"))
 
         # Run automation
         AutomationTestFactory.run_signal(signal)
     
 
         # Verify alert
-        self.assertTrue(AutomationTestFactory.signal_created("kyc_record_created"))
+        self.assertEqual(AutomationTestFactory.count_alerts(), 1)

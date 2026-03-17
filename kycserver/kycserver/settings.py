@@ -21,6 +21,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 TEST_FLAG = envloader.get("TEST_FLAG", "1").lower() in ("1", "true", "yes")
 
+if TEST_FLAG:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'http')
 
 # Quick-start development settings - unsuitable for production
