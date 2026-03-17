@@ -6,9 +6,12 @@ from django.db import transaction
 
 from automation.models import AutomationRule, AutomationTrigger, AutomationAction
 from watchdog.models import SignalType
+import logging
 
 
 class Command(BaseCommand):
+
+    logger = logging.getLogger()
 
     help = "Import Automation Signals, Triggers, and Actions from CSV / Excel / ODS"
 
@@ -66,6 +69,7 @@ class Command(BaseCommand):
     # --------------------------------------------------
     def validate_columns(self, df: pd.DataFrame):
         required = {"trigger_name", "trigger_type"}
+        self.__class__.logger.error(f"COLUMNS FOUND: {df.columns}")
         missing = required - set(df.columns)
         if missing:
             raise CommandError(f"Missing required columns: {', '.join(missing)}")
