@@ -47,7 +47,7 @@ class KycAutomationTests(TestCase):
 
         kyc_status, _ = KYCStatus.objects.get_or_create(
             code="pending",
-            name="Pending"
+            defaults={"name": "Pending"}
         )
 
         # Now create the KYCRecord properly
@@ -58,20 +58,15 @@ class KycAutomationTests(TestCase):
             notes="Initial test KYC record"
         )
 
-        if created or isinstance(kyc, KYCRecord):
-            # Emit signal
-            signal = AutomationTestFactory.emit_signal(
-                "kyc_record_created",
-                obj=kyc
-            )
+        signal = AutomationTestFactory.emit_signal(
+            "kyc_record_created",
+            obj=kyc
+        )
 
-            # Run automation
-            AutomationTestFactory.run_signal(signal)
+        # Run automation
+        AutomationTestFactory.run_signal(signal)
 
-            # Verify alert
-            self.assertTrue(
-                AutomationTestFactory.alert_created()
-            )
-        else:
-            print(f"KYC Record: {kyc}\n\tCreated: {created}")
-            self.assertTrue(False)
+        # Verify alert
+        self.assertTrue(
+            AutomationTestFactory.alert_created()
+        )
