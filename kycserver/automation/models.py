@@ -120,7 +120,7 @@ class AutomationAction(BaseModel):
         help_text="The action type registered in ActionRunner",
     )
 
-    config = models.JSONField(default=dict)
+    config = models.JSONField(default=dict, blank=True)
 
     order = models.PositiveIntegerField(default=0)
 
