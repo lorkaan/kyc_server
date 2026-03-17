@@ -55,7 +55,7 @@ class AutomationTestFactory:
             signal_type=signal_type_obj,
             content_type=content_type,
             object_id=object_id,
-            payload=payload or {},
+            metadata=payload or {},
             created_at=timezone.now()
         )
 
