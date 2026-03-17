@@ -8,7 +8,9 @@ from automation.tasks import evaluate_signal
 
 class AutomationTestFactory:
 
-    default_signal_severity = "low"
+    default_signal_severity_code = "low"
+
+    default_signal_severity_rank = 10
 
     @staticmethod
     def signal_type(name):
@@ -40,7 +42,7 @@ class AutomationTestFactory:
         return trigger, action
 
     @staticmethod
-    def emit_signal(signal_type, obj=None, payload=None, severity_code=None):
+    def emit_signal(signal_type, obj=None, payload=None, severity_code=None, severity_rank=None):
         """
         Emits a Signal for a model instance.
         """
@@ -54,10 +56,13 @@ class AutomationTestFactory:
             object_id = obj.pk
 
         if severity_code == None:
-            severity_code = AutomationTestFactory.default_signal_severity
+            severity_code = AutomationTestFactory.default_signal_severity_code
+        if severity_rank == None:
+            severity_rank = AutomationTestFactory.default_signal_severity_rank
 
         serverity, _ = SignalSeverity.objects.get_or_create(
-            code=severity_code
+            code=severity_code,
+            rank=severity_rank
         )
 
         signal = Signal.objects.create(
