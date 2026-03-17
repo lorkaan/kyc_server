@@ -1,12 +1,14 @@
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
-from watchdog.models import Signal, SignalType
+from watchdog.models import Signal, SignalSeverity, SignalType
 from automation.models import AutomationTrigger, AutomationAction, TriggerTypes
 from automation.tasks import evaluate_signal
 
 
 class AutomationTestFactory:
+
+    default_signal_severity = "low"
 
     @staticmethod
     def signal_type(name):
@@ -38,7 +40,7 @@ class AutomationTestFactory:
         return trigger, action
 
     @staticmethod
-    def emit_signal(signal_type, obj=None, payload=None):
+    def emit_signal(signal_type, obj=None, payload=None, severity_code=None):
         """
         Emits a Signal for a model instance.
         """
@@ -51,12 +53,19 @@ class AutomationTestFactory:
             content_type = ContentType.objects.get_for_model(obj)
             object_id = obj.pk
 
+        if severity_code == None:
+            severity_code = AutomationTestFactory.default_signal_severity
+
+        serverity, _ = SignalSeverity.objects.get_or_create(
+            code=severity_code
+        )
+
         signal = Signal.objects.create(
             signal_type=signal_type_obj,
             content_type=content_type,
             object_id=object_id,
             metadata=payload or {},
-            created_at=timezone.now()
+            severity=serverity
         )
 
         return signal
