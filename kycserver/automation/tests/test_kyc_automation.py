@@ -8,9 +8,13 @@ from party.models import Party, PartyType
 
 from django.contrib.contenttypes.models import ContentType
 from datetime import date
-
+from kycserver.settings import CELERY_TASK_ALWAYS_EAGER, CELERY_TASK_EAGER_PROPAGATES
+import logging
+import time
 
 class KycAutomationTests(TestCase):
+
+    logger = logging.getLogger()
 
     def test_kyc_creation_creates_alert(self):
 
@@ -63,6 +67,7 @@ class KycAutomationTests(TestCase):
         # Run automation
         AutomationTestFactory.run_signal(signal)
     
-
+        self.__class__.logger.error((f"CELERY_TASK_ALWAYS_EAGER: {CELERY_TASK_ALWAYS_EAGER} \nCELERY_TASK_EAGER_PROPAGATES: {CELERY_TASK_EAGER_PROPAGATES}"))
+        time.sleep(15)
         # Verify alert
         self.assertEqual(AutomationTestFactory.count_alerts(), 1)
