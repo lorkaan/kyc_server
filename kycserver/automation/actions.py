@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 def create_alert_action(results, config, context):
     title = config.get("title", "Default Alert")
     signal_type_id = config.get("signal_type_id")
-
+    logger.error(f"Title: {title}\n\tSignal Type: {signal_type_id}\n\n\tContext: {context}\n\n\tResults: {results}")
     try:
         signal_type_obj = SignalType.objects.get(pk=signal_type_id)
         alert_message = f"{title} - {signal_type_obj.label}"
