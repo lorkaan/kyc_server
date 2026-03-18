@@ -3,6 +3,7 @@ import uuid
 
 from kyc.models import KYCRecord, KYCStatus
 from automation.tests.utils.automation_factory import AutomationTestFactory
+from automation.models import AutomationTrigger
 from person.models import Person
 from party.models import Party, PartyType
 
@@ -70,4 +71,8 @@ class KycAutomationTests(TestCase):
         self.__class__.logger.error((f"CELERY_TASK_ALWAYS_EAGER: {CELERY_TASK_ALWAYS_EAGER} \nCELERY_TASK_EAGER_PROPAGATES: {CELERY_TASK_EAGER_PROPAGATES}"))
         time.sleep(15)
         # Verify alert
+        triggers = AutomationTrigger.objects.filter(signal_type=signal.signal_type)
+        for t in triggers:
+            self.__class__.logger.error(f"Trigger: {t}")
+            AutomationTestFactory.run_trigger(t)
         self.assertEqual(AutomationTestFactory.count_alerts(), 1)
