@@ -8,6 +8,10 @@ from utils.action_runner import ActionRunner
 from utils.boolAstHandler import BooleanAstHandler  # Your Boolean DSL evaluator
 from datetime import timedelta
 
+import logging
+
+logger = logging.getLogger()
+
 LOCK_TIMEOUT = timedelta(minutes=30)
 
 # -----------------------------
@@ -52,7 +56,7 @@ def run_due_triggers():
 @shared_task(bind=True, max_retries=5, default_retry_delay=60)
 def run_trigger(self, trigger_id, signal_id=None):
     now = timezone.now()
-
+    logger.error(f"Running Trigger: {trigger_id}")
     try:
         # Acquire a lock safely
         with transaction.atomic():
@@ -68,6 +72,7 @@ def run_trigger(self, trigger_id, signal_id=None):
 
             # Skip if a fresh lock exists
             if trigger.is_running and trigger.locked_at and now - trigger.locked_at < LOCK_TIMEOUT:
+                logger.error(f"Trigger: {trigger_id} is locked")
                 return
 
             # Recover stale lock
@@ -100,8 +105,11 @@ def run_trigger(self, trigger_id, signal_id=None):
             status=AutomationRun.RunStatus.RUNNING,
         )
 
+        logger.error(f"Excuting Actions")
+
         # Execute actions
         for action in trigger.actions.filter(is_active=True).order_by("order"):
+            logger.error(f"\tExcuting Action: {action}")
             should_run = True
             if action.condition:
                 should_run = BooleanAstHandler.run(
