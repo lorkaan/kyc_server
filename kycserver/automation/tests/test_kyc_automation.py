@@ -17,6 +17,20 @@ class KycAutomationTests(TestCase):
 
     logger = logging.getLogger()
 
+    @classmethod
+    def setUpTestData(cls):
+        from django.core.management import call_command
+
+        call_command(
+            "load_automation_triggers",
+            "/app/backend/config/triggers.ods"
+        )
+
+        call_command(
+            "load_automation_actions",
+            "/app/backend/config/actions.ods"
+        )
+
     def test_kyc_creation_creates_alert(self):
 
         self.assertEqual(AutomationTestFactory.count_alerts(), 0)
