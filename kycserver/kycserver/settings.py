@@ -24,6 +24,8 @@ TEST_FLAG = envloader.get("TEST_FLAG", "1").lower() in ("1", "true", "yes")
 if TEST_FLAG:
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
+    CELERY_BROKER_URL = "memory://"
+    CELERY_RESULT_BACKEND = "cache+memory://"
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'http')
 
