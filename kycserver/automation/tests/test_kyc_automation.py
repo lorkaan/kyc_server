@@ -77,6 +77,7 @@ class KycAutomationTests(TestCase):
             "kyc_record_created",
             obj=kyc
         )
+        self.__class__.logger.error(f"Emitted signal: {signal}:\n{signal.__dict__ if not signal == None else "N/A"}")
         self.assertTrue(AutomationTestFactory.signal_created("kyc_record_created"))
 
         # Run automation

@@ -29,6 +29,7 @@ def evaluate_signal(signal_id):
         trigger_type=TriggerTypes.SIGNAL,
         signal_type=signal.signal_type
     )
+    logger.error(f"Evaluating signal id: {signal_id}, which corresponds to {signal}")
     for trigger in triggers:
         run_trigger.delay(trigger.id, signal_id=signal.id)
 
