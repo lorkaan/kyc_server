@@ -85,9 +85,9 @@ class KycAutomationTests(TestCase):
         self.__class__.logger.error(f"Is this correct: \nCELERY_TASK_ALWAYS_EAGER: {CELERY_TASK_ALWAYS_EAGER} \nCELERY_TASK_EAGER_PROPAGATES: {CELERY_TASK_EAGER_PROPAGATES}")
         time.sleep(15)
         # Verify alert
-        triggers = AutomationTrigger.objects.filter(signal_type=signal.signal_type)
-        self.__class__.logger.error(f"Running Triggers for signal_type {signal.signal_type}: {triggers}")
-        for t in triggers:
-            self.__class__.logger.error(f"Trigger: {t}")
-            AutomationTestFactory.run_trigger(t)
+        #triggers = AutomationTrigger.objects.filter(signal_type=signal.signal_type)
+        #self.__class__.logger.error(f"Running Triggers for signal_type {signal.signal_type}: {triggers}")
+        #for t in triggers:
+        #    self.__class__.logger.error(f"Trigger: {t}")
+        #    AutomationTestFactory.run_trigger(t)
         self.assertEqual(AutomationTestFactory.count_alerts(), 1)
