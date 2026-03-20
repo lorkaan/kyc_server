@@ -5,16 +5,14 @@ from utils.action_runner import ActionRunner
 
 logger = logging.getLogger(__name__)
 
-def getSignalTypeIdFromSignalId(signal_id):
+def getSignal(signal_id):
     logger.error(f"Starting Get Signal Type from ID: {signal_id}")
     if signal_id == None:
         return None
     else:
         logger.error(f"Getting Signal Type from ID: {signal_id}")
         try:
-            signal = Signal.objects.get(pk=signal_id)
-            logger.error(f"Signal: {signal} Type: {signal.signal_type}")
-            return signal.signal_type
+            return Signal.objects.get(pk=signal_id)
         except Signal.DoesNotExist as e:
             logger.error(f"Signal ID could not be found on a signal: {signal_id}")
             return None
@@ -22,35 +20,44 @@ def getSignalTypeIdFromSignalId(signal_id):
             logger.error(f"Action Runner Exception: {e}")
             return None
         
-def create_alert(message, reason=None, status=None, severity=None):
+def create_alert(message, reason=None, status=None, severity=None, obj=None):
+
     def resolve_fk(value, model):
         if value is None:
-            return None
+            raise ValueError(f"{model.__name__} is required")
         if isinstance(value, model):
             return value
         return model.objects.get(pk=value)
 
+    if obj is None:
+        raise ValueError("create_alert requires 'obj' (target object)")
+
     try:
-        alert_obj = Alert.objects.create(
+        alert_obj = Alert(
             message=message,
             reason=resolve_fk(reason, AlertReason),
             status=resolve_fk(status, AlertStatus),
             severity=resolve_fk(severity, AlertSeverity),
         )
+
+        # ✅ Properly set GenericForeignKey
+        alert_obj.set_target(obj)
+
+        alert_obj.save()
         return alert_obj
+
     except Exception as e:
-        # Optional: log or re-raise with clearer context
         raise ValueError(f"Failed to create alert: {e}")
 
 @ActionRunner.register("create_alert")
 def create_alert_action(results, config, context):
     title = config.get("title", "Default Alert")
     logger.error(f"\tContext: {context}")
-    signal_type_obj = getSignalTypeIdFromSignalId(context.get("signal_id", None))
-    if signal_type_obj != None:
-        alert_message = f"{title} - {signal_type_obj.label}"
+    signal_obj = getSignal(context.get("signal_id", None))
+    if signal_obj != None:
+        alert_message = f"{title} - {signal_obj.signal_type.label}"
         try:
-            create_alert(alert_message, reason=1, status=1, severity=1)
+            create_alert(alert_message, reason=1, status=1, severity=1, obj=signal_obj.content_object)
         except Exception as e:
             logger.error(f"Alert Object Issue: {e}")
     else:
