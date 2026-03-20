@@ -6,11 +6,14 @@ from utils.action_runner import ActionRunner
 logger = logging.getLogger(__name__)
 
 def getSignalTypeIdFromSignalId(signal_id):
+    logger.error(f"Starting Get Signal Type from ID: {signal_id}")
     if signal_id == None:
         return None
     else:
+        logger.error(f"Getting Signal Type from ID: {signal_id}")
         try:
             signal = Signal.objects.get(pk=signal_id)
+            logger.error(f"Signal: {signal} Type: {signal.signal_type}")
             return signal.signal_type
         except Signal.DoesNotExist as e:
             logger.error(f"Signal ID could not be found on a signal: {signal_id}")
