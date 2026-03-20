@@ -1,6 +1,6 @@
 
 import logging
-from watchdog.models import Alert, Signal, SignalType
+from watchdog.models import Alert, AlertReason, AlertSeverity, AlertStatus, Signal, SignalType
 from utils.action_runner import ActionRunner
 
 logger = logging.getLogger(__name__)
@@ -30,14 +30,12 @@ def create_alert(message, reason=None, status=None, severity=None):
             return value
         return model.objects.get(pk=value)
 
-    from .models import Alert, Reason, Status, Severity  # adjust import as needed
-
     try:
         alert_obj = Alert.objects.create(
             message=message,
-            reason=resolve_fk(reason, Reason),
-            status=resolve_fk(status, Status),
-            severity=resolve_fk(severity, Severity),
+            reason=resolve_fk(reason, AlertReason),
+            status=resolve_fk(status, AlertStatus),
+            severity=resolve_fk(severity, AlertSeverity),
         )
         return alert_obj
     except Exception as e:
