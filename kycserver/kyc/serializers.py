@@ -4,6 +4,8 @@ from .models import (
     KYCRecord,
     KycAnswer,
     KycAnswerOption,
+    KycCondition,
+    KycConditionDependency,
     ReferenceValue,
     RelationshipRole,
     KYCStatus,
@@ -320,3 +322,48 @@ class KycBulkSubmitSerializer(serializers.Serializer):
             seen.add(key)
 
         return answers
+    
+class KycConditionDependencySerializer(serializers.ModelSerializer):
+    question_key = serializers.CharField(source="source_question.key")
+    group_key = serializers.CharField(source="group.key", allow_null=True)
+
+    class Meta:
+        model = KycConditionDependency
+        fields = ["question_key", "group_key", "is_required"]
+
+class KycConditionSerializer(serializers.ModelSerializer):
+    dependencies = KycConditionDependencySerializer(many=True)
+
+    class Meta:
+        model = KycCondition
+        fields = [
+            "id",
+            "condition_type",
+            "rule",
+            "priority",
+            "dependencies",
+        ]
+
+class KycQuestionSerializer(serializers.ModelSerializer):
+    conditions = serializers.SerializerMethodField()
+
+    class Meta:
+        model = KycQuestion
+        fields = [
+            "id",
+            "key",
+            "label",
+            "answer_type",
+            "required",
+            "order",
+            "is_repeatable",
+            "conditions",  # 👈 added here
+        ]
+
+    def get_conditions(self, obj):
+        conditions = obj.conditions.filter(is_active=True).order_by("priority")
+
+        if not conditions.exists():
+            return []
+
+        return KycConditionSerializer(conditions, many=True).data

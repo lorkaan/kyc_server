@@ -351,10 +351,10 @@ class KycCondition(models.Model):
     """
 
     class ConditionType(models.TextChoices):
-        SHOW = "show", "Show question"
-        REQUIRE = "require", "Require answer"
-        BLOCK = "block", "Block submission"
-        VALIDATE = "validate", "Custom validation"
+        SHOW = "S", "Show question"
+        REQUIRE = "R", "Require answer"
+        BLOCK = "B", "Block submission"
+        VALIDATE = "V", "Custom validation"
 
     target_question = models.ForeignKey(
         KycQuestion,
@@ -363,7 +363,7 @@ class KycCondition(models.Model):
     )
 
     condition_type = models.CharField(
-        max_length=20,
+        max_length=1,
         choices=ConditionType.choices
     )
 

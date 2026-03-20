@@ -25,6 +25,7 @@ from .serializers import (
     KycAnswerSerializer,
     KycAnswerOptionSerializer,
     KycBulkSubmitSerializer,
+    KycQuestionSerializer,
     RelationshipRoleSerializer,
     KYCStatusSerializer,
 )
@@ -340,16 +341,12 @@ class KYCStatusViewSet(ModelViewSet):
 # KycQuestion ViewSet (optional)
 # -------------------------------------------------
 class KycQuestionViewSet(ModelViewSet):
-    queryset = KycQuestion.objects.all()
+    #queryset = KycQuestion.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def get_serializer_class(self):
-        # Use simple serializer for frontend question loading
-        class QuestionSerializer(serializers.ModelSerializer):
-            class Meta:
-                model = KycQuestion
-                fields = [
-                    "id", "key", "label", "answer_type", "required",
-                    "is_repeatable", "reference_set", "group"
-                ]
-        return QuestionSerializer
+    queryset = KycQuestion.objects.prefetch_related(
+        "conditions__dependencies__source_question",
+        "conditions__dependencies__group",
+    )
+
+    serializer_class = KycQuestionSerializer
