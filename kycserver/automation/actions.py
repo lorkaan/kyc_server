@@ -26,7 +26,7 @@ def getSignalTypeIdFromSignalId(signal_id):
 def create_alert_action(results, config, context):
     title = config.get("title", "Default Alert")
     logger.error(f"\tContext: {context}")
-    signal_type_obj = getSignalTypeIdFromSignalId(context.get("signal", None))
+    signal_type_obj = getSignalTypeIdFromSignalId(context.get("signal_id", None))
     if signal_type_obj != None:
         alert_message = f"{title} - {signal_type_obj.label}"
         try:
