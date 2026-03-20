@@ -21,6 +21,28 @@ def getSignalTypeIdFromSignalId(signal_id):
         except Exception as e:
             logger.error(f"Action Runner Exception: {e}")
             return None
+        
+def create_alert(message, reason=None, status=None, severity=None):
+    def resolve_fk(value, model):
+        if value is None:
+            return None
+        if isinstance(value, model):
+            return value
+        return model.objects.get(pk=value)
+
+    from .models import Alert, Reason, Status, Severity  # adjust import as needed
+
+    try:
+        alert_obj = Alert.objects.create(
+            message=message,
+            reason=resolve_fk(reason, Reason),
+            status=resolve_fk(status, Status),
+            severity=resolve_fk(severity, Severity),
+        )
+        return alert_obj
+    except Exception as e:
+        # Optional: log or re-raise with clearer context
+        raise ValueError(f"Failed to create alert: {e}")
 
 @ActionRunner.register("create_alert")
 def create_alert_action(results, config, context):
@@ -30,8 +52,7 @@ def create_alert_action(results, config, context):
     if signal_type_obj != None:
         alert_message = f"{title} - {signal_type_obj.label}"
         try:
-            alert_obj = Alert.objects.create(message=alert_message, reason__pk=1, status__pk=1, severity__pk=1)
-            alert_obj.save()
+            create_alert(alert_message, reason=1, status=1, severity=1)
         except Exception as e:
             logger.error(f"Alert Object Issue: {e}")
     else:
