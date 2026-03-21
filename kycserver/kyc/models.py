@@ -5,6 +5,8 @@ import pghistory
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+
 
 from base.models import BaseModel
 from company.models import Company
@@ -608,7 +610,7 @@ class KycAnswer(models.Model):
         # MULTI
         # -----------------------
 
-        elif t == KycQuestion.AnswerTypeEnum.MULTI:
+        elif t == KycQuestion.AnswerTypeEnum.MULTI: # This needs to change for when required becomes true
 
             if self.value_reference is not None:
                 raise ValidationError(

@@ -1,6 +1,7 @@
 import datetime
 import traceback
 
+from kyc.handlers import ANSWER_HANDLERS
 from person.models import Person
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -10,6 +11,9 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework import status
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
+import logging
+
 
 from .models import (
     KYCRecord,
@@ -174,6 +178,9 @@ class KYCRecordViewSet(ModelViewSet):
 # KYC Answer ViewSet
 # -------------------------------------------------
 class KycAnswerViewSet(ModelViewSet):
+
+    logger = logging.getLogger()
+
     queryset = KycAnswer.objects.all()
     serializer_class = KycAnswerSerializer
     permission_classes = [IsAuthenticated]
@@ -204,30 +211,74 @@ class KycAnswerViewSet(ModelViewSet):
             "name": attachment.original_name
         })
     
-    def _validate_question_id(self, question_id, record_pk):
-        if question_id == None:
-            return False
-        else:
-            try:
-                record_object = KYCRecord.objects.get(pk=record_pk)
-                try:
-                    kyc_question = KycQuestion.objects.get(pk=question_id)
-                    if record_object.party != None and kyc_question.party_type == record_object.party.party_type:
-                        return True
-                    else:
-                        return False
-                except KycQuestion.DoesNotExist:
-                    return False
-                except Exception as e:
-                    print(e)
-                    return False
-            except KycQuestion.DoesNotExist:
-                return False
-            except Exception as e:
-                print(e)
-                return False
+    def _validate_question(self, question, record):
+        """
+        Accepts either PKs or model instances for both inputs.
+        Returns True/False.
+        """
+
+        try:
+            # Resolve record
+            if isinstance(record, KYCRecord):
+                record_obj = record
+            else:
+                record_obj = KYCRecord.objects.get(pk=record)
+
+            # Resolve question
+            if isinstance(question, KycQuestion):
+                question_obj = question
+            else:
+                question_obj = KycQuestion.objects.get(pk=question)
+
+        except (KYCRecord.DoesNotExist, KycQuestion.DoesNotExist):
+            return False, None, None
+        except Exception as e:
+            print(e)
+            return False, None, None
+
+        # -----------------------
+        # Business logic
+        # -----------------------
+
+        if not record_obj.party:
+            return False, record_obj, question_obj
+
+        return question_obj.party_type == record_obj.party.party_type, record_obj, question_obj
+            
+    def create_kyc_answer(self, *, kyc_record, question, value, repeat_index=0):
+        validation, kyc_record_obj, question_obj = self._validate_question(question, kyc_record)
+        if not validation:
+            raise ValidationError(f"Can not validate that this KYC Question: {question} works with the KycRecord: {kyc_record}")
+
+        answer = KycAnswer(
+            kyc_record=kyc_record_obj,
+            question=question_obj,
+            repeat_index=repeat_index,
+        )
+
+        handler = ANSWER_HANDLERS.get(question_obj.answer_type)
+
+        if not handler or not callable(handler):
+            raise ValidationError(f"Unsupported answer type: \n\tQuestion: {question}\n\tType: {question_obj.answer_type}\n\tValue Type: {type(value)}\n\tValue: {value}")
+
+        # Note: Do not need transaction.atomic here because this is wrapped in one.
+
+        # Apply handler
+        handler(answer, value, question_obj)
+
+        # Run full validation (important!)
+        answer.full_clean()
+
+        # Save if not already saved (MULTI handler saves early)
+        if not answer.pk:
+            answer.save()
+
+        return answer
     
     def _submit_single_answer(self, record_pk, item):
+        """
+            Depreciated
+        """
         question_id = item.get("question", None)
         if not self._validate_question_id(question_id, record_pk):
             raise Exception(f"Can not validate the Question/Record Pair: \n\tRecord: {record_pk}\n\tQuestion: {question_id}")
@@ -272,9 +323,33 @@ class KycAnswerViewSet(ModelViewSet):
     @transaction.atomic
     def bulk_add_answers(self, record_pk, answers_data):
         answer_ids = []
-        for item in answers_data:
-            answer_ids.append(self._submit_single_answer(record_pk, item))
-        return answer_ids
+        try:
+            kyc_record = KYCRecord.objects.get(pk=record_pk)
+            for item in answers_data:
+                question = item["question"]
+                repeat_index = item.get("repeat_index", 0)
+
+                # Determine value explicitly
+                if "selected_options" in item:
+                    value = item["selected_options"]
+                elif "value_date_from" in item or "value_date_to" in item:
+                    value = {"from": item.get("value_date_from"), "to": item.get("value_date_to")}
+                else:
+                    # pick the first value_* key (simplest)
+                    value_keys = [
+                        "value_number", "value_text", "value_bool",
+                        "value_reference", "value_date", "value_email", "value_phone"
+                    ]
+                    value = next((item[k] for k in value_keys if k in item), None)
+                answer_ids.append(self.create_kyc_answer(kyc_record=kyc_record, question=question, value=value, repeat_index=repeat_index))
+            return answer_ids
+        except KYCRecord.DoesNotExist as e:
+            self.__class__.logger.error(f"Unable to process due to inability to find KYC Record with primary key: {record_pk}\n\t{e}")
+            raise # Important to stop the transaction
+        except (ValidationError, Exception) as e:
+            self.__class__.logger.error(f"{e}")
+            raise # Important to stop the transaction
+        
     
     @action(detail=False, methods=["post"])
     def submit(self, request, record_pk=None, *args, **kwargs):
