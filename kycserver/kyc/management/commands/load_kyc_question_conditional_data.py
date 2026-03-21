@@ -85,6 +85,7 @@ class Command(BaseCommand):
                 questions = KycQuestion.objects.all()
                 for qrow in questions:
                     self.stderr.write(f"Found: {qrow.key} NOT {row["target_question"]}")
+                raise
             except Exception as e:
                 self.stderr.write(
                     f"Row {index} failed: {e}"
