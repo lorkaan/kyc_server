@@ -80,7 +80,11 @@ class Command(BaseCommand):
                 )
 
                 created += 1
-
+            except KycQuestion.DoesNotExist as e:
+                self.stderr.write(f"Can not find KycQuestion with key: {row["target_question"]}")
+                questions = KycQuestion.objects.all()
+                for qrow in questions:
+                    self.stderr.write(f"Found: {qrow.key} NOT {row["target_question"]}")
             except Exception as e:
                 self.stderr.write(
                     f"Row {index} failed: {e}"
