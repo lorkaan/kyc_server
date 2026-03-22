@@ -24,7 +24,7 @@ import uuid
 
 class QueryAstHandler(DslEvaluator):
 
-    eval_statement_key = "query"
+    eval_statement_key = "query.where"
 
     MAX_DEPTH = 4 # To stop queries going too deep
 
