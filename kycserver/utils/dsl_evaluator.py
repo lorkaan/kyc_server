@@ -123,7 +123,9 @@ class DslEvaluator:
             for path in key_path:
                 cls.logger.error(f"Checking {path} in {key_path}")
                 if isDict(eval_statement, keys=[path]):
+                    cls.logger.error(f"Before {path} in {dictToStr(eval_statement, prefix="\t")}")
                     eval_statement = eval_statement.get(path, {})
+                    cls.logger.error(f"After {path} in {dictToStr(eval_statement, prefix="\t")}")
                 else:
                     raise ValueError(f"Using the key path: {cls.eval_statement_key}\n\tExpected a Dictionary, got: {type(eval_statement)} that looks like:\n{dictToStr(eval_statement, prefix="\t")}\n\tExpected path to be non-empty string: {path}")
             if eval_statement is not None and not isDict(eval_statement):
