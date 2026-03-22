@@ -124,7 +124,7 @@ class DslEvaluator:
                 if isDict(eval_statement, keys=[path]):
                     eval_statement = eval_statement.get(path, {})
                 else:
-                    raise ValueError(f"Using the key path: {cls.eval_statement_key}\n\tExpected a Dictionary, got: {type(eval_statement)}\n\tExpected path to be non-empty string: {path}")
+                    raise ValueError(f"Using the key path: {cls.eval_statement_key}\n\tExpected a Dictionary, got: {type(eval_statement)} that looks like:\n{dictToStr(eval_statement, prefix="\t")}\n\tExpected path to be non-empty string: {path}")
             if eval_statement is not None and not isDict(eval_statement):
                 raise ValueError(f"Expected \"{cls.eval_statement_key}\" to be a dictionary, got {type(eval_statement)}")
             else:
