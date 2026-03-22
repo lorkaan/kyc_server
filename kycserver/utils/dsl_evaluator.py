@@ -150,4 +150,4 @@ class DslEvaluator:
     @classmethod
     def run(cls, query_def, params={}, **kwargs):
         ast_obj = cls.fill(query_def, params)
-        return cls.evaluate(ast_obj)
+        return cls.evaluate(ast_obj, **kwargs)
