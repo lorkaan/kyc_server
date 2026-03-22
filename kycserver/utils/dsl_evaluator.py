@@ -133,7 +133,7 @@ class DslEvaluator:
     @classmethod
     def fill(cls, query_def, params={}):
         eval_statement = cls.get_eval_statement(query_def)
-        resolved_params = cls.resolve_parameters(query_def.get(cls.global_param_key), query_def.get(cls.param_key), params)
+        resolved_params = cls.resolve_parameters(query_def.get(cls.param_key), query_def.get(cls.global_param_key), params)
         return cls.bind_params(eval_statement, resolved_params)
     
     @classmethod
