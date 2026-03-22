@@ -121,6 +121,7 @@ class DslEvaluator:
             key_path = cls.eval_statement_key.split(cls.key_path_sep)
             eval_statement = eval_block
             for path in key_path:
+                cls.logger.error("Checking {path} in {key_path}")
                 if isDict(eval_statement, keys=[path]):
                     eval_statement = eval_statement.get(path, {})
                 else:
