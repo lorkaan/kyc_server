@@ -1,8 +1,8 @@
 from copy import deepcopy
 from globalparams.models import GlobalParameter
-from utils.dict_utils import isDict
+from utils.dict_utils import dictToStr, isDict
 from utils.type_utils import isString
-
+import logging
 
 class DslEvaluator:
 
@@ -16,6 +16,8 @@ class DslEvaluator:
     eval_statement_key = ""
 
     key_path_sep = "."
+
+    logger = logging.getLogger()
 
     @classmethod
     def validate_params(cls, param_def: dict, params: dict):
@@ -133,7 +135,9 @@ class DslEvaluator:
     @classmethod
     def fill(cls, query_def, params={}):
         eval_statement = cls.get_eval_statement(query_def)
+        cls.logger.error(f"Eval Statement: \n{dictToStr(eval_statement, prefix="\t")}")
         resolved_params = cls.resolve_parameters(query_def.get(cls.param_key) or {}, query_def.get(cls.global_param_key) or {}, params)
+        cls.logger.error(f"Resolved Params: \n{dictToStr(resolved_params, prefix="\t")}")
         return cls.bind_params(eval_statement, resolved_params)
     
     @classmethod
