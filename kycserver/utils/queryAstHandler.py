@@ -24,7 +24,11 @@ import uuid
 
 class QueryAstHandler(DslEvaluator):
 
-    eval_statement_key = "query.query.where"
+    eval_statement_key = "query.where"
+
+    model_name_key = "model"
+
+    query_def_key = "query"
 
     MAX_DEPTH = 4 # To stop queries going too deep
 
@@ -297,7 +301,7 @@ class QueryAstHandler(DslEvaluator):
     
     @classmethod
     def evaluate(cls, ast_obj, **kwargs):
-        entity_name = kwargs.get("entity_name", None)
+        entity_name = kwargs.get("model_name", None)
         if not isString(entity_name):
             raise ValueError(
                 f"Expected model to be a non-empty string, instead got: "
@@ -329,4 +333,6 @@ class QueryAstHandler(DslEvaluator):
                 f"{type(query_def)} ==> {dictToStr(query_def) if isinstance(query_def, dict) else query_def}"
             )
         else:
-            return super().run(query_def, params, **kwargs)
+            model_name = query_def.get(cls.model_name_key, None)
+            query_ast_def = query_def.get(cls.query_def_key, {})
+            return super().run(query_ast_def, params, model_name=model_name, **kwargs)

@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 
-from kyc.models import KycQuestion
+from kyc.models import KycQuestion, ReferenceValue
 
 
 def handle_number(answer, value, question):
