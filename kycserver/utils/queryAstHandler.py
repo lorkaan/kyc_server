@@ -309,7 +309,7 @@ class QueryAstHandler(DslEvaluator):
             )
         else:
             try:
-                base_model = getModelFromName()
+                base_model = getModelFromName(entity_name)
             except Exception:
                 raise ValueError(f"Could not find a model for the given name: {entity_name}")
             if not issubclass(base_model, models.Model) or base_model not in cls.ENTITY_REGISTRY:
