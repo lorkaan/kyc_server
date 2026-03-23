@@ -121,11 +121,8 @@ class DslEvaluator:
             key_path = cls.eval_statement_key.split(cls.key_path_sep)
             eval_statement = eval_block
             for path in key_path:
-                cls.logger.error(f"Checking {path} in {key_path}")
                 if isDict(eval_statement, keys=[path]):
-                    cls.logger.error(f"Before {path} in {dictToStr(eval_statement, prefix="\t")}")
                     eval_statement = eval_statement.get(path, {})
-                    cls.logger.error(f"After {path} in {dictToStr(eval_statement, prefix="\t")}")
                 else:
                     raise ValueError(f"Using the key path: {cls.eval_statement_key}\n\tExpected a Dictionary, got: {type(eval_statement)} that looks like:\n{dictToStr(eval_statement, prefix="\t")}\n\tExpected path to be non-empty string: {path}")
             if eval_statement is not None and not isDict(eval_statement):
@@ -138,9 +135,7 @@ class DslEvaluator:
     @classmethod
     def fill(cls, query_def, params={}):
         eval_statement = cls.get_eval_statement(query_def)
-        cls.logger.error(f"Eval Statement: \n{dictToStr(eval_statement, prefix="\t")}")
         resolved_params = cls.resolve_parameters(query_def.get(cls.param_key) or {}, query_def.get(cls.global_param_key) or {}, params)
-        cls.logger.error(f"Resolved Params: \n{dictToStr(resolved_params, prefix="\t")}")
         return cls.bind_params(eval_statement, resolved_params)
     
     @classmethod
