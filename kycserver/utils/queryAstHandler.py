@@ -144,7 +144,7 @@ class QueryAstHandler(DslEvaluator):
         return True
 
     @classmethod
-    def _get_history_model(model):
+    def _get_history_model(cls, model):
         """
         Return the pghistory Event model for a tracked model.
         """
@@ -155,7 +155,7 @@ class QueryAstHandler(DslEvaluator):
         return None
 
     @classmethod
-    def _resolve_lookup_path(root_model, lookup):
+    def _resolve_lookup_path(cls, root_model, lookup):
         """ This is from the ModelInterface set up in the automation ingestion engine
         Validates and resolves a Django-style lookup path.
         Returns (final_model, django_lookup)
