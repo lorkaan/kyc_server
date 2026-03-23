@@ -39,8 +39,14 @@ def logout_view(request):
     return JsonResponse({"success": True})
 
 
-@login_required
 def me(request):
+    if not request.user.is_authenticated:
+        return JsonResponse(
+            {"detail": "Authentication credentials were not provided."},
+            status=401
+        )
+
     return JsonResponse({
+        "id": request.user.id,
         "username": request.user.username
     })
