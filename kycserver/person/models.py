@@ -4,6 +4,7 @@ import pghistory
 from base.models import BaseModel
 
 # Create your models here.
+""" Depreciated in favour of Party?"""
 @pghistory.track()
 class Person(BaseModel):
     first_name = models.CharField(max_length=100)
