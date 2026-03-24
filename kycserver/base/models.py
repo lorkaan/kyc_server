@@ -69,3 +69,28 @@ class NullableGenericTargetMixin(models.Model):
         else:
             self.content_type = ContentType.objects.get_for_model(obj)
             self.object_id = obj.pk
+
+class GenericPointerToClassMixin(models.Model):
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        abstract = True
+
+    def set_model(self, model_or_instance):
+        """
+        Accepts either a model class or instance
+        """
+        self.content_type = ContentType.objects.get_for_model(
+            model_or_instance,
+            for_concrete_model=False
+        )
+
+    def get_model_class(self):
+        return self.content_type.model_class()
+    
+    def __str__(self):
+        model = self.content_type.model
+        return f"{model}.{self.field_name} → {self.label}"

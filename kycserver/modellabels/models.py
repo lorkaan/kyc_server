@@ -1,9 +1,9 @@
 from django.db import models
 
-from base.models import GenericTargetMixin
+from base.models import GenericPointerToClassMixin
 
 # Create your models here.
-class ModelFieldLabel(GenericTargetMixin):
+class ModelFieldLabel(GenericPointerToClassMixin):
     field_name = models.CharField(max_length=255)  # e.g., "person__name"
     label = models.CharField(max_length=255)       # Human-readable
     description = models.TextField(blank=True, null=True)
