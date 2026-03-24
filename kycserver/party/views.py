@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db.models import Q
 from django.db import transaction
+from rest_framework.permissions import IsAuthenticated
 
 from .models import PartyType, Party, PartyRelationship
 from .serializers import (
@@ -130,6 +131,7 @@ class PartyRelationshipViewSet(BaseViewSet):
 # views.py
 
 class PartyGraphViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=["post"], url_path="create-graph")
     def create_graph(self, request):
