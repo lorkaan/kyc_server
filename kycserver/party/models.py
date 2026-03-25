@@ -31,7 +31,10 @@ class PartyType(models.Model):
         Serializer = self.get_serializer()
         serializer = Serializer(data=data)
         #self.__class__.logger.error(f"Prevalidation Data\n: {dictToStr(serializer.data, prefix="\t")}")
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            self.__class__.logger.error(f"Validation Error in Serializer: {e}")
         self.__class__.logger.error(f"PostValidation Data\n: {dictToStr(serializer.data, prefix="\t")}")
         return serializer.save()
 
