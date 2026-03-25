@@ -2,10 +2,14 @@ from django.db import models
 from django.utils import timezone
 from base.models import BaseModel, GenericTargetMixin
 from django.utils.module_loading import import_string
+from utils.dict_utils import dictToStr
 import pghistory
+import logging
 
 # Create your models here.
 class PartyType(models.Model):
+
+    logger = logging.getLogger()
 
     code = models.SlugField(unique=True)
 
@@ -23,6 +27,7 @@ class PartyType(models.Model):
         return import_string(self.serializer_path)
 
     def create_entity(self, data):
+        self.__class__logger.error(f"Entity Data\n: {dictToStr(data, prefix="\t")}")
         Serializer = self.get_serializer()
         serializer = Serializer(data=data)
         serializer.is_valid(raise_exception=True)

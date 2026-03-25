@@ -2,7 +2,9 @@ from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
 
 from .models import PartyType, Party, PartyRelationship
+import logging
 
+logger = logging.getLogger()
 
 # --- PartyType ---
 class PartyTypeSerializer(serializers.ModelSerializer):
@@ -124,7 +126,7 @@ class PartyCreateSerializer(serializers.ModelSerializer):
         # Pop entity-specific data
         entity_data = validated_data.pop("data")
         party_type = validated_data["party_type"]
-
+        logger.error(f"Entity Data: {entity_data}\nPartyType: {party_type}")
         # Dynamically create the underlying entity
         entity = party_type.create_entity(entity_data)
 
