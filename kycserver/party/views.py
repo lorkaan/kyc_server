@@ -185,8 +185,9 @@ class PartyGraphViewSet(viewsets.ViewSet):
 
         # NEW party
         self.__class__.logger.error(f"Party Create Serializer being run: {dictToStr(party_data["data"], prefix="\t")}")
-        serializer = PartyCreateSerializer(data=party_data["data"])
-        self.__class__.logger.error(f"Validating the data")
-        serializer.is_valid(raise_exception=True)
-        self.__class__.logger.error("Saving")
-        return serializer.save()
+        #serializer = PartyCreateSerializer(data=party_data["data"])
+        #self.__class__.logger.error(f"Validating the data")
+        #serializer.is_valid(raise_exception=True)
+        #self.__class__.logger.error("Saving")
+        #return serializer.save()
+        return PartyCreateSerializer().create(party_data["data"])
