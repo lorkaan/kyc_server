@@ -10,6 +10,6 @@ router = DefaultRouter()
 router.register(r"party-types", PartyTypeViewSet)
 router.register(r"parties", PartyViewSet)
 router.register(r"relationships", PartyRelationshipViewSet)
-router.register(r"party-graph", PartyGraphViewSet)
+router.register(r"party-graph", PartyGraphViewSet, basename="party-graph")
 
 urlpatterns = router.urls
