@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from base.views import BaseViewSet
+from utils.dict_utils import dictToStr
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -129,16 +130,19 @@ class PartyRelationshipViewSet(BaseViewSet):
         return queryset
     
 # views.py
-
+import logging
 class PartyGraphViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
+    logger = logging.getLogger()
 
     @action(detail=False, methods=["post"], url_path="create-graph")
     def create_graph(self, request):
+        self.__class__.logger(f"Creating Graph Start")
         serializer = PartyGraphSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         data = serializer.validated_data
+        self.__class__.logger(f"Validated Data for Create Graph: {dictToStr(data, prefiex="\t")}")
 
         with transaction.atomic():
             # --- Resolve or create main party ---
@@ -175,10 +179,14 @@ class PartyGraphViewSet(viewsets.ViewSet):
 
     # --- Helper ---
     def _resolve_party(self, party_data):
+        self.__class__.logger.error(f"Starting Resolve Party:\n{dictToStr(party_data, prefix="\t")}")
         if party_data["type"] == "existing":
             return Party.objects.get(id=party_data["id"])
 
         # NEW party
+        self.__class__.logger.error(f"Party Create Serializer being run: {dictToStr(party_data["data"], prefix="\t")}")
         serializer = PartyCreateSerializer(data=party_data["data"])
+        self.__class__.logger.error(f"Validating the data")
         serializer.is_valid(raise_exception=True)
+        self.__class__.logger.error("Saving")
         return serializer.save()
