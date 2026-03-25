@@ -100,26 +100,40 @@ class PartyRelationshipSerializer(serializers.ModelSerializer):
 
         return data
     
-class PartyCreateSerializer(serializers.Serializer):
+class PartyCreateSerializer(serializers.ModelSerializer):
+    # Use SlugRelatedField to map 'party_type' from its code
     party_type = serializers.SlugRelatedField(
         slug_field="code",
-        queryset=PartyType.objects.filter(is_active=True)
+        queryset=PartyType.objects.all()  # avoid filtered queryset for reliability
     )
-    name = serializers.CharField(max_length=255)
-    data = serializers.JSONField()
+
+    # Nested entity data, write_only so it doesn't appear in output
+    data = serializers.JSONField(write_only=True)
+
+    class Meta:
+        model = Party
+        fields = ["party_type", "name", "data"]
+
+    def validate_party_type(self, value):
+        # Ensure the party_type is active
+        if not value.is_active:
+            raise serializers.ValidationError("PartyType is not active")
+        return value
 
     def create(self, validated_data):
+        # Pop entity-specific data
+        entity_data = validated_data.pop("data")
         party_type = validated_data["party_type"]
-        entity_data = validated_data["data"]
 
-        # Create underlying entity dynamically
+        # Dynamically create the underlying entity
         entity = party_type.create_entity(entity_data)
 
-        return Party.objects.create(
-            party_type=party_type,
-            name=validated_data["name"],
-            content_object=entity
+        # Create the Party instance
+        party = Party.objects.create(
+            content_object=entity,
+            **validated_data
         )
+        return party
     
 # ---------- PARTY GRAPH SERIALIZERS ---------------------#
 
