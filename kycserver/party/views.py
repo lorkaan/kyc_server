@@ -137,7 +137,7 @@ class PartyGraphViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=["post"], url_path="create-graph")
     def create_graph(self, request):
-        self.__class__.logger(f"Creating Graph Start")
+        self.__class__.logger.error(f"Creating Graph Start")
         serializer = PartyGraphSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
