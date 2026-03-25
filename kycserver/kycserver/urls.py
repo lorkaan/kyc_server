@@ -28,4 +28,5 @@ urlpatterns = [
     path('api/kyc/', include('kyc.urls')),
     path('api/', include('storedquery.urls')),
     path('api/', include('users.urls')),
+    path('api/', include('party.urls'))
 ]
