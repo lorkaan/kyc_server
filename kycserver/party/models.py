@@ -27,10 +27,12 @@ class PartyType(models.Model):
         return import_string(self.serializer_path)
 
     def create_entity(self, data):
-        self.__class__logger.error(f"Entity Data\n: {dictToStr(data, prefix="\t")}")
+        self.__class__.logger.error(f"Entity Data\n: {dictToStr(data, prefix="\t")}")
         Serializer = self.get_serializer()
         serializer = Serializer(data=data)
+        self.__class__.logger.error(f"Prevalidation Data\n: {dictToStr(serializer.data, prefix="\t")}")
         serializer.is_valid(raise_exception=True)
+        self.__class__.logger.error(f"PostValidation Data\n: {dictToStr(serializer.data, prefix="\t")}")
         return serializer.save()
 
     def __str__(self):
