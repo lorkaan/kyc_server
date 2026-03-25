@@ -142,7 +142,7 @@ class PartyGraphViewSet(viewsets.ViewSet):
         serializer.is_valid(raise_exception=True)
 
         data = serializer.validated_data
-        self.__class__.logger(f"Validated Data for Create Graph: {dictToStr(data, prefiex="\t")}")
+        self.__class__.logger(f"Validated Data for Create Graph: {dictToStr(data, prefix="\t")}")
 
         with transaction.atomic():
             # --- Resolve or create main party ---
