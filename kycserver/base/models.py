@@ -94,3 +94,58 @@ class GenericPointerToClassMixin(models.Model):
     def __str__(self):
         model = self.content_type.model
         return f"{model}.{self.field_name} → {self.label}"
+    
+class ModelSchemaMixin:
+    @classmethod
+    def get_schema(
+        cls,
+        include_choices=True,
+        include_labels=True,
+        choice_limit=100,
+        filter_functions=None,  # dict: field_name -> callable(queryset)
+    ):
+        schema = {}
+
+        for field in cls._meta.get_fields():
+            if field.auto_created and not field.concrete:
+                continue
+
+            field_info = {
+                "type": field.__class__.__name__,
+                "required": not getattr(field, "blank", False),
+                "null": getattr(field, "null", False),
+            }
+
+            # Char/Text choices
+            if include_choices and hasattr(field, "choices") and field.choices:
+                field_info["choices"] = [
+                    {"value": choice[0], **({"label": choice[1]} if include_labels else {})}
+                    for choice in field.choices
+                ]
+
+            # ForeignKey choices
+            if isinstance(field, models.ForeignKey) and include_choices:
+                queryset = field.related_model.objects.all()
+
+                if field.limit_choices_to:
+                    queryset = queryset.filter(**field.limit_choices_to)
+
+                # Apply per-field filter if exists
+                if filter_functions and field.name in filter_functions:
+                    func = filter_functions[field.name]
+                    if callable(func):
+                        queryset = func(queryset)
+
+                if choice_limit is not None:
+                    queryset = queryset[:choice_limit]
+
+                field_info["choices"] = [
+                    {"id": obj.pk, **({"label": getattr(obj, "label", str(obj))} if include_labels else {})}
+                    for obj in queryset
+                ]
+
+                field_info["related_model"] = field.related_model.__name__
+
+            schema[field.name] = field_info
+
+        return schema

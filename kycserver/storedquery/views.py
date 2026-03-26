@@ -17,7 +17,7 @@ import csv
 from django.http import HttpResponse
 from django.utils import timezone
 import re
-from modellabels.utils import get_field_label
+
 
 ALLOWED_MODELS = {
     "kyc.RelationshipRole",
@@ -137,7 +137,7 @@ class SavedQueryViewSet(ModelViewSet):
             selected_fields = request.data.get("selected_fields", [])
             if not isList(selected_fields):
                 selected_fields = list(rows[0].keys())
-
+            from modellabels.utils import get_field_label
             model_class = self.get_object().get_model_class()  # You should have a method returning the Django model for this query
             headers = [
                 get_field_label(model_class, f, override=field_labels_override)

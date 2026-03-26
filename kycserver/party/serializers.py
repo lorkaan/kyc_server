@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.contrib.contenttypes.models import ContentType
 
 from .models import PartyType, Party, PartyRelationship
 import logging
@@ -25,13 +24,10 @@ class PartyTypeSerializer(serializers.ModelSerializer):
 class PartySerializer(serializers.ModelSerializer):
     party_type = serializers.SlugRelatedField(
         slug_field="code",
-        queryset=PartyType.objects.filter(is_active=True)
+        read_only=True
     )
 
-    content_type = serializers.SlugRelatedField(
-        slug_field="model",
-        queryset=ContentType.objects.all()
-    )
+    entity_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Party
@@ -40,25 +36,13 @@ class PartySerializer(serializers.ModelSerializer):
             "party_type",
             "name",
             "is_active",
-            "content_type",
-            "object_id",
+            "entity_type",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
 
-    def validate(self, data):
-        """
-        Optional: enforce uniqueness at serializer level for better UX
-        """
-        if Party.objects.filter(
-            content_type=data.get("content_type"),
-            object_id=data.get("object_id")
-        ).exists():
-            raise serializers.ValidationError(
-                "A Party already exists for this entity."
-            )
-        return data
+    def get_entity_type(self, obj):
+        return obj.content_type.model
 
 
 # --- PartyRelationship ---

@@ -1,5 +1,4 @@
-from .models import ModelFieldLabel
-from django.contrib.contenttypes.models import ContentType
+
 
 def get_field_label(model, field_name, override: dict = None) -> str:
     """
@@ -12,6 +11,9 @@ def get_field_label(model, field_name, override: dict = None) -> str:
     """
     if override and field_name in override:
         return override[field_name]
+    
+    from .models import ModelFieldLabel
+    from django.contrib.contenttypes.models import ContentType
     
     try:
         # Lookup ModelFieldLabel for this model and field

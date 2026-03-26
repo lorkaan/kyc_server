@@ -9,9 +9,7 @@ from django.core.exceptions import ValidationError
 
 
 from base.models import BaseModel
-from company.models import Company
 from users.models import User
-from person.models import Person
 
 # Create your models here.
 """

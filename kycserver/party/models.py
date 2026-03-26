@@ -1,8 +1,9 @@
 from django.db import models
 from django.utils import timezone
-from base.models import BaseModel, GenericTargetMixin
+from base.models import BaseModel, GenericTargetMixin, ModelSchemaMixin
 from django.utils.module_loading import import_string
 from utils.dict_utils import dictToStr
+from django.core.exceptions import ValidationError
 import pghistory
 import logging
 
@@ -51,12 +52,12 @@ class Party(GenericTargetMixin, BaseModel):
         related_name="parties"
     )
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, blank=True, null=True)
 
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return self.name
+        return self.name or f"Party {self.pk}"
     
     class Meta:
         constraints = [
@@ -64,8 +65,28 @@ class Party(GenericTargetMixin, BaseModel):
             models.UniqueConstraint(
                 fields=["content_type", "object_id"],
                 name="unique_party_entity"
+            ),
+            models.UniqueConstraint(
+                fields=["name"],
+                name="unique_party_name_not_null",
+                condition=models.Q(name__isnull=False)
             )
         ]
+    
+    def clean(self):
+        super().clean()  # in case GenericTargetMixin has validations
+
+        # Ensure the content_object (target of the GenericForeignKey) inherits ModelSchemaMixin
+        target_model = self.content_type.model_class()
+        if not issubclass(target_model, ModelSchemaMixin):
+            raise ValidationError(
+                f"Party's target model must inherit from ModelSchemaMixin. "
+                f"Got {target_model.__name__}"
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # enforce validation before saving
+        super().save(*args, **kwargs)
     
 """
 Links a party to another party. Such as a Person to a Company
