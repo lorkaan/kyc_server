@@ -42,6 +42,9 @@ def handle_single(answer, value, question):
 
 def handle_multi(answer, value, question):
     if not isinstance(value, (list, tuple)):
+        import logging
+        logger = logging.getLogger()
+        logger.error(f"Value: {type(value)} -> {value}")
         raise ValidationError("Multi choice requires a list")
 
     if question.required and not value:
