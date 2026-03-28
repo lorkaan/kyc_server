@@ -2,7 +2,7 @@ import datetime
 import traceback
 
 from kyc.handlers import ANSWER_HANDLERS
-from kycserver.party.models import PartyType
+from party.models import PartyType
 from person.models import Person
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
