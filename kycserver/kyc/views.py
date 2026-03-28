@@ -367,7 +367,8 @@ class KycAnswerViewSet(ModelViewSet):
         # Note: Do not need transaction.atomic here because this is wrapped in one.
 
         # Apply handler
-        handler(answer, value, question_obj)
+        if value != None:
+            handler(answer, value, question_obj)
 
         # Run full validation (important!)
         answer.full_clean()
