@@ -276,8 +276,8 @@ class KYCRecordViewSet(ModelViewSet):
             }
         })
     
-    @action(detail=False, methods=["get"])
-    @renderer_classes([EventStreamRenderer])
+    @action(detail=False, methods=["get"], renderer_classes=[])
+    #@renderer_classes([EventStreamRenderer])
     def stream(self, request):
         """
         SSE endpoint for streaming KYCRecords for the logged-in user.
@@ -287,6 +287,8 @@ class KYCRecordViewSet(ModelViewSet):
         """
         #user = request.user
         #user_id = user.id
+        request.accepted_renderer = None
+        request.accepted_media_type = "text/event-stream"
 
         def event_stream():
             # 1️⃣ Send existing KYCRecords
