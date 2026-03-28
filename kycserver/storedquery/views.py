@@ -1,3 +1,6 @@
+import json
+import time
+
 from django.forms import ValidationError
 from django.shortcuts import render
 from django.db import models
@@ -108,18 +111,23 @@ class SavedQueryViewSet(ModelViewSet):
         )
         return Response(serializer.data)
     
-    def execute_query(self, request):
+    def execute_query(self, request, post_flag=True, query_result_return=False):
         query = self.get_object()
-        params = request.data.get("params", {})       # Bind params into AST
+        if post_flag:
+            data = request.data
+        else:
+            data = request.query_params
+        params = data.get("params", {})       # Bind params into AST
         extra_options = {
-            "order_by": request.data.get("order_by"),
-            "limit": request.data.get("limit"),
-            "filters": request.data.get("filters")    # additional ad-hoc filtering
+            "order_by": data.get("order_by"),
+            "limit": data.get("limit"),
+            "filters": data.get("filters")    # additional ad-hoc filtering
         }
-
         query_results = QueryAstHandler.run(query.to_ast_payload(), params)
-
-        return list(self.__class__.apply_extra_options(query_results, extra_options).values())
+        if not query_result_return:
+            return list(self.__class__.apply_extra_options(query_results, extra_options).values())
+        else:
+            return self.__class__.apply_extra_options(query_results, extra_options)
     
     @action(detail=True, methods=['post'])
     def run(self, request, pk=None):
@@ -162,4 +170,3 @@ class SavedQueryViewSet(ModelViewSet):
             return response
         else:
             return HttpResponse(status=404)
-

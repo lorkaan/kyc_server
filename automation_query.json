@@ -1,0 +1,23 @@
+[
+    {
+        "name": "kyc_records_created_last_hour",
+        "description": "Gets KYC records created within the last hour",
+        "is_system": true,
+        "query": {
+            "model": "kyc.KYCRecord",
+            "params": {
+                "since_time": {
+                    "type": "datetime",
+                    "required": true
+                }
+            },
+            "query": {
+                "where": {
+                    "field": "created_at",
+                    "op": "gte",
+                    "value": { "$param": "since_time" }
+                }
+            }
+        }
+    }
+]

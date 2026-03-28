@@ -2,6 +2,7 @@ import datetime
 import traceback
 
 from kyc.handlers import ANSWER_HANDLERS
+from kycserver.party.models import PartyType
 from person.models import Person
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -12,7 +13,14 @@ from rest_framework import status
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+import redis
+from django.conf import settings
+from django.http import StreamingHttpResponse
+import json
+from django.contrib.auth.decorators import login_required
 import logging
+from .models import KycQuestionGroup
+from django.db.models import Prefetch
 
 
 from .models import (
@@ -53,23 +61,67 @@ class KYCRecordViewSet(ModelViewSet):
         serializer = HistoryEventSerializer(events, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["post"])
     def questions(self, request):
         """
         Return all KYC questions grouped by their group.
         Useful for frontend wizard.
         """
-        from .models import KycQuestionGroup
 
+        party_type_id = request.data.get("party_type_id")
+        if type(party_type_id) == str:
+            try:
+                party_type_id = int(party_type_id)
+            except Exception as e:
+                return Response(
+                    {"error": e},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        try:
+            party_type = PartyType.objects.get(pk=party_type_id)
+        except PartyType.DoesNotExist as e:
+            return Response(
+                {"error": e},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as e:
+            return Response(
+                {"error": e},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        question_qs = KycQuestion.objects.filter(
+            party_type=party_type
+        ).select_related(
+            "reference_set"
+        ).prefetch_related(
+            "reference_set__values",
+            "conditions"
+        ).order_by("order")
+
+        # Prefetch ONLY filtered questions into groups
+        groups = KycQuestionGroup.objects.prefetch_related(
+            Prefetch("questions", queryset=question_qs)
+        ).order_by("order")
+
+        '''
         groups = KycQuestionGroup.objects.prefetch_related(
             "questions",
             "questions__reference_set",
             "questions__reference_set__values",
             "questions__conditions"
         ).order_by("order")
+        '''
 
         data = []
+
         for g in groups:
+            questions = list(g.questions.all())
+
+            # Skip empty groups (important)
+            if not questions:
+                continue
+
             group_data = {
                 "id": g.id,
                 "key": g.key,
@@ -78,7 +130,8 @@ class KYCRecordViewSet(ModelViewSet):
                 "is_repeatable": g.is_repeatable,
                 "questions": []
             }
-            for q in g.questions.all().order_by("order"):
+
+            for q in questions:
                 question_data = {
                     "id": q.id,
                     "key": q.key,
@@ -106,7 +159,9 @@ class KYCRecordViewSet(ModelViewSet):
                         } for c in q.conditions.all()
                     ]
                 }
+
                 group_data["questions"].append(question_data)
+
             data.append(group_data)
 
         return Response(data)
@@ -172,6 +227,43 @@ class KYCRecordViewSet(ModelViewSet):
         return Response({
             "party_id": party.id,
             "kyc_record_id": record.id
+        })
+
+    @action(detail=False, methods=["post"])
+    def party_info(self, request):
+        """
+        Given a KYCRecord UUID, return the Party and its PartyType
+        """
+
+        record_id = request.data.get("kyc_record_id")
+
+        if not record_id:
+            return Response(
+                {"error": "kyc_record_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            record = KYCRecord.objects.select_related("party__party_type").get(id=record_id)
+        except KYCRecord.DoesNotExist:
+            return Response(
+                {"error": "KYCRecord not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        party = record.party
+        party_type = party.party_type
+
+        return Response({
+            "party": {
+                "id": party.id,
+                "name": party.name,
+            },
+            "party_type": {
+                "id": party_type.id,
+                "code": party_type.code,
+                "name": getattr(party_type, "name", None),
+            }
         })
 
 # -------------------------------------------------
@@ -425,3 +517,59 @@ class KycQuestionViewSet(ModelViewSet):
     )
 
     serializer_class = KycQuestionSerializer
+
+
+# Redis connection (reuse your existing Redis)
+redis_client = redis.Redis.from_url(settings.REDIS_URL)
+
+# SSE helper
+def sse_event(data, event=None):
+    msg = f"data: {json.dumps(data)}\n\n"
+    if event:
+        msg = f"event: {event}\n{msg}"
+    return msg
+
+@login_required
+def kyc_records_stream(request):
+    """
+    SSE endpoint for streaming KYCRecords for the logged-in user.
+    Sends:
+      - Existing pending/in-progress KYCRecords immediately
+      - Any new KYCRecord events via Redis pub/sub
+    """
+    user_id = request.user.id
+
+    def event_stream():
+        # 1️⃣ Send existing KYCRecords
+        existing = KYCRecord.objects.filter(
+            party__owner_id=user_id,
+            status__code__in=["pending", "in_progress", "requires_update"]
+        )
+        for record in existing:
+            yield sse_event({
+                "id": record.id,
+                "party_id": record.party_id,
+                "status": record.status.code,
+                "created_at": record.created_at.isoformat(),
+            }, event="kyc_record_init")
+
+        # 2️⃣ Subscribe to Redis channel for new KYCRecords
+        pubsub = redis_client.pubsub(ignore_subscribe_messages=True)
+        pubsub.subscribe(f"kyc_user_{user_id}")  # user-specific channel
+
+        try:
+            for message in pubsub.listen():
+                if message["type"] != "message":
+                    continue
+                data = json.loads(message["data"])
+                yield sse_event(data, event="kyc_record_new")
+        finally:
+            pubsub.close()
+
+    response = StreamingHttpResponse(
+        event_stream(),
+        content_type="text/event-stream"
+    )
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"  # for nginx to flush
+    return response

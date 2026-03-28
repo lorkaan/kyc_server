@@ -27,6 +27,8 @@ if TEST_FLAG:
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'http')
 
+REDIS_URL = envloader.get("REDIS_URL", "redis://redis:6379/1")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
