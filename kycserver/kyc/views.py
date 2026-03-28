@@ -5,7 +5,7 @@ from kyc.handlers import ANSWER_HANDLERS
 from party.models import PartyType
 from person.models import Person
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.decorators import action
+from rest_framework.decorators import action, renderer_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser
@@ -17,7 +17,6 @@ import redis
 from django.conf import settings
 from django.http import StreamingHttpResponse
 import json
-from django.contrib.auth.decorators import login_required
 import logging
 from .models import KycQuestionGroup
 from django.db.models import Prefetch
@@ -42,6 +41,17 @@ from .serializers import (
     KYCStatusSerializer,
 )
 from base.serializers import HistoryEventSerializer  # If you have pghistory events
+from rest_framework.renderers import BaseRenderer
+
+
+class EventStreamRenderer(BaseRenderer):
+    media_type = 'text/event-stream'
+    format = None
+    charset = 'utf-8'
+
+    def render(self, data, media_type=None, renderer_context=None):
+        return data  # Already bytes or string
+
 
 # -------------------------------------------------
 # KYC Record ViewSet
@@ -267,6 +277,7 @@ class KYCRecordViewSet(ModelViewSet):
         })
     
     @action(detail=False, methods=["get"])
+    @renderer_classes([EventStreamRenderer])
     def stream(self, request):
         """
         SSE endpoint for streaming KYCRecords for the logged-in user.
