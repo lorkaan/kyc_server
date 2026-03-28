@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 
-from kyc.models import KycQuestion, ReferenceValue
+from kyc.models import KycAnswerOption, KycQuestion, ReferenceValue
 
 
 def handle_number(answer, value, question):
@@ -65,7 +65,10 @@ def handle_multi(answer, value, question):
 
     # MUST save before setting M2M
     answer.save()
-    answer.selected_options.set(refs)
+    KycAnswerOption.objects.bulk_create([
+        KycAnswerOption(answer=answer, reference_value=ref)
+        for ref in refs
+    ])
 
 
 def handle_date(answer, value, question):

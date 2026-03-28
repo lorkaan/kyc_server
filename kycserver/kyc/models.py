@@ -743,6 +743,7 @@ class KycAnswerOption(models.Model):
 
     def __str__(self):
         return f"{self.answer_id} → {self.reference_value.code}"
+
 """
 Validation for a file
 """
