@@ -45,7 +45,7 @@ def create_kyc_record(sender, instance, created, **kwargs):
             record = KYCRecord(
                 party=instance,
                 status=status,
-                risk=_DEFAULT_RISK_SCORE
+                risk_score=_DEFAULT_RISK_SCORE
             )
             record.save()
         except KYCStatus.DoesNotExist:
