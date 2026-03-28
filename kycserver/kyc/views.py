@@ -362,6 +362,8 @@ class KycAnswerViewSet(ModelViewSet):
         handler = ANSWER_HANDLERS.get(question_obj.answer_type)
 
         if not handler or not callable(handler):
+            logger = logging.getLogger()
+            logger.error(f"Handler {handler} -> {question_obj.answer_type}")
             raise ValidationError(f"Unsupported answer type: \n\tQuestion: {question}\n\tType: {question_obj.answer_type}\n\tValue Type: {type(value)}\n\tValue: {value}")
 
         # Note: Do not need transaction.atomic here because this is wrapped in one.
