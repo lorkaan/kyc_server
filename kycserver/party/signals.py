@@ -25,7 +25,7 @@ def create_party_signal(sender, instance, created, **kwargs):
             severity=severity,
             content_object=instance,  # 👈 Generic FK target
             metadata={
-                "party_id": instance.id,
+                "party_id": str(instance.id),
                 "party_type": instance.party_type.code,
                 "name": instance.name,
             }
