@@ -541,7 +541,7 @@ def sse_event(data, event=None):
     return msg
 
 @login_required
-def kyc_stream(self, request):
+def kyc_stream(request):
         """
         SSE endpoint for streaming KYCRecords for the logged-in user.
         Sends:
