@@ -7,8 +7,7 @@ from .views import (
     KycAnswerOptionViewSet,
     RelationshipRoleViewSet,
     KYCStatusViewSet,
-    KycQuestionViewSet,
-    kyc_records_stream
+    KycQuestionViewSet
 )
 
 # Root router for main resources
@@ -18,7 +17,6 @@ router.register(r'answer-options', KycAnswerOptionViewSet, basename='kyc-answer-
 router.register(r'roles', RelationshipRoleViewSet, basename='relationship-role')
 router.register(r'statuses', KYCStatusViewSet, basename='kyc-status')
 router.register(r'questions', KycQuestionViewSet, basename='kyc-question')
-router.register(r"stream", kyc_records_stream, basename='kyc-stream')
 
 # Nested router for answers under records
 records_router = routers.NestedDefaultRouter(router, r'records', lookup='record')
