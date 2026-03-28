@@ -20,6 +20,7 @@ import json
 import logging
 from .models import KycQuestionGroup
 from django.db.models import Prefetch
+from django.contrib.auth.decorators import login_required
 
 
 from .models import (
@@ -275,54 +276,6 @@ class KYCRecordViewSet(ModelViewSet):
                 "name": getattr(party_type, "name", None),
             }
         })
-    
-    @action(detail=False, methods=["get"], renderer_classes=[])
-    @renderer_classes([EventStreamRenderer])
-    def stream(self, request):
-        """
-        SSE endpoint for streaming KYCRecords for the logged-in user.
-        Sends:
-          - Existing pending/in-progress KYCRecords immediately
-          - Any new KYCRecord events via Redis pub/sub
-        """
-        #user = request.user
-        #user_id = user.id
-        request.accepted_renderer = None
-        request.accepted_media_type = "text/event-stream"
-
-        def event_stream():
-            # 1️⃣ Send existing KYCRecords
-            existing = KYCRecord.objects.filter(
-                status__code__in=["created", "pending", "in_progress", "requires_update", "expired"]
-            )
-            for record in existing:
-                yield sse_event({
-                    "id": record.id,
-                    "party_id": record.party_id,
-                    "status": record.status.code,
-                    "created_at": record.created_at.isoformat(),
-                }, event="kyc_record_init")
-
-            # 2️⃣ Subscribe to Redis channel for new KYCRecords
-            pubsub = redis_client.pubsub(ignore_subscribe_messages=True)
-            pubsub.subscribe(f"kyc_records")  # user-specific channel
-
-            try:
-                for message in pubsub.listen():
-                    if message["type"] != "message":
-                        continue
-                    data = json.loads(message["data"])
-                    yield sse_event(data, event="kyc_record_new")
-            finally:
-                pubsub.close()
-
-        response = StreamingHttpResponse(
-            event_stream(),
-            content_type="text/event-stream"
-        )
-        response["Cache-Control"] = "no-cache"
-        response["X-Accel-Buffering"] = "no"  # for nginx to flush
-        return response
 
 # -------------------------------------------------
 # KYC Answer ViewSet
@@ -586,3 +539,50 @@ def sse_event(data, event=None):
     if event:
         msg = f"event: {event}\n{msg}"
     return msg
+
+@login_required
+def kyc_stream(self, request):
+        """
+        SSE endpoint for streaming KYCRecords for the logged-in user.
+        Sends:
+          - Existing pending/in-progress KYCRecords immediately
+          - Any new KYCRecord events via Redis pub/sub
+        """
+        #user = request.user
+        #user_id = user.id
+        request.accepted_renderer = None
+        request.accepted_media_type = "text/event-stream"
+
+        def event_stream():
+            # 1️⃣ Send existing KYCRecords
+            existing = KYCRecord.objects.filter(
+                status__code__in=["created", "pending", "in_progress", "requires_update", "expired"]
+            )
+            for record in existing:
+                yield sse_event({
+                    "id": record.id,
+                    "party_id": record.party_id,
+                    "status": record.status.code,
+                    "created_at": record.created_at.isoformat(),
+                }, event="kyc_record_init")
+
+            # 2️⃣ Subscribe to Redis channel for new KYCRecords
+            pubsub = redis_client.pubsub(ignore_subscribe_messages=True)
+            pubsub.subscribe(f"kyc_records")  # user-specific channel
+
+            try:
+                for message in pubsub.listen():
+                    if message["type"] != "message":
+                        continue
+                    data = json.loads(message["data"])
+                    yield sse_event(data, event="kyc_record_new")
+            finally:
+                pubsub.close()
+
+        response = StreamingHttpResponse(
+            event_stream(),
+            content_type="text/event-stream"
+        )
+        response["Cache-Control"] = "no-cache"
+        response["X-Accel-Buffering"] = "no"  # for nginx to flush
+        return response

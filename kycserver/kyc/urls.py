@@ -7,7 +7,8 @@ from .views import (
     KycAnswerOptionViewSet,
     RelationshipRoleViewSet,
     KYCStatusViewSet,
-    KycQuestionViewSet
+    KycQuestionViewSet,
+    kyc_stream
 )
 
 # Root router for main resources
@@ -25,4 +26,5 @@ records_router.register(r'answers', KycAnswerViewSet, basename='kyc-record-answe
 urlpatterns = [
     path('', include(router.urls)),         # /records/, /questions/, /statuses/, etc.
     path('', include(records_router.urls)), # /records/<record_id>/answers/
+    path('stream/', kyc_stream)
 ]
