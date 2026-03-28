@@ -1,6 +1,8 @@
 import datetime
 import traceback
 
+from django.db import models
+
 from kyc.handlers import ANSWER_HANDLERS
 from party.models import PartyType
 from person.models import Person
@@ -347,7 +349,31 @@ class KycAnswerViewSet(ModelViewSet):
             return False, record_obj, question_obj
 
         return question_obj.party_type == record_obj.party.party_type, record_obj, question_obj
-            
+
+    def validate_group(self, kyc_record, repeat_index, group):
+        answers = (
+            KycAnswer.objects
+            .filter(
+                kyc_record=kyc_record,
+                repeat_index=repeat_index,
+                question__group=group
+            )
+            .select_related("question")
+        )
+
+        answer_map = {a.question_id: a for a in answers}
+
+        errors = []
+
+        for q in group.questions.all():
+            ans = answer_map.get(q.id)
+
+            if q.required and (not ans or not ans.has_value()):
+                errors.append(f"Required question '{q.label}' is missing in repeat {repeat_index}")
+
+        if errors:
+            raise ValidationError({"__all__": errors})
+
     def create_kyc_answer(self, *, kyc_record, question, value, repeat_index=0):
         validation, kyc_record_obj, question_obj = self._validate_question(question, kyc_record)
         if not validation:
@@ -379,7 +405,7 @@ class KycAnswerViewSet(ModelViewSet):
         if not answer.pk:
             answer.save()
 
-        return answer
+        return answer, question_obj
     
     def _submit_single_answer(self, record_pk, item):
         """
@@ -429,6 +455,7 @@ class KycAnswerViewSet(ModelViewSet):
     @transaction.atomic
     def bulk_add_answers(self, record_pk, answers_data):
         answer_ids = []
+        group_index = {}
         try:
             kyc_record = KYCRecord.objects.get(pk=record_pk)
             for item in answers_data:
@@ -447,7 +474,16 @@ class KycAnswerViewSet(ModelViewSet):
                         "value_reference", "value_date", "value_email", "value_phone"
                     ]
                     value = next((item[k] for k in value_keys if k in item), None)
-                answer_ids.append(self.create_kyc_answer(kyc_record=kyc_record, question=question, value=value, repeat_index=repeat_index))
+                answer_value, question_obj = self.create_kyc_answer(kyc_record=kyc_record, question=question, value=value, repeat_index=repeat_index)
+                answer_ids.append(answer_value)
+                if isinstance(question_obj, models.Model) and question_obj.group:
+                    cur_group_index_val = group_index.get(question_obj.group, [])
+                    cur_group_index_val.append(repeat_index)
+                    group_index[question_obj.group] = cur_group_index_val
+            for k, v in group_index.items():
+                group = KycQuestionGroup.objects.prefetch_related("questions").get(pk=k)
+                for r_index in v:
+                    self.validate_group(kyc_record, r_index, group)
             return answer_ids
         except KYCRecord.DoesNotExist as e:
             self.__class__.logger.error(f"Unable to process due to inability to find KYC Record with primary key: {record_pk}\n\t{e}")

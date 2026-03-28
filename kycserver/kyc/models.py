@@ -675,7 +675,7 @@ class KycAnswer(models.Model):
         # -------------------------------------------------
         # Group-level validation
         # -------------------------------------------------
-
+        """
         if question.group_id:
 
             group = (
@@ -708,6 +708,7 @@ class KycAnswer(models.Model):
                         f"Required question '{q.label}' "
                         f"is missing in repeat {self.repeat_index}"
                     )
+        """
 
 
 # =====================================================
