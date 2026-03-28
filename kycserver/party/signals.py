@@ -36,10 +36,13 @@ def create_party_signal(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Party)
 def create_kyc_record(sender, instance, created, **kwargs):
+    logger = logging.getLogger()
+    logger.getError(f"Creating KYC Record")
     if not created:
         return
 
     def _create_kyc():
+        logger.getError(f"Making a KYC Record")
         try:
             status = KYCStatus.objects.get(code=_INITIAL_KYC_RECORD_STATUS)
             record = KYCRecord(
