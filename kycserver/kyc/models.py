@@ -273,7 +273,7 @@ class KycQuestion(models.Model):
     )
 
     answer_type = models.CharField(max_length=1, choices=AnswerTypeEnum)
-    required = models.BooleanField(default=True)
+    required = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
     requires_document = models.BooleanField(default=False)
     is_repeatable = models.BooleanField(default=False)  # NEW: repeatable question
