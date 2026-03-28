@@ -560,8 +560,8 @@ def kyc_stream(request):
             )
             for record in existing:
                 yield sse_event({
-                    "id": record.id,
-                    "party_id": record.party_id,
+                    "id": str(record.id),
+                    "party_id": str(record.party_id),
                     "status": record.status.code,
                     "created_at": record.created_at.isoformat(),
                 }, event="kyc_record_init")
