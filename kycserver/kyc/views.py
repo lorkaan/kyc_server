@@ -477,9 +477,9 @@ class KycAnswerViewSet(ModelViewSet):
                 answer_value, question_obj = self.create_kyc_answer(kyc_record=kyc_record, question=question, value=value, repeat_index=repeat_index)
                 answer_ids.append(answer_value)
                 if isinstance(question_obj, models.Model) and question_obj.group:
-                    cur_group_index_val = group_index.get(question_obj.group, [])
+                    cur_group_index_val = group_index.get(question_obj.group.pk, [])
                     cur_group_index_val.append(repeat_index)
-                    group_index[question_obj.group] = cur_group_index_val
+                    group_index[question_obj.group.pk] = cur_group_index_val
             for k, v in group_index.items():
                 group = KycQuestionGroup.objects.prefetch_related("questions").get(pk=k)
                 for r_index in v:
