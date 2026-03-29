@@ -4,6 +4,7 @@ import traceback
 from django.db import models
 
 from kyc.handlers import ANSWER_HANDLERS
+from kycserver.utils.type_utils import isList
 from party.models import PartyType
 from person.models import Person
 from rest_framework.viewsets import ModelViewSet
@@ -475,7 +476,19 @@ class KycAnswerViewSet(ModelViewSet):
                     ]
                     value = next((item[k] for k in value_keys if k in item), None)
                 answer_value, question_obj = self.create_kyc_answer(kyc_record=kyc_record, question=question, value=value, repeat_index=repeat_index)
-                answer_ids.append(answer_value)
+                if isinstance(answer_value, models.Model):
+                    answer_ids.append(answer_value.pk)
+                elif isList(answer_value, 0):
+                    if len(answer_value) <= 0:
+                        continue
+                    else:
+                        for a in answer_value:
+                            if isinstance(a, models.Model):
+                                answer_ids.append(a.pk)
+                            else:
+                                answer_ids.append(a)
+                else:
+                    answer_ids.append(answer_value)
                 if isinstance(question_obj, models.Model) and question_obj.group:
                     cur_group_index_val = group_index.get(question_obj.group.pk, [])
                     cur_group_index_val.append(repeat_index)
