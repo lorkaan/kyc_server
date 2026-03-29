@@ -4,7 +4,7 @@ import traceback
 from django.db import models
 
 from kyc.handlers import ANSWER_HANDLERS
-from kycserver.utils.type_utils import isList
+from utils.type_utils import isList
 from party.models import PartyType
 from person.models import Person
 from rest_framework.viewsets import ModelViewSet
