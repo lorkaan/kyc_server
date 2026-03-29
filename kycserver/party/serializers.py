@@ -29,6 +29,8 @@ class PartySerializer(serializers.ModelSerializer):
 
     entity_type = serializers.SerializerMethodField()
 
+    entity = serializers.SerializerMethodField() 
+
     class Meta:
         model = Party
         fields = [
@@ -38,11 +40,25 @@ class PartySerializer(serializers.ModelSerializer):
             "is_active",
             "entity_type",
             "created_at",
+            "entity",
             "updated_at",
         ]
 
     def get_entity_type(self, obj):
         return obj.content_type.model
+    
+    def get_entity(self, obj):
+        target = obj.content_object
+        if not target:
+            return None
+
+        if hasattr(target, "get_serialized_data"):
+            return target.get_serialized_data()
+
+        return {
+            "id": str(target.pk),
+            "repr": str(target),
+        }
 
 
 # --- PartyRelationship ---

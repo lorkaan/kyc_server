@@ -13,4 +13,8 @@ class Person(ModelSchemaMixin, BaseModel):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+    
+    def get_serializer_class(self):
+        from .serializers import PersonSerializer
+        return PersonSerializer
 

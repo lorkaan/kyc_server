@@ -95,7 +95,16 @@ class GenericPointerToClassMixin(models.Model):
         model = self.content_type.model
         return f"{model}.{self.field_name} → {self.label}"
     
+    
 class ModelSchemaMixin:
+
+    def get_serializer_class(self):
+        raise NotImplementedError
+
+    def get_serialized_data(self):
+        serializer_class = self.get_serializer_class()
+        return serializer_class(self).data
+
     @classmethod
     def get_schema(
         cls,

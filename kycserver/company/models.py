@@ -30,6 +30,10 @@ class Company(ModelSchemaMixin, BaseModel):
     def save(self, *args, **kwargs):
         self.full_clean()  # <-- enforce validation
         super().save(*args, **kwargs)
+
+    def get_serializer_class(self):
+        from .serializers import CompanySerializer
+        return CompanySerializer
         
     class Meta:
         unique_together = ("country", "registration_number")
