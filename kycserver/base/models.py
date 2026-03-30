@@ -136,8 +136,14 @@ class ModelSchemaMixin:
             if isinstance(field, models.ForeignKey) and include_choices:
                 queryset = field.related_model.objects.all()
 
-                if field.limit_choices_to:
-                    queryset = queryset.filter(**field.limit_choices_to)
+                limit = None
+                if hasattr(field, "get_limit_choices_to"):
+                    limit = field.get_limit_choices_to()
+                elif hasattr(field, "_limit_choices_to"):
+                    limit = field._limit_choices_to
+
+                if limit:
+                    queryset = queryset.filter(**limit)
 
                 # Apply per-field filter if exists
                 if filter_functions and field.name in filter_functions:
