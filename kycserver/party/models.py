@@ -31,7 +31,6 @@ class PartyType(models.Model):
         return Serializer.Meta.model
 
     def create_entity(self, data):
-        import logging
         logger = logging.getLogger()
         logger.error(f"Creating entity for {data}")
         Serializer = self.get_serializer()
