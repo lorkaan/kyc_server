@@ -1,6 +1,6 @@
 from django import forms
 
-from users.models import FieldPermissions
+from users.models import FieldPermissions, User
 
 class FieldPermissionsForm(forms.ModelForm):
     view = forms.BooleanField(required=False)
@@ -40,3 +40,8 @@ class FieldPermissionsForm(forms.ModelForm):
             instance.save()
 
         return instance
+    
+class UserAdminForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = '__all__'
