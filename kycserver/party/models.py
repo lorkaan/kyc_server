@@ -24,6 +24,10 @@ class PartyType(models.Model):
 
     def get_serializer(self):
         return import_string(self.serializer_path)
+    
+    def get_model(self):
+        Serializer = self.get_serializer()
+        return Serializer.Meta.model
 
     def create_entity(self, data):
         Serializer = self.get_serializer()
@@ -37,6 +41,13 @@ class PartyType(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_model_fields(self):
+        model_cls = self.get_model()
+        if issubclass(model_cls, ModelSchemaMixin):
+            return model_cls.get_schema(choice_limit=None)
+        else:
+            return {}
     
 @pghistory.track()
 class Party(GenericTargetMixin, BaseModel):

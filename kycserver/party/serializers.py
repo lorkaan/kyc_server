@@ -1,12 +1,11 @@
 from rest_framework import serializers
 
 from .models import PartyType, Party, PartyRelationship
-import logging
-
-logger = logging.getLogger()
 
 # --- PartyType ---
 class PartyTypeSerializer(serializers.ModelSerializer):
+    model_fields = serializers.SerializerMethodField()
+
     class Meta:
         model = PartyType
         fields = [
@@ -16,8 +15,12 @@ class PartyTypeSerializer(serializers.ModelSerializer):
             "description",
             "is_active",
             "created_at",
+            "model_fields"
         ]
         read_only_fields = ["id", "created_at"]
+
+    def get_model_fields(self, obj):
+        return obj.get_model_fields()
 
 
 # --- Party ---
@@ -126,7 +129,6 @@ class PartyCreateSerializer(serializers.ModelSerializer):
         # Pop entity-specific data
         entity_data = validated_data.pop("data")
         party_type = validated_data["party_type"]
-        logger.error(f"Entity Data: {entity_data}\nPartyType: {party_type}")
         # Dynamically create the underlying entity
         entity = party_type.create_entity(entity_data)
 
