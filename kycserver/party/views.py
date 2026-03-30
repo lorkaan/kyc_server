@@ -137,57 +137,20 @@ class PartyGraphViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=["post"], url_path="create-graph")
     def create_graph(self, request):
-        self.__class__.logger.error(f"Creating Graph Start")
+        self.logger.error("Creating Graph Start")
+
         serializer = PartyGraphSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        data = serializer.validated_data
-        self.__class__.logger.error(f"Validated Data for Create Graph: {dictToStr(data, prefix="\t")}")
+        self.logger.error(
+            f"Validated Data for Create Graph: {serializer.validated_data}"
+        )
 
-        with transaction.atomic():
-            # --- Resolve or create main party ---
-            main_party = self._resolve_party(data["main_party"])
-
-            created_relationships = []
-
-            for rel in data["relationships"]:
-                other_party = self._resolve_party(rel["party"])
-
-                if rel["direction"] == "out":
-                    party = main_party
-                    target_party = other_party
-                else:
-                    party = other_party
-                    target_party = main_party
-
-                relationship, _ = PartyRelationship.objects.get_or_create(
-                    party=party,
-                    target_party=target_party,
-                    role_id=rel["role"],
-                    start_date=rel["start_date"],
-                    defaults={
-                        "end_date": rel.get("end_date")
-                    }
-                )
-
-                created_relationships.append(relationship.id)
+        result = serializer.save()  # 🔥 ALL logic happens inside serializer
 
         return Response({
-            "main_party_id": main_party.id,
-            "relationships_created": created_relationships
+            "main_party_id": result["party"].id,
+            "relationships_created": [
+                rel.id for rel in result["relationships"]
+            ]
         }, status=status.HTTP_201_CREATED)
-
-    # --- Helper ---
-    def _resolve_party(self, party_data):
-        self.__class__.logger.error(f"Starting Resolve Party:\n{dictToStr(party_data, prefix="\t")}")
-        if party_data["type"] == "existing":
-            return Party.objects.get(id=party_data["id"])
-
-        # NEW party
-        self.__class__.logger.error(f"Party Create Serializer being run: {dictToStr(party_data["data"], prefix="\t")}")
-        #serializer = PartyCreateSerializer(data=party_data["data"])
-        #self.__class__.logger.error(f"Validating the data")
-        #serializer.is_valid(raise_exception=True)
-        #self.__class__.logger.error("Saving")
-        #return serializer.save()
-        return PartyCreateSerializer().create(party_data["data"])
