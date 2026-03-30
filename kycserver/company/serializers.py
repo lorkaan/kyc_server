@@ -1,10 +1,16 @@
 from kyc.models import ReferenceValue
 from kyc.serializers import ReferenceValueSerializer
+from base.serializers import KeyConversionSerializer
 from rest_framework import serializers
 from .models import Company
 
 
-class CompanySerializer(serializers.ModelSerializer):
+class CompanySerializer(KeyConversionSerializer):
+
+    CONVERSION_KEYS = {
+        "country": "country_id"
+    }
+
     country = ReferenceValueSerializer(read_only=True)
 
     country_id = serializers.PrimaryKeyRelatedField(
