@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from base.models import BaseModel, GenericTargetMixin, ModelSchemaMixin
 from django.utils.module_loading import import_string
+from kycserver.base.serializers import KeyConversionSerializer
 from utils.dict_utils import dictToStr
 from django.core.exceptions import ValidationError
 import pghistory
@@ -30,7 +31,17 @@ class PartyType(models.Model):
         return Serializer.Meta.model
 
     def create_entity(self, data):
+        import logging
+        logger = logging.getLogger()
+        logger.error(f"Creating entity for {data}")
         Serializer = self.get_serializer()
+        logger.error(f"\tUsing serializer for {Serializer}")
+        if issubclass(Serializer, KeyConversionSerializer):
+            for k, v in Serializer.CONVERSION_KEYS.items():
+                logger.error(f"Checking key: {k}")
+                data[v] = data.get(k, None)
+                del data[k]
+        logger.error(f"Transformed data for {data}")
         serializer = Serializer(data=data)
         #self.__class__.logger.error(f"Prevalidation Data\n: {dictToStr(serializer.data, prefix="\t")}")
         try:

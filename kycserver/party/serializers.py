@@ -126,10 +126,14 @@ class PartyCreateSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        import logging
+        logger = logger.getLogger()
         # Pop entity-specific data
         entity_data = validated_data.pop("data")
+        logger.error(f"Entity Data: {entity_data}")
         party_type = validated_data["party_type"]
         # Dynamically create the underlying entity
+        logger.error(f"Party_type Data: {party_type}")
         entity = party_type.create_entity(entity_data)
 
         # Create the Party instance
