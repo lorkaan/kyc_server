@@ -2,8 +2,6 @@ from django.db import models
 from django.utils import timezone
 from base.models import BaseModel, GenericTargetMixin, ModelSchemaMixin
 from django.utils.module_loading import import_string
-from kycserver.base.serializers import KeyConversionSerializer
-from utils.dict_utils import dictToStr
 from django.core.exceptions import ValidationError
 import pghistory
 import logging
@@ -31,6 +29,7 @@ class PartyType(models.Model):
         return Serializer.Meta.model
 
     def create_entity(self, data):
+        from base.serializers import KeyConversionSerializer
         logger = logging.getLogger()
         logger.error(f"Creating entity for {data}")
         Serializer = self.get_serializer()
