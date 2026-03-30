@@ -10,8 +10,6 @@ import logging
 # Create your models here.
 class PartyType(models.Model):
 
-    logger = logging.getLogger()
-
     code = models.SlugField(unique=True)
 
     name = models.CharField(max_length=100)
@@ -28,15 +26,12 @@ class PartyType(models.Model):
         return import_string(self.serializer_path)
 
     def create_entity(self, data):
-        self.__class__.logger.error(f"Entity Data\n: {dictToStr(data, prefix="\t")}")
         Serializer = self.get_serializer()
         serializer = Serializer(data=data)
         #self.__class__.logger.error(f"Prevalidation Data\n: {dictToStr(serializer.data, prefix="\t")}")
         try:
             serializer.is_valid(raise_exception=True)
-            self.__class__.logger.error(f"PostValidation Data\n: {dictToStr(serializer.validated_data, prefix="\t")}")
         except Exception as e:
-            self.__class__.logger.error(f"Validation Error in Serializer: {e}")
             raise e
         return serializer.save()
 

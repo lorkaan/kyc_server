@@ -12,6 +12,11 @@ from .models import (
     KycQuestion,
 )
 
+class ReferenceValueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReferenceValue
+        fields = ["id", "code", "label"]
+
 class RelationshipRoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = RelationshipRole

@@ -4,7 +4,6 @@ import pghistory
 from base.models import BaseModel, ModelSchemaMixin
 
 # Create your models here.
-""" Depreciated in favour of Party?"""
 @pghistory.track()
 class Person(ModelSchemaMixin, BaseModel):
     first_name = models.CharField(max_length=100)
