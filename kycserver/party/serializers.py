@@ -127,7 +127,7 @@ class PartyCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         import logging
-        logger = logger.getLogger()
+        logger = logging.getLogger()
         # Pop entity-specific data
         entity_data = validated_data.pop("data")
         logger.error(f"Entity Data: {entity_data}")
