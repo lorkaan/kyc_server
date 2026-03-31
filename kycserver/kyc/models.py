@@ -1,5 +1,6 @@
 from django.db import models, transaction
 from django.db.models import Q
+from encrypt.models import EncryptionType, EncryptionValue
 from party.models import Party, PartyType
 import pghistory
 from django.core.exceptions import ValidationError
@@ -277,6 +278,7 @@ class KycQuestion(models.Model):
     order = models.PositiveIntegerField(default=0)
     requires_document = models.BooleanField(default=False)
     is_repeatable = models.BooleanField(default=False)  # NEW: repeatable question
+    encrypt_type = models.ForeignKey(EncryptionType, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return self.label
@@ -484,6 +486,8 @@ class KycAnswer(models.Model):
         validators=[phone_validator],
         help_text="Enter phone number in international format"
     )
+
+    value_encrypt = models.ForeignKey(EncryptionValue, on_delete=models.CASCADE, null=True, blank=True)
 
     # -----------------------
 

@@ -133,7 +133,9 @@ class PartyInputField(serializers.Field):
                 raise serializers.ValidationError("Party not found")
 
         elif input_type == "new":
-            serializer = PartyCreateSerializer(data=data)
+            payload = data.get("data", data)
+
+            serializer = PartyCreateSerializer(data=payload)
             serializer.is_valid(raise_exception=True)
             return serializer.save()
 
@@ -205,7 +207,7 @@ class PartyGraphSerializer(serializers.Serializer):
             for rel in relationships_data:
                 other_party = rel["party"]
 
-                if rel["direction"] == "to":
+                if rel["direction"] == "out":
                     party = main_party
                     target_party = other_party
                 else:

@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     "globalparams.apps.GlobalparamsConfig",
     "agenda.apps.AgendaConfig",
     "automation.apps.AutomationConfig",
+    "encrypt.apps.EncryptConfig",
     "pghistory",
     "pgtrigger",
     "corsheaders",
