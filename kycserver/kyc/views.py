@@ -1,12 +1,11 @@
-import datetime
 import traceback
 
 from django.db import models
 
 from kyc.handlers import ANSWER_HANDLERS
+from watchdog.generate_signals import create_signal
 from utils.type_utils import isList
 from party.models import PartyType
-from person.models import Person
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action, renderer_classes
 from rest_framework.response import Response
@@ -497,6 +496,7 @@ class KycAnswerViewSet(ModelViewSet):
                 group = KycQuestionGroup.objects.prefetch_related("questions").get(pk=k)
                 for r_index in v:
                     self.validate_group(kyc_record, r_index, group)
+            create_signal(kyc_record, "kyc_record_status_update", status__code="approved")
             return answer_ids
         except KYCRecord.DoesNotExist as e:
             self.__class__.logger.error(f"Unable to process due to inability to find KYC Record with primary key: {record_pk}\n\t{e}")
