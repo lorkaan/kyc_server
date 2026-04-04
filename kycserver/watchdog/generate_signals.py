@@ -1,5 +1,5 @@
 
-from kycserver.watchdog.models import Signal, SignalSeverity, SignalType
+from watchdog.models import Signal, SignalSeverity, SignalType
 
 
 def create_signal(instance, signal_type_label, **kwargs):
