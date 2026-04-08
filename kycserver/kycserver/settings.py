@@ -64,7 +64,9 @@ CSRF_TRUSTED_ORIGINS = [
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 
-
+ENCRYPT_SERVICE_URL = "http://flask-encrypt:5000/encrypt_dek"
+DECRYPT_SERVICE_URL = "http://flask-decrypt:5000/decrypt_dek"
+ROTATE_SERVICE_URL = "http://flask-rotate:5000/rotate_deks"
 
 # Application definition
 
