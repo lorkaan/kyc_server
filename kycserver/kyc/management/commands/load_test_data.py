@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 
+from kyc.data_types import AnswerTypeEnum
 from person.models import Person
 from company.models import Company
 from kyc.models import (
@@ -94,7 +95,7 @@ class Command(BaseCommand):
             key="annual_income",
             defaults={
                 "label": "Annual Income",
-                "answer_type": KycQuestion.AnswerTypeEnum.NUMBER,
+                "answer_type": AnswerTypeEnum.NUMBER,
                 "required": True,
                 "order": 1,
             },
@@ -104,7 +105,7 @@ class Command(BaseCommand):
             key="is_pep",
             defaults={
                 "label": "Politically Exposed Person",
-                "answer_type": KycQuestion.AnswerTypeEnum.BOOL,
+                "answer_type": AnswerTypeEnum.BOOL,
                 "required": True,
                 "order": 2,
             },

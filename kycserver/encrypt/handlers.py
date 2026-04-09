@@ -17,7 +17,7 @@ class DekHandler:
     def encrypt_dek(dek: str) -> str:
         res = requests.post(settings.ENCRYPT_SERVICE_URL, json={"dek": dek})
         res.raise_for_status()
-        return res.json()["encrypted_dek"]
+        return res.json()["encrypted_dek"], res.json()["key_id"]
 
     def decrypt_dek(encrypted_dek: str) -> str:
         res = requests.post(settings.DECRYPT_SERVICE_URL, json={"encrypted_dek": encrypted_dek})
@@ -32,31 +32,38 @@ class DekHandler:
 @CipherPol.register("AES256_GCM")
 class AES256GCM(CipherPolAgent):
 
-    @staticmethod
-    def encrypt(plaintext: str, dek: str) -> str:
-        key = base64.b64decode(dek)
+    KEY_LENGTH = 32
+
+    @classmethod
+    def encrypt(cls, plain_text: str, key: str, **kwargs) -> str:
+        key = base64.b64decode(key)
         aesgcm = AESGCM(key)
         nonce = os.urandom(12)
-        ciphertext = aesgcm.encrypt(nonce, plaintext.encode(), None)
+        ciphertext = aesgcm.encrypt(nonce, plain_text.encode(), None)
         return base64.b64encode(nonce + ciphertext).decode()
 
-    @staticmethod
-    def decrypt(ciphertext: str, dek: str) -> str:
-        raw = base64.b64decode(ciphertext)
+    @classmethod
+    def decrypt(cls, cipher_text: str, key: str, **kwargs) -> str:
+        raw = base64.b64decode(cipher_text)
         nonce, ct = raw[:12], raw[12:]
-        aesgcm = AESGCM(base64.b64decode(dek))
+        aesgcm = AESGCM(base64.b64decode(key))
         return aesgcm.decrypt(nonce, ct, None).decode()
     
+    @classmethod
+    def generate_key(cls, **kwargs):
+        raw = os.urandom(cls.KEY_LENGTH)
+        return base64.b64encode(raw).decode()
 
 
-@CipherRegistry.register("XCHACHA20_POLY1305")
+@CipherPol.register("XCHACHA20_POLY1305")
 class XChaCha20Poly1305(CipherPolAgent):
 
+    KEY_LENGTH = 32
     NONCE_SIZE = 24  # XChaCha uses 24-byte nonce
 
     @staticmethod
-    def encrypt(plaintext: str, dek: str) -> str:
-        key = base64.b64decode(dek)
+    def encrypt(plain_text: str, key: str, **kwargs) -> str:
+        key = base64.b64decode(key)
 
         if len(key) != 32:
             raise ValueError("DEK must be 32 bytes (base64-encoded)")
@@ -64,7 +71,7 @@ class XChaCha20Poly1305(CipherPolAgent):
         nonce = nacl.utils.random(XChaCha20Poly1305.NONCE_SIZE)
 
         ciphertext = crypto_aead_xchacha20poly1305_ietf_encrypt(
-            plaintext.encode(),
+            plain_text.encode(),
             aad=None,
             nonce=nonce,
             key=key,
@@ -73,10 +80,10 @@ class XChaCha20Poly1305(CipherPolAgent):
         return base64.b64encode(nonce + ciphertext).decode()
 
     @staticmethod
-    def decrypt(ciphertext: str, dek: str) -> str:
-        key = base64.b64decode(dek)
+    def decrypt(cipher_text: str, key: str, **kwargs) -> str:
+        key = base64.b64decode(key)
 
-        raw = base64.b64decode(ciphertext)
+        raw = base64.b64decode(cipher_text)
         nonce = raw[:XChaCha20Poly1305.NONCE_SIZE]
         ct = raw[XChaCha20Poly1305.NONCE_SIZE:]
 
@@ -88,3 +95,8 @@ class XChaCha20Poly1305(CipherPolAgent):
         )
 
         return plaintext.decode()
+    
+    @classmethod
+    def generate_key(cls, **kwargs):
+        raw = os.urandom(cls.KEY_LENGTH)
+        return base64.b64encode(raw).decode()

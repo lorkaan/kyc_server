@@ -1,6 +1,7 @@
 from django.db import models, transaction
 from django.db.models import Q
-from encrypt.models import EncryptionType, EncryptionValue
+from encrypt.models import REPRESENTATION_HANDLERS, EncryptionType, EncryptionValue
+from kyc.data_types import AnswerTypeEnum
 from party.models import Party, PartyType
 import pghistory
 from django.core.exceptions import ValidationError
@@ -235,17 +236,6 @@ class ReferenceValue(models.Model):
 @pghistory.track()
 class KycQuestion(models.Model):
 
-    class AnswerTypeEnum(models.TextChoices):
-        NUMBER = "N", "number"
-        TEXT   = "T", "text"
-        BOOL   = "B", "bool"
-        SINGLE = "S", "single"
-        MULTI  = "M", "multi"
-        DATE   = "D", "date"
-        RANGE  = "R", "date_range"
-        PHONE  = "P", "phone_number"
-        EMAIL  = "E", "email_address"
-
     key = models.SlugField(unique=True)
     label = models.CharField(max_length=255)
 
@@ -328,8 +318,8 @@ class KycQuestion(models.Model):
 
         # Choice questions must use reference sets
         if self.answer_type in {
-            self.AnswerTypeEnum.SINGLE,
-            self.AnswerTypeEnum.MULTI,
+            AnswerTypeEnum.SINGLE,
+            AnswerTypeEnum.MULTI,
         }:
             if not self.reference_set:
                 raise ValidationError(
@@ -338,13 +328,20 @@ class KycQuestion(models.Model):
 
         # Non-choice questions must NOT have reference sets
         if self.answer_type not in {
-            self.AnswerTypeEnum.SINGLE,
-            self.AnswerTypeEnum.MULTI,
+            AnswerTypeEnum.SINGLE,
+            AnswerTypeEnum.MULTI,
         }:
             if self.reference_set:
                 raise ValidationError(
                     "Only Single/Multi questions may use reference sets."
                 )
+        # -------------------------------
+        # Enforce encryption whitelist
+        # -------------------------------
+        if self.answer_type not in REPRESENTATION_HANDLERS.keys():
+            raise ValidationError(
+                {"answer_type": f"Answer type '{self.answer_type}' is not allowed for encryption."}
+            )
             
 @pghistory.track()
 class KycCondition(models.Model):
@@ -573,15 +570,15 @@ class KycAnswer(models.Model):
         # Type validation
         # -----------------------
 
-        if t == KycQuestion.AnswerTypeEnum.NUMBER:
+        if t == AnswerTypeEnum.NUMBER:
             if self.value_number is None:
                 raise ValidationError("Number answer required")
 
-        elif t == KycQuestion.AnswerTypeEnum.TEXT:
+        elif t == AnswerTypeEnum.TEXT:
             if not self.value_text:
                 raise ValidationError("Text answer required")
 
-        elif t == KycQuestion.AnswerTypeEnum.BOOL:
+        elif t == AnswerTypeEnum.BOOL:
             if self.value_bool is None:
                 raise ValidationError("Boolean answer required")
 
@@ -589,7 +586,7 @@ class KycAnswer(models.Model):
         # SINGLE
         # -----------------------
 
-        elif t == KycQuestion.AnswerTypeEnum.SINGLE:
+        elif t == AnswerTypeEnum.SINGLE:
 
             if self.value_reference is None:
                 raise ValidationError(
@@ -612,7 +609,7 @@ class KycAnswer(models.Model):
         # MULTI
         # -----------------------
 
-        elif t == KycQuestion.AnswerTypeEnum.MULTI: # This needs to change for when required becomes true
+        elif t == AnswerTypeEnum.MULTI: # This needs to change for when required becomes true
 
             if self.value_reference is not None:
                 raise ValidationError(
@@ -639,7 +636,7 @@ class KycAnswer(models.Model):
         # DATE
         # -----------------------
 
-        elif t == KycQuestion.AnswerTypeEnum.DATE:
+        elif t == AnswerTypeEnum.DATE:
 
             if self.value_date is None:
                 raise ValidationError("Date required")
@@ -648,7 +645,7 @@ class KycAnswer(models.Model):
         # RANGE
         # -----------------------
 
-        elif t == KycQuestion.AnswerTypeEnum.RANGE:
+        elif t == AnswerTypeEnum.RANGE:
 
             if not self.value_date_from or not self.value_date_to:
                 raise ValidationError("Date range required")
@@ -662,7 +659,7 @@ class KycAnswer(models.Model):
         # PHONE
         # -----------------------
 
-        elif t == KycQuestion.AnswerTypeEnum.PHONE:
+        elif t == AnswerTypeEnum.PHONE:
 
             if not self.value_phone:
                 raise ValidationError("Phone number required")
@@ -671,7 +668,7 @@ class KycAnswer(models.Model):
         # EMAIL
         # -----------------------
 
-        elif t == KycQuestion.AnswerTypeEnum.EMAIL:
+        elif t == AnswerTypeEnum.EMAIL:
 
             if not self.value_email:
                 raise ValidationError("Email address required")

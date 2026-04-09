@@ -14,6 +14,12 @@ class CipherPolAgent(ABC):
     @abstractmethod
     def decrypt(cls, cipher_text, key, **kwargs):
         raise NotImplementedError(f"{cls.name} decrypt method has not been implemented")
+    
+    @classmethod
+    @abstractmethod
+    def generate_key(cls, **kwargs):
+        raise NotImplementedError(f"{cls.name} key generation method has not been implemented")
+    
 
 class CipherPol:
     REGISTRY: Dict[str, Type[CipherPolAgent]] = {}

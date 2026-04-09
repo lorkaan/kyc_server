@@ -1,3 +1,8 @@
+from encrypt.cipherpol import CipherPol
+from encrypt.handlers import DekHandler
+from kyc.data_types import AnswerTypeEnum
+from encrypt.models import REPRESENTATION_HANDLERS
+from encrypt.serializers import EncryptionValueSerializer
 from rest_framework import serializers
 from django.db import transaction
 from .models import (
@@ -39,6 +44,8 @@ class KycAnswerSerializer(serializers.ModelSerializer):
         required=False
     )
 
+    value_encrypt = EncryptionValueSerializer(read_only=True)
+
     class Meta:
         model = KycAnswer
         fields = [
@@ -58,7 +65,28 @@ class KycAnswerSerializer(serializers.ModelSerializer):
             "value_phone",
             # multi-select
             "selected_options",
+            "value_encrypt"
         ]
+
+
+    # -------------------------------------------------
+    # Override read representation
+    # -------------------------------------------------
+    def to_representation(self, instance):
+        """Populate value_* fields from decrypted value_encrypt."""
+        ret = super().to_representation(instance)
+
+        enc_value = instance.value_encrypt
+        if enc_value:
+            # Use the EncryptionValueSerializer to get plaintext
+            plaintext = EncryptionValueSerializer(enc_value).data.get("plaintext")
+            
+            # Map to the correct value_* field based on data_type
+            field_name = REPRESENTATION_HANDLERS.get(enc_value.data_type)
+            if field_name:
+                ret[field_name] = plaintext
+
+        return ret
 
     # -------------------------------------------------
     # VALIDATION
@@ -209,32 +237,32 @@ class KycBulkAnswerSerializer(serializers.Serializer):
         # TYPE CHECKING
         # -------------------------------------------------
 
-        if answer_type == KycQuestion.AnswerTypeEnum.NUMBER:
+        if answer_type == AnswerTypeEnum.NUMBER:
             if attrs.get("value_number") is None:
                 raise serializers.ValidationError(
                     "value_number required for NUMBER question"
                 )
 
-        elif answer_type == KycQuestion.AnswerTypeEnum.TEXT:
+        elif answer_type == AnswerTypeEnum.TEXT:
             if not attrs.get("value_text"):
                 raise serializers.ValidationError(
                     "value_text required for TEXT question"
                 )
 
-        elif answer_type == KycQuestion.AnswerTypeEnum.BOOL:
+        elif answer_type == AnswerTypeEnum.BOOL:
             if attrs.get("value_bool") is None:
                 raise serializers.ValidationError(
                     "value_bool required for BOOL question"
                 )
 
-        elif answer_type == KycQuestion.AnswerTypeEnum.SINGLE:
+        elif answer_type == AnswerTypeEnum.SINGLE:
 
             if attrs.get("value_reference") is None:
                 raise serializers.ValidationError(
                     "value_reference required for SINGLE question"
                 )
 
-        elif answer_type == KycQuestion.AnswerTypeEnum.MULTI:
+        elif answer_type == AnswerTypeEnum.MULTI:
 
             options = attrs.get("selected_options", [])
 
@@ -243,14 +271,14 @@ class KycBulkAnswerSerializer(serializers.Serializer):
                     "At least one selected_option required"
                 )
 
-        elif answer_type == KycQuestion.AnswerTypeEnum.DATE:
+        elif answer_type == AnswerTypeEnum.DATE:
 
             if attrs.get("value_date") is None:
                 raise serializers.ValidationError(
                     "value_date required"
                 )
 
-        elif answer_type == KycQuestion.AnswerTypeEnum.RANGE:
+        elif answer_type == AnswerTypeEnum.RANGE:
 
             start = attrs.get("value_date_from")
             end = attrs.get("value_date_to")
@@ -265,14 +293,14 @@ class KycBulkAnswerSerializer(serializers.Serializer):
                     "Start date must be before end date"
                 )
 
-        elif answer_type == KycQuestion.AnswerTypeEnum.EMAIL:
+        elif answer_type == AnswerTypeEnum.EMAIL:
 
             if not attrs.get("value_email"):
                 raise serializers.ValidationError(
                     "value_email required"
                 )
 
-        elif answer_type == KycQuestion.AnswerTypeEnum.PHONE:
+        elif answer_type == AnswerTypeEnum.PHONE:
 
             if not attrs.get("value_phone"):
                 raise serializers.ValidationError(

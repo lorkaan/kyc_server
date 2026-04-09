@@ -1,7 +1,12 @@
 from django.core.exceptions import ValidationError
 
-from kyc.models import KycAnswerOption, KycQuestion, ReferenceValue
+from kyc.models import KycAnswer, KycAnswerOption, KycQuestion, ReferenceValue
+import logging
 
+from encrypt.cipherpol import CipherPol, CipherPolAgent
+from encrypt.handlers import DekHandler
+from encrypt.models import EncryptionValue
+from kyc.data_types import AnswerTypeEnum
 
 def handle_number(answer, value, question):
     try:
@@ -94,13 +99,38 @@ def handle_email(answer, value, question):
     answer.value_email = str(value)
 
 ANSWER_HANDLERS = {
-    KycQuestion.AnswerTypeEnum.NUMBER: handle_number,
-    KycQuestion.AnswerTypeEnum.TEXT: handle_text,
-    KycQuestion.AnswerTypeEnum.BOOL: handle_bool,
-    KycQuestion.AnswerTypeEnum.SINGLE: handle_single,
-    KycQuestion.AnswerTypeEnum.MULTI: handle_multi,
-    KycQuestion.AnswerTypeEnum.DATE: handle_date,
-    KycQuestion.AnswerTypeEnum.RANGE: handle_range,
-    KycQuestion.AnswerTypeEnum.PHONE: handle_phone,
-    KycQuestion.AnswerTypeEnum.EMAIL: handle_email,
+    AnswerTypeEnum.NUMBER: handle_number,
+    AnswerTypeEnum.TEXT: handle_text,
+    AnswerTypeEnum.BOOL: handle_bool,
+    AnswerTypeEnum.SINGLE: handle_single,
+    AnswerTypeEnum.MULTI: handle_multi,
+    AnswerTypeEnum.DATE: handle_date,
+    AnswerTypeEnum.RANGE: handle_range,
+    AnswerTypeEnum.PHONE: handle_phone,
+    AnswerTypeEnum.EMAIL: handle_email,
 }
+
+class AnswerHandler:
+
+    logger = logging.getLogger()
+
+    @classmethod
+    def save(cls, answer, value, questionObj):
+        if isinstance(questionObj, KycQuestion) and isinstance(answer, KycAnswer) and value != None:
+            handler = ANSWER_HANDLERS.get(questionObj.answer_type)
+            if not handler or not callable(handler):
+                cls.logger.error(f"Handler {handler} -> {questionObj.answer_type}")
+                raise ValidationError(f"Unsupported answer type: \n\tQuestion: {questionObj}\n\tType: {questionObj.answer_type}\n\tValue Type: {type(value)}\n\tValue: {value}")
+            else:
+                if questionObj.encrypt_type == None:
+                    handler(answer, value, questionObj)
+                else:
+                    # Encryption pass
+                    algoCls = CipherPol.get(questionObj.encrypt_type.algorithm)
+                    if issubclass(algoCls, CipherPolAgent):
+                        dek = algoCls.generate_key()
+                        ciphertext = algoCls.encrypt(value, dek) # Do more things here
+                        cipherdek, key_id = DekHandler.encrypt_dek(dek)
+                        encryptedAns = EncryptionValue(encrypt_type=questionObj.encrypt_type, ciphertext=ciphertext, dek=cipherdek, key_id=key_id, data_type=questionObj.answer_type)
+                        encryptedAns.save()
+                        answer.value_encrypt = encryptedAns

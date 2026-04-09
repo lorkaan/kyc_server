@@ -2,7 +2,9 @@ import traceback
 
 from django.db import models
 
-from kyc.handlers import ANSWER_HANDLERS
+from kyc.handlers import ANSWER_HANDLERS, AnswerHandler
+from encrypt.cipherpol import CipherPol
+from encrypt.models import EncryptionValue
 from watchdog.generate_signals import create_signal
 from utils.type_utils import isList
 from party.models import PartyType
@@ -385,18 +387,7 @@ class KycAnswerViewSet(ModelViewSet):
             repeat_index=repeat_index,
         )
 
-        handler = ANSWER_HANDLERS.get(question_obj.answer_type)
-
-        if not handler or not callable(handler):
-            logger = logging.getLogger()
-            logger.error(f"Handler {handler} -> {question_obj.answer_type}")
-            raise ValidationError(f"Unsupported answer type: \n\tQuestion: {question}\n\tType: {question_obj.answer_type}\n\tValue Type: {type(value)}\n\tValue: {value}")
-
-        # Note: Do not need transaction.atomic here because this is wrapped in one.
-
-        # Apply handler
-        if value != None:
-            handler(answer, value, question_obj)
+        AnswerHandler.save(answer, value, question_obj)
 
         # Run full validation (important!)
         answer.full_clean()
@@ -461,7 +452,7 @@ class KycAnswerViewSet(ModelViewSet):
             for item in answers_data:
                 question = item["question"]
                 repeat_index = item.get("repeat_index", 0)
-
+                
                 # Determine value explicitly
                 if "selected_options" in item:
                     value = item["selected_options"]
