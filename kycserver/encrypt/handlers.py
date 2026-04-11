@@ -19,8 +19,8 @@ class DekHandler:
                 json={"dek": dek}, 
                 verify="/certs/ca/ca.crt",
                 cert=(
-                    "/certs/ca/server.crt",   # Django's cert
-                    "/certs/ca/server.key"
+                    "/certs/services/django/server.crt",   # Django's cert
+                    "/certs/services/django/server.key"
                 )
             )
         res.raise_for_status()
@@ -29,10 +29,10 @@ class DekHandler:
     def decrypt_dek(encrypted_dek: str) -> str:
         res = requests.post(settings.DECRYPT_SERVICE_URL, 
                 json={"encrypted_dek": encrypted_dek},
-                verify="/certs/ca/ca.crt",
+                verify="/certs/services/django/ca.crt",
                 cert=(
-                    "/certs/ca/server.crt",   # Django's cert
-                    "/certs/ca/server.key"
+                    "/certs/services/django/server.crt",   # Django's cert
+                    "/certs/services/django/server.key"
                 )
             )
         res.raise_for_status()
@@ -43,8 +43,8 @@ class DekHandler:
                 json={"encrypted_deks": batch},
                 verify="/certs/ca/ca.crt",
                 cert=(
-                    "/certs/ca/server.crt",   # Django's cert
-                    "/certs/ca/server.key"
+                    "/certs/services/django/server.crt",   # Django's cert
+                    "/certs/services/django/server.key"
                 )
             )
         res.raise_for_status()
