@@ -17,10 +17,10 @@ class DekHandler:
     def encrypt_dek(dek: str) -> str:
         res = requests.post(settings.ENCRYPT_SERVICE_URL, 
                 json={"dek": dek}, 
-                verify="/certs/ca.crt",
+                verify="/certs/ca/ca.crt",
                 cert=(
-                    "/certs/server.crt",   # Django's cert
-                    "/certs/server.key"
+                    "/certs/ca/server.crt",   # Django's cert
+                    "/certs/ca/server.key"
                 )
             )
         res.raise_for_status()
@@ -29,10 +29,10 @@ class DekHandler:
     def decrypt_dek(encrypted_dek: str) -> str:
         res = requests.post(settings.DECRYPT_SERVICE_URL, 
                 json={"encrypted_dek": encrypted_dek},
-                verify="/certs/ca.crt",
+                verify="/certs/ca/ca.crt",
                 cert=(
-                    "/certs/server.crt",   # Django's cert
-                    "/certs/server.key"
+                    "/certs/ca/server.crt",   # Django's cert
+                    "/certs/ca/server.key"
                 )
             )
         res.raise_for_status()
@@ -41,10 +41,10 @@ class DekHandler:
     def rotate_deks(batch):
         res = requests.post(settings.ROTATE_SERVICE_URL,
                 json={"encrypted_deks": batch},
-                verify="/certs/ca.crt",
+                verify="/certs/ca/ca.crt",
                 cert=(
-                    "/certs/server.crt",   # Django's cert
-                    "/certs/server.key"
+                    "/certs/ca/server.crt",   # Django's cert
+                    "/certs/ca/server.key"
                 )
             )
         res.raise_for_status()
