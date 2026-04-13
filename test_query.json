@@ -44,13 +44,22 @@
         "query": {
             "model": "kyc.KYCRecord",
             "params": {
-                "person_id": { "type": "uuid", "required": true }
+                "person_id": { "type": "uuid", "required": false }
             },
             "query": {
                 "where": {
-                    "field": "person__id",
-                    "op": "eq",
-                    "value": { "$param": "person_id" }
+                    "and": [
+                        {
+                            "field": "party__id",
+                            "op": "eq",
+                            "value": { "$param": "person_id" }
+                        },
+                        {
+                            "field": "party__party_type__code",
+                            "op": "eq",
+                            "value": "person"
+                        }
+                    ]
                 }
             }
         }
