@@ -64,6 +64,32 @@ class QueryAstHandler(DslEvaluator):
     }
 
     @classmethod
+    def clean_params(cls, param_def: dict, params: dict):
+        """
+            This function will clean the parameters so it can be properly evaluated. 
+            E.g. Set any non-required parameters to None if they do not have a value.
+        """
+        if not isinstance(params, dict):
+            return {}
+        if not isinstance(param_def, dict):
+            raise ValueError(f"Expected a parameter dictionary to handle having parameters:\nParams: \n{dictToStr(params, prefix="\t")}\nInstead got: {type(param_def)} -> {param_def}")
+        new_params = {}
+        for name, value in params.items():
+            if not param_def[name].get("required", False):
+                expected_type = param_def[name].get("type")
+                if expected_type == "datetime" and isinstance(value, str) and value.length <= 0:
+                    continue
+                elif expected_type == "string" and isinstance(value, str) and value.length <= 0:
+                    continue
+                elif expected_type == "uuid" and isinstance(value, str) and value.length <= 0:
+                    continue
+                else:
+                    new_params[name] = value
+            else:
+                new_params[name] = value
+        return new_params
+
+    @classmethod
     def validate_params(cls, param_def: dict, params: dict):
         """
         Validate parameter values against the definitions and inject defaults.
@@ -94,7 +120,8 @@ class QueryAstHandler(DslEvaluator):
 
         # Type validation
         for name, value in params.items():
-            if param_def[name].get("required", False) or value != None:
+            required_flag = param_def[name].get("required", False)
+            if required_flag or value != None:
                 expected_type = param_def[name].get("type")
                 if expected_type == "datetime":
                     if hasattr(value, "isoformat"):

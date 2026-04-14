@@ -22,6 +22,10 @@ class DslEvaluator:
     @classmethod
     def validate_params(cls, param_def: dict, params: dict):
         return True
+    
+    @classmethod
+    def clean_params(cls, param_def: dict, params: dict):
+        return params
 
     @classmethod
     def bind_params(cls, ast, params: dict):
@@ -108,7 +112,8 @@ class DslEvaluator:
         # ---- Params handling ----
         #param_def = query_def.get("params")
         if isDict(param_def):
-            cls.validate_params(param_def, params)
+            clean_params = cls.clean_params(param_def, params)
+            cls.validate_params(param_def, clean_params)
             resolved_params.update(params)
         return resolved_params
 
