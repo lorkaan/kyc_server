@@ -94,53 +94,56 @@ class QueryAstHandler(DslEvaluator):
 
         # Type validation
         for name, value in params.items():
-            expected_type = param_def[name].get("type")
-            if expected_type == "datetime":
-                if hasattr(value, "isoformat"):
-                    continue
-                elif isinstance(value, str):
-                    try:
-                        datetime.fromisoformat(value.replace("Z", "+00:00"))
-                    except ValueError:
-                        raise ValueError(f"Param {name} must be ISO datetime string or datetime object")
-                else:
-                    raise ValueError(f"Param {name} must be datetime or ISO string")
-            elif expected_type == "string":
-                if isString(value, 0):
-                    continue
-                else:
-                    raise ValueError(f"Param {name} must be a string")
-            elif expected_type == "int":
-                if isInteger(value):
-                    continue
-                else:
-                    raise ValueError(f"Param {name} must be an Integer")
-            elif expected_type == "float":
-                if isFloat(value):
-                    continue
-                else:
-                    raise ValueError(f"Param {name} must be a Float")
-            elif expected_type == "number":
-                if isNumber(value):
-                    continue
-                else:
-                    raise ValueError(f"Param {name} must be a Number")
-            elif expected_type == "boolean":
-                if type(value) == bool:
-                    continue
-                else:
-                    raise ValueError(f"Param {name} must be a Boolean")
-            elif expected_type == "uuid":
-                try:
-                    # Accept both UUID objects and valid UUID strings
-                    if isinstance(value, uuid.UUID):
+            if param_def[name].get("required", False) or value != None:
+                expected_type = param_def[name].get("type")
+                if expected_type == "datetime":
+                    if hasattr(value, "isoformat"):
                         continue
                     elif isinstance(value, str):
-                        uuid.UUID(value)  # will raise ValueError if invalid
+                        try:
+                            datetime.fromisoformat(value.replace("Z", "+00:00"))
+                        except ValueError:
+                            raise ValueError(f"Param {name} must be ISO datetime string or datetime object")
                     else:
-                        raise ValueError
-                except ValueError:
-                    raise ValueError(f"Param {name} must be a valid UUID")
+                        raise ValueError(f"Param {name} must be datetime or ISO string")
+                elif expected_type == "string":
+                    if isString(value, 0):
+                        continue
+                    else:
+                        raise ValueError(f"Param {name} must be a string, instead got {type(value)} --> {value}")
+                elif expected_type == "int":
+                    if isInteger(value):
+                        continue
+                    else:
+                        raise ValueError(f"Param {name} must be an Integer, instead got {type(value)} --> {value}")
+                elif expected_type == "float":
+                    if isFloat(value):
+                        continue
+                    else:
+                        raise ValueError(f"Param {name} must be a Float, instead got {type(value)} --> {value}")
+                elif expected_type == "number":
+                    if isNumber(value):
+                        continue
+                    else:
+                        raise ValueError(f"Param {name} must be a Number, instead got {type(value)} --> {value}")
+                elif expected_type == "boolean":
+                    if type(value) == bool:
+                        continue
+                    else:
+                        raise ValueError(f"Param {name} must be a Boolean, instead got {type(value)} --> {value}")
+                elif expected_type == "uuid":
+                    try:
+                        # Accept both UUID objects and valid UUID strings
+                        if isinstance(value, uuid.UUID):
+                            continue
+                        elif isinstance(value, str):
+                            uuid.UUID(value)  # will raise ValueError if invalid
+                        else:
+                            raise ValueError
+                    except ValueError:
+                        raise ValueError(f"Param {name} must be a valid UUID, instead got {type(value)} --> {value}")
+            else:
+                cls.logger.error(f"Parameter {name} is not required and is being skipped because it has value: {value}")
         return True
 
     @classmethod
