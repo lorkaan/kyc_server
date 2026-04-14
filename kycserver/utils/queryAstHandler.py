@@ -400,7 +400,7 @@ class FieldDefinitionInterface:
 class AnnotatedQueryAstHandler(QueryAstHandler):
 
     field_def_key = "fields"
-    annotate_flag_key = "annotateFlags"
+    annotate_flag_key = "annotateFlag"
 
     @classmethod
     def getFields(cls, query_ast_obj):
