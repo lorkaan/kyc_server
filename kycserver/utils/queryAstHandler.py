@@ -77,11 +77,11 @@ class QueryAstHandler(DslEvaluator):
         for name, value in params.items():
             if not param_def[name].get("required", False):
                 expected_type = param_def[name].get("type")
-                if expected_type == "datetime" and isinstance(value, str) and value.length <= 0:
+                if expected_type == "datetime" and isinstance(value, str) and len(value) <= 0:
                     continue
-                elif expected_type == "string" and isinstance(value, str) and value.length <= 0:
+                elif expected_type == "string" and isinstance(value, str) and len(value) <= 0:
                     continue
-                elif expected_type == "uuid" and isinstance(value, str) and value.length <= 0:
+                elif expected_type == "uuid" and isinstance(value, str) and len(value) <= 0:
                     continue
                 else:
                     new_params[name] = value
