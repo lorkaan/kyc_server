@@ -87,6 +87,7 @@ class QueryAstHandler(DslEvaluator):
                     new_params[name] = value
             else:
                 new_params[name] = value
+        cls.logger.error(f"Cleaned Params: \n{dictToStr(new_params, prefix="\t")}")
         return new_params
 
     @classmethod

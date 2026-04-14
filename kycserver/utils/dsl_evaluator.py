@@ -114,7 +114,7 @@ class DslEvaluator:
         if isDict(param_def):
             clean_params = cls.clean_params(param_def, params)
             cls.validate_params(param_def, clean_params)
-            resolved_params.update(params)
+            resolved_params.update(clean_params)
         return resolved_params
 
     
@@ -141,6 +141,7 @@ class DslEvaluator:
     def fill(cls, query_def, params={}):
         eval_statement = cls.get_eval_statement(query_def)
         resolved_params = cls.resolve_parameters(query_def.get(cls.param_key) or {}, query_def.get(cls.global_param_key) or {}, params)
+        cls.logger.error(f"Resolved Params: \n{dictToStr(resolved_params, prefix="\t")}")
         return cls.bind_params(eval_statement, resolved_params)
     
     @classmethod
