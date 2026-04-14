@@ -450,7 +450,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         cls.logger.error(f"Annonate: {annotateFlag}")
         results = super().run(query_def, params, **kwargs)
         if annotateFlag:
-            field_list = cls.getFields(query_def.get(cls.query_def_key, None))
+            field_list = cls.getFields(query_def.get(cls.field_def_key, None))
             cls.logger.error(f"Field List: {type(field_list)} --> {field_list}")
             if not isList(field_list):
                 return results
