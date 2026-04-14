@@ -445,7 +445,9 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
     
     @classmethod
     def run(cls, query_def, params={}, **kwargs):
+        cls.logger.error(f"Kwargs: {dictToStr(kwargs, prefix="\t")}")
         annotateFlag = kwargs.pop(cls.annotate_flag_key, False)
+        cls.logger.error(f"Annonate: {annotateFlag}")
         results = super().run(query_def, params, **kwargs)
         if annotateFlag:
             field_list = cls.getFields(query_def.get(cls.query_def_key, None))
