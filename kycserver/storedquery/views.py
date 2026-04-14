@@ -11,7 +11,7 @@ from django.apps import apps
 from django.db.models import Q
 from rest_framework.permissions import IsAuthenticated
 
-from utils.queryAstHandler import QueryAstHandler
+from utils.queryAstHandler import AnnotatedQueryAstHandler, QueryAstHandler
 
 from .models import SavedQuery, SavedQueryPermission
 from .serializers import SavedQuerySerializer, SavedQueryPermissionSerializer
@@ -123,7 +123,7 @@ class SavedQueryViewSet(ModelViewSet):
             "limit": data.get("limit"),
             "filters": data.get("filters")    # additional ad-hoc filtering
         }
-        query_results = QueryAstHandler.run(query.to_ast_payload(), params)
+        query_results = AnnotatedQueryAstHandler.run(query.to_ast_payload(), params, annotateFlag = not query_result_return)
         if not query_result_return:
             return list(self.__class__.apply_extra_options(query_results, extra_options).values())
         else:

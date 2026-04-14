@@ -1,4 +1,4 @@
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import F, Q, Exists, OuterRef
 
 from globalparams.models import GlobalParameter
 from utils.dsl_evaluator import DslEvaluator
@@ -367,3 +367,99 @@ class QueryAstHandler(DslEvaluator):
             model_name = query_def.get(cls.model_name_key, None)
             query_ast_def = query_def.get(cls.query_def_key, {})
             return super().run(query_ast_def, params, model_name=model_name, **kwargs)
+
+class FieldDefinitionInterface:
+
+        field_path_key = "path"
+        custom_name_key = "name"
+
+        def __init__(self, field_path, custom_name=None):
+            if isString(field_path):
+                self.field_path = field_path
+            else:
+                raise ValueError(f"{field_path} is not a valid path to a field")
+            if isString(custom_name):
+                self.custom_name = custom_name
+            else:
+                self.custom_name = None
+
+        @classmethod
+        def create(cls, **kwargs):
+            fp = kwargs.get(cls.field_path_key, None)
+            name = kwargs.get(cls.custom_name_key, None)
+            try:
+                newObj = cls(fp, name)
+            except ValueError:
+                newObj = None
+            except Exception as e:
+                cls.logger.error(f"FieldDefinition Create Error: {e}")
+                newObj = None
+            finally:
+                return newObj
+
+class AnnotatedQueryAstHandler(QueryAstHandler):
+
+    field_def_key = "fields"
+    annotate_flag_key = "annotateFlags"
+
+    @classmethod
+    def getFields(cls, query_ast_obj):
+        if not isDict(query_ast_obj):
+            return None
+        fields_defs = query_ast_obj.get(cls.field_def_key, None)
+        if not isList(fields_defs):
+            return None
+        fields = []
+        for field_def in fields_defs:
+            if isDict(field_def):
+                cur_def = FieldDefinitionInterface.create(field_def)
+                if cur_def == None:
+                    continue
+                else:
+                    fields.append(cur_def)
+            else:
+                continue
+        return fields
+    
+    @classmethod
+    def build_annotations(cls, field_defs):
+        annotations = {}
+
+        for fd in field_defs:
+            key = fd.custom_name or fd.field_path.replace("__", "_")
+            annotations[key] = F(fd.field_path)
+
+        return annotations
+
+    # 🔥 Extract select_related paths
+    @classmethod
+    def get_select_related_fields(cls, field_defs):
+        related = set()
+
+        for fd in field_defs:
+            parts = fd.field_path.split("__")[:-1]
+            if parts:
+                related.add("__".join(parts))
+
+        return list(related)
+    
+    @classmethod
+    def run(cls, query_def, params={}, **kwargs):
+        annotateFlag = kwargs.pop(cls.annotate_flag_key, False)
+        results = super().run(query_def, params, **kwargs)
+        if annotateFlag:
+            field_list = cls.getFields(query_def.get(cls.query_def_key, None))
+            if not isList(field_list):
+                return results
+            else:
+                select_related_fields = cls.get_select_related_fields(field_list)
+                if select_related_fields:
+                    results = results.select_related(*select_related_fields)
+
+                # Step 4: annotate fields
+                annotations = cls.build_annotations(field_list)
+                if annotations:
+                    results = results.annotate(**annotations)
+                return results
+        else:
+            return results

@@ -61,7 +61,21 @@
                         }
                     ]
                 }
-            }
+            },
+            "fields": [
+                {
+                    "path": "party__name",
+                    "name": "NickName"
+                },
+                {
+                    "path": "created_at",
+                    "name": "Created"
+                },
+                {
+                    "path": "updated_at",
+                    "name": "Updated"
+                }
+            ]
         }
     }
 ]
