@@ -41,12 +41,16 @@ def import_saved_queries(query_list, owner: User = None):
         # Extract params and AST query
         params_def = query_obj.get("params", {})
         ast_query = query_obj.get("query", {})
+        field_defs = query_obj.get("fields", None)
 
         # Construct final JSON for storage
         json_for_storage = {
             "params": params_def,
-            "query": ast_query
+            "query": ast_query,
         }
+
+        if type(field_defs) == list  and len(field_defs) > 0:
+            json_for_storage["fields"] = field_defs
 
         # Determine owner
         if is_system:
