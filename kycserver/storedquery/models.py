@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from django.apps import apps
 
 from base.models import BaseModel
 from users.models import User
@@ -47,7 +48,8 @@ class SavedQuery(BaseModel):
         }
     
     def get_model_class(self):
-        return self.content_type.model_class()
+        app_label, model_name = self.model.split(".")
+        return apps.get_model(app_label, model_name)
 
 # I need to change the choices I think and check the target_type and target_id, 
 # I dont know why I cant just use the Permissions
