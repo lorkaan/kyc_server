@@ -407,10 +407,12 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
     @classmethod
     def find_value_from_path(cls, obj, path):
         if not isString(path):
+            cls.logger.error(f"Path is: {type(path)} -> {path}")
             return None
         path_elems = path.split(cls.path_splitter)
         cur = obj
         for p in path_elems:
+            cls.logger.error(f"Cur Step: {dictToStr(cur, prefix="\t")}")
             if isDict(cur):
                 cur = cur.get(p, None)
             else:
@@ -418,10 +420,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         return cur
 
     @classmethod
-    def getFields(cls, query_ast_obj):
-        if not isDict(query_ast_obj):
-            return None
-        fields_defs = query_ast_obj.get(cls.field_def_key, None)
+    def getFields(cls, fields_defs):
         if not isList(fields_defs):
             return None
         fields = []
@@ -466,6 +465,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         results = super().run(query_def, params, **kwargs)
         if annotateFlag:
             field_list = cls.getFields(cls.find_value_from_path(query_def, cls.field_def_key))
+            cls.logger.error(f"Field List: {type(field_list)} --> {field_list}")
             if not isList(field_list):
                 return results
             else:
@@ -475,6 +475,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
 
                 # Step 4: annotate fields
                 annotations = cls.build_annotations(field_list)
+                cls.logger.error(f"Annotations: {type(annotations)} --> {annotations}")
                 if annotations:
                     results = results.annotate(**annotations)
                 return results
