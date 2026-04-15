@@ -399,8 +399,23 @@ class FieldDefinitionInterface:
 
 class AnnotatedQueryAstHandler(QueryAstHandler):
 
-    field_def_key = "fields"
+    path_splitter = "."
+
+    field_def_key = f"query{path_splitter}fields"
     annotate_flag_key = "annotateFlag"
+
+    @classmethod
+    def find_value_from_path(cls, obj, path):
+        if not isString(path):
+            return None
+        path_elems = path.split(cls.path_splitter)
+        cur = obj
+        for p in path_elems:
+            if isDict(cur):
+                cur = cur.get(p, None)
+            else:
+                return None
+        return cur
 
     @classmethod
     def getFields(cls, query_ast_obj):
@@ -450,11 +465,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         cls.logger.error(f"Annonate: {annotateFlag}")
         results = super().run(query_def, params, **kwargs)
         if annotateFlag:
-            fields = query_def.get(cls.field_def_key, None)
-            cls.logger.error(f"Field Key: {cls.field_def_key}\n- QueryDef To Print: \n{dictToStr(query_def, prefix="\t")}")
-            cls.logger.error(f"Found Fields From Query Def: {fields}")
-            field_list = cls.getFields(query_def.get(cls.field_def_key, None))
-            cls.logger.error(f"Field List: {type(field_list)} --> {field_list}")
+            field_list = cls.getFields(cls.find_value_from_path(query_def, cls.field_def_key))
             if not isList(field_list):
                 return results
             else:
@@ -464,7 +475,6 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
 
                 # Step 4: annotate fields
                 annotations = cls.build_annotations(field_list)
-                cls.logger.error(f"Annotations: {type(annotations)} --> {annotations}")
                 if annotations:
                     results = results.annotate(**annotations)
                 return results
