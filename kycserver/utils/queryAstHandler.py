@@ -426,7 +426,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         fields = []
         for field_def in fields_defs:
             if isDict(field_def):
-                cur_def = FieldDefinitionInterface.create(field_def)
+                cur_def = FieldDefinitionInterface.create(**field_def)
                 if cur_def == None:
                     continue
                 else:
