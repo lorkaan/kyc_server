@@ -45,6 +45,9 @@ class SavedQuery(BaseModel):
             "query": self.query,
             "model": self.model
         }
+    
+    def get_model_class(self):
+        return self.content_type.model_class()
 
 # I need to change the choices I think and check the target_type and target_id, 
 # I dont know why I cant just use the Permissions
