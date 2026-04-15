@@ -450,6 +450,9 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         cls.logger.error(f"Annonate: {annotateFlag}")
         results = super().run(query_def, params, **kwargs)
         if annotateFlag:
+            fields = query_def.get(cls.field_def_key, None)
+            cls.logger.error(f"Field Key: {cls.field_def_key}\nQueryDef: \n{dictToStr(query_def, prefix="\t")}")
+            cls.logger.error(f"Found Fields From Query Def: {fields}")
             field_list = cls.getFields(query_def.get(cls.field_def_key, None))
             cls.logger.error(f"Field List: {type(field_list)} --> {field_list}")
             if not isList(field_list):
