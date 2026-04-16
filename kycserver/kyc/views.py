@@ -37,6 +37,7 @@ from .models import (
     KycQuestion,
 )
 from .serializers import (
+    KYCRecordPartySerializer,
     KYCRecordSerializer,
     KycAnswerSerializer,
     KycAnswerOptionSerializer,
@@ -601,13 +602,10 @@ def kyc_stream(request):
             existing = KYCRecord.objects.filter(
                 status__code__in=["created", "pending", "in_progress", "requires_update", "expired"]
             )
+            
             for record in existing:
-                yield sse_event({
-                    "id": str(record.id),
-                    "party_id": str(record.party_id),
-                    "status": record.status.code,
-                    "created_at": record.created_at.isoformat(),
-                }, event="kyc_record_init")
+                serializer = KYCRecordPartySerializer(record)
+                yield sse_event(serializer.data, event="kyc_record_init")
 
             # 2️⃣ Subscribe to Redis channel for new KYCRecords
             pubsub = redis_client.pubsub(ignore_subscribe_messages=True)

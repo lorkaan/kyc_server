@@ -3,6 +3,7 @@ from encrypt.handlers import DekHandler
 from kyc.data_types import AnswerTypeEnum
 from encrypt.models import REPRESENTATION_HANDLERS
 from encrypt.serializers import EncryptionValueSerializer
+from party.serializers import PartySerializer
 from rest_framework import serializers
 from django.db import transaction
 from .models import (
@@ -151,6 +152,33 @@ class KYCRecordSerializer(serializers.ModelSerializer):
         source="status",
         write_only=True
     )
+
+    answers = KycAnswerSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = KYCRecord
+        fields = [
+            "id",
+            "party",
+            "status",
+            "status_id",
+            "risk_score",
+            "notes",
+            "verified_at",
+            "answers",
+            "created_at",
+            "updated_at",
+        ]
+
+class KYCRecordPartySerializer(serializers.ModelSerializer):
+    status = KYCStatusSerializer(read_only=True)
+    status_id = serializers.PrimaryKeyRelatedField(
+        queryset=KYCStatus.objects.all(),
+        source="status",
+        write_only=True
+    )
+
+    party = PartySerializer(read_only=True)  # 👈 THIS is the key
 
     answers = KycAnswerSerializer(many=True, read_only=True)
 
