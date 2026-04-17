@@ -114,6 +114,7 @@ def kyc_verified(results, config, context):
                 kyc_status = KYCStatus.objects.get(code="approved")
                 target.status = kyc_status
                 target.verified_at = timezone.now()
+                target.is_current = True
                 target.save()
             except KYCStatus.DoesNotExist as e:
                 logger.error(f"Can not get status approved for signal: {signal_obj.pk}")

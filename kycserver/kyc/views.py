@@ -25,6 +25,7 @@ import logging
 from .models import KycQuestionGroup
 from django.db.models import Prefetch
 from django.contrib.auth.decorators import login_required
+from django.core.serializers.json import DjangoJSONEncoder
 
 
 from .models import (
@@ -629,7 +630,7 @@ redis_client = redis.Redis.from_url(settings.REDIS_URL)
 
 # SSE helper
 def sse_event(data, event=None):
-    msg = f"data: {json.dumps(data)}\n\n"
+    msg = f"data: {json.dumps(data, cls=DjangoJSONEncoder)}\n\n"
     if event:
         msg = f"event: {event}\n{msg}"
     return msg
