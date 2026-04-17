@@ -694,7 +694,7 @@ def kyc_review_stream(request):
         def event_stream():
             # 1️⃣ Send existing KYCRecords
             existing = KYCRecord.objects.filter(
-                status__code__in=["pending", "in_progress", "requires_update"]
+                status__code__in=["pending", "in_progress", "requires_update", "under_review"]
             )
             
             for record in existing:
