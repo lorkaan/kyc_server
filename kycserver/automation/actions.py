@@ -124,7 +124,7 @@ def kyc_verified(results, config, context):
         return
     
 @ActionRunner.register("kyc_submitted")
-def kyc_verified(results, config, context):
+def kyc_submitted(results, config, context):
     signal_obj = getSignal(context.get("signal_id", None))
     if signal_obj != None:
         target = signal_obj.content_object
@@ -160,7 +160,7 @@ def kyc_not_verified(results, config, context):
         return
     
 @ActionRunner.register("manual_verify_required_kyc_record")
-def kyc_not_verified(results, config, context):
+def kyc_under_review(results, config, context):
     signal_obj = getSignal(context.get("signal_id", None))
     if signal_obj != None:
         target = signal_obj.content_object
