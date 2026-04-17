@@ -5,6 +5,15 @@ from datetime import datetime
 import uuid
 
 class BaseValue(models.Model):
+
+    parameter = models.OneToOneField(
+        "GlobalParameter",
+        on_delete=models.CASCADE,
+        related_name="%(class)s",
+        null=True,
+        blank=True,
+    )
+
     class Meta:
         abstract = True
 
@@ -65,6 +74,8 @@ class GlobalParameter(GenericTargetMixin):
     def set_target(self, obj):
         if not isinstance(obj, BaseValue):
             raise TypeError(f"{obj} is not assignable as a Value for a parameter")
+        obj.parameter = self
+        obj.save()
         return super().set_target(obj)
 
     def get_value(self):

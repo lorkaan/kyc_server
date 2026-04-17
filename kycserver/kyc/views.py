@@ -67,6 +67,56 @@ class KYCRecordViewSet(ModelViewSet):
     serializer_class = KYCRecordSerializer
     permission_classes = [IsAuthenticated]
 
+    @action(detail=False, methods=["post"])
+    def verify_decline(self, request):
+        record_id = request.data.get("kyc_record_id")
+
+        if not record_id:
+            return Response(
+                {"error": "kyc_record_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            record = KYCRecord.objects.select_related("party__party_type").get(id=record_id)
+            create_signal(record, "kyc_verification_failed")
+        except KYCRecord.DoesNotExist:
+            return Response(
+                {"error": "KYCRecord not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        return Response({
+            "signal": "Sent",
+            "type": "kyc_verification_failed"
+        })
+
+
+    @action(detail=False, methods=["post"])
+    def verify_accept(self, request):
+        record_id = request.data.get("kyc_record_id")
+
+        if not record_id:
+            return Response(
+                {"error": "kyc_record_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            record = KYCRecord.objects.select_related("party__party_type").get(id=record_id)
+            create_signal(record, "verified_kyc_record")
+        except KYCRecord.DoesNotExist:
+            return Response(
+                {"error": "KYCRecord not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        return Response({
+            "signal": "Sent",
+            "type": "verified_kyc_record"
+        })
+
+
     @action(detail=True, methods=["get"])
     def history(self, request, pk=None):
         """
@@ -488,7 +538,7 @@ class KycAnswerViewSet(ModelViewSet):
                 group = KycQuestionGroup.objects.prefetch_related("questions").get(pk=k)
                 for r_index in v:
                     self.validate_group(kyc_record, r_index, group)
-            create_signal(kyc_record, "kyc_record_status_update", status__code="approved")
+            create_signal(kyc_record, "kyc_record_submit")
             return answer_ids
         except KYCRecord.DoesNotExist as e:
             self.__class__.logger.error(f"Unable to process due to inability to find KYC Record with primary key: {record_pk}\n\t{e}")
@@ -600,7 +650,7 @@ def kyc_stream(request):
         def event_stream():
             # 1️⃣ Send existing KYCRecords
             existing = KYCRecord.objects.filter(
-                status__code__in=["created", "pending", "in_progress", "requires_update", "expired"]
+                status__code__in=["created"]
             )
             
             for record in existing:
@@ -617,6 +667,50 @@ def kyc_stream(request):
                         continue
                     data = json.loads(message["data"])
                     yield sse_event(data, event="kyc_record_new")
+            finally:
+                pubsub.close()
+
+        response = StreamingHttpResponse(
+            event_stream(),
+            content_type="text/event-stream"
+        )
+        response["Cache-Control"] = "no-cache"
+        response["X-Accel-Buffering"] = "no"  # for nginx to flush
+        return response
+
+@login_required
+def kyc_review_stream(request):
+        """
+        SSE endpoint for streaming KYCRecords for the logged-in user.
+        Sends:
+          - Existing pending/in-progress KYCRecords immediately
+          - Any new KYCRecord events via Redis pub/sub
+        """
+        #user = request.user
+        #user_id = user.id
+        request.accepted_renderer = None
+        request.accepted_media_type = "text/event-stream"
+
+        def event_stream():
+            # 1️⃣ Send existing KYCRecords
+            existing = KYCRecord.objects.filter(
+                status__code__in=["pending", "in_progress", "requires_update"]
+            )
+            
+            for record in existing:
+                serializer = KYCRecordPartySerializer(record)
+                yield sse_event(serializer.data, event="kyc_record_review")
+
+            # 2️⃣ Subscribe to Redis channel for new KYCRecords
+            pubsub = redis_client.pubsub(ignore_subscribe_messages=True)
+            pubsub.subscribe(f"review_kyc_records")  # user-specific channel
+
+            try:
+                for message in pubsub.listen():
+                    if message["type"] != "message":
+                        continue
+                    data = json.loads(message["data"])
+                    yield sse_event(data, event="kyc_record_new_review")
             finally:
                 pubsub.close()
 

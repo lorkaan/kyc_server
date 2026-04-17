@@ -1,9 +1,19 @@
 
 import logging
+from kyc.models import KYCRecord, KYCStatus
+from globalparams.actions import getGlobalParamByName
+from utils.type_utils import isNumber
+from watchdog.generate_signals import create_signal
 from watchdog.models import Alert, AlertReason, AlertSeverity, AlertStatus, Signal, SignalType
 from utils.action_runner import ActionRunner
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
+verify_signal_name = "verify_kyc_record"
+verified_signal_name = "verified_kyc_record"
+manual_verify_signal_name = "manual_verify_required_kyc_record"
+
 
 def getSignal(signal_id):
     if signal_id == None:
@@ -57,3 +67,112 @@ def create_alert_action(results, config, context):
             logger.error(f"Alert Object Issue: {e}")
     else:
         logger.error(f"Signal Type could not be found")
+
+def _get_risk_score_for_kyc_record(record):
+    return 10
+
+@ActionRunner.register("evaluate_risk_score")
+def evaulate_risk_score(results, config, context):
+    signal_obj = getSignal(context.get("signal_id", None))
+    if signal_obj != None:
+        target = signal_obj.content_object
+        if isinstance(target, KYCRecord):
+            target.risk_score = _get_risk_score_for_kyc_record(target)
+            target.save()
+            create_signal(target, verify_signal_name)
+            return
+        else:
+            return
+    else:
+        return
+    
+@ActionRunner.register("auto_verify")
+def verify_kyc_record(results, config, context):
+    signal_obj = getSignal(context.get("signal_id", None))
+    if signal_obj != None:
+        target = signal_obj.content_object
+        if isinstance(target, KYCRecord):
+            min_risk_score = getGlobalParamByName("min_risk_score")
+            if isNumber(min_risk_score):
+                if target.risk_score <= min_risk_score:
+                    create_signal(target, verified_signal_name)
+                    return
+            create_signal(target, manual_verify_signal_name)
+            return
+        else:
+            return
+    else:
+        return
+    
+@ActionRunner.register("kyc_verified")
+def kyc_verified(results, config, context):
+    signal_obj = getSignal(context.get("signal_id", None))
+    if signal_obj != None:
+        target = signal_obj.content_object
+        if isinstance(target, KYCRecord):
+            try:
+                kyc_status = KYCStatus.objects.get(code="approved")
+                target.status = kyc_status
+                target.verified_at = timezone.now()
+                target.save()
+            except KYCStatus.DoesNotExist as e:
+                logger.error(f"Can not get status approved for signal: {signal_obj.pk}")
+            return
+        else:
+            return
+    else:
+        return
+    
+@ActionRunner.register("kyc_submitted")
+def kyc_verified(results, config, context):
+    signal_obj = getSignal(context.get("signal_id", None))
+    if signal_obj != None:
+        target = signal_obj.content_object
+        if isinstance(target, KYCRecord):
+            try:
+                kyc_status = KYCStatus.objects.get(code="pending")
+                target.status = kyc_status
+                target.save()
+            except KYCStatus.DoesNotExist as e:
+                logger.error(f"Can not get status pending for signal: {signal_obj.pk}")
+            return
+        else:
+            return
+    else:
+        return
+    
+@ActionRunner.register("kyc_verification_failed")
+def kyc_not_verified(results, config, context):
+    signal_obj = getSignal(context.get("signal_id", None))
+    if signal_obj != None:
+        target = signal_obj.content_object
+        if isinstance(target, KYCRecord):
+            try:
+                kyc_status = KYCStatus.objects.get(code="rejected")
+                target.status = kyc_status
+                target.save()
+            except KYCStatus.DoesNotExist as e:
+                logger.error(f"Can not get status rejected for signal: {signal_obj.pk}")
+            return
+        else:
+            return
+    else:
+        return
+    
+@ActionRunner.register("manual_verify_required_kyc_record")
+def kyc_not_verified(results, config, context):
+    signal_obj = getSignal(context.get("signal_id", None))
+    if signal_obj != None:
+        target = signal_obj.content_object
+        if isinstance(target, KYCRecord):
+            try:
+                kyc_status = KYCStatus.objects.get(code="under_review")
+                target.status = kyc_status
+                target.save()
+            except KYCStatus.DoesNotExist as e:
+                logger.error(f"Can not get status under_review for signal: {signal_obj.pk}")
+            return
+        else:
+            return
+    else:
+        return
