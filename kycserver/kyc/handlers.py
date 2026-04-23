@@ -101,6 +101,7 @@ def handle_email(answer, value, question):
 ANSWER_HANDLERS = {
     AnswerTypeEnum.NUMBER: handle_number,
     AnswerTypeEnum.TEXT: handle_text,
+    AnswerTypeEnum.TEXT_AREA: handle_text,
     AnswerTypeEnum.BOOL: handle_bool,
     AnswerTypeEnum.SINGLE: handle_single,
     AnswerTypeEnum.MULTI: handle_multi,

@@ -123,6 +123,7 @@ class ModelSchemaMixin:
                 "type": field.__class__.__name__,
                 "required": not getattr(field, "blank", False),
                 "null": getattr(field, "null", False),
+                "default": getattr(field, "default", None),
             }
 
             # Char/Text choices

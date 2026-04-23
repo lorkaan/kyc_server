@@ -574,7 +574,7 @@ class KycAnswer(models.Model):
             if self.value_number is None:
                 raise ValidationError("Number answer required")
 
-        elif t == AnswerTypeEnum.TEXT:
+        elif t == AnswerTypeEnum.TEXT or t == AnswerTypeEnum.TEXT_AREA:
             if not self.value_text:
                 raise ValidationError("Text answer required")
 

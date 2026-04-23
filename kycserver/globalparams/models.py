@@ -24,6 +24,9 @@ class BaseValue(models.Model):
 class StringValue(BaseValue):
     value = models.CharField(max_length=255)
 
+class JsonValue(BaseValue):
+    value = models.JSONField()
+
 class IntValue(BaseValue):
     value = models.IntegerField()
 
@@ -49,6 +52,7 @@ class GlobalParameter(GenericTargetMixin):
         BOOLEAN = "B", "Boolean"
         UUID = "U", "UUID"
         DATETIME = "D", "Datetime"
+        JSON = "J", "JSON"
 
     TYPE_MAP = {
             Type.STRING: str,
@@ -57,6 +61,7 @@ class GlobalParameter(GenericTargetMixin):
             Type.BOOLEAN: bool,
             Type.UUID: uuid.UUID,
             Type.DATETIME: datetime,
+            Type.JSON: object
         }
 
     description = models.TextField(blank=True)

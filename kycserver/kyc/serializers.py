@@ -271,7 +271,7 @@ class KycBulkAnswerSerializer(serializers.Serializer):
                     "value_number required for NUMBER question"
                 )
 
-        elif answer_type == AnswerTypeEnum.TEXT:
+        elif answer_type == AnswerTypeEnum.TEXT or answer_type == AnswerTypeEnum.TEXT_AREA:
             if not attrs.get("value_text"):
                 raise serializers.ValidationError(
                     "value_text required for TEXT question"
