@@ -66,6 +66,8 @@ class KYCRecordViewSet(ModelViewSet):
     serializer_class = KYCRecordSerializer
     permission_classes = [IsAuthenticated]
 
+    logger = logging.getLogger()
+
     @action(detail=False, methods=["post"])
     def verify_decline(self, request):
         record_id = request.data.get("kyc_record_id")
@@ -285,19 +287,24 @@ class KYCRecordViewSet(ModelViewSet):
         elif entity_data:
             entity = party_type.create_entity(entity_data)  # <- Use create_entity here
         else:
+            self.__class__.logger.error("entity issue")
             return Response(
                 {"error": "entity_id or entity_data required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         # Step 2: Get or create the Party
+        self.__class__.logger.error("setp 2")
         content_type = ContentType.objects.get_for_model(entity)
+        self.__class__.logger.error("setp 3")
         party, created = Party.objects.get_or_create(
             party_type=party_type,
             content_type=content_type,
             object_id=entity.pk,
             defaults={"name": str(entity)}
         )
+
+        self.__class__.logger.error("setp 4")
 
         # Step 3: Get or create KYCRecord for this Party
         record, created = KYCRecord.objects.get_or_create(
@@ -307,6 +314,7 @@ class KYCRecordViewSet(ModelViewSet):
                 "risk_score": None
             }
         )
+        self.__class__.logger.error("setp 5")
 
         return Response({
             "party_id": party.id,
