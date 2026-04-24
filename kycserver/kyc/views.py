@@ -20,7 +20,7 @@ from django.conf import settings
 from django.http import StreamingHttpResponse
 import json
 import logging
-from .models import KycQuestionGroup
+from .models import KycQuestionGroup, RiskScore
 from django.db.models import Prefetch
 from django.contrib.auth.decorators import login_required
 from django.core.serializers.json import DjangoJSONEncoder
@@ -115,6 +115,25 @@ class KYCRecordViewSet(ModelViewSet):
             "type": "verified_kyc_record"
         })
 
+    @action(defail=False, methods=["post"])
+    def edit(self, request, pk=None):
+        record = self.get_object()
+        data = request.data.get("kyc")
+        if data.get('id', None) != None and record.id == data.id:
+
+            record.notes = data.get("notes", "")
+            if record.risk_score == None:
+                risk_score = data.get("risk_score", None)
+                if risk_score != None:
+                    risk_label = risk_score.get("label", None)
+                    if risk_label != None:
+                        new_risk_score = RiskScore.create(label=risk_label)
+                        new_risk_score.save()
+                        record.risk_score = new_risk_score
+            record.save()
+            return Response({"update": True})
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["get"])
     def history(self, request, pk=None):
