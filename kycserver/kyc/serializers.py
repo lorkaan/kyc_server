@@ -152,12 +152,12 @@ class RiskScoreSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RiskScore
-        fields = ["id", "score", "label", "label_display", "label_choices"]
+        fields = ["id", "score", "label", "label_choices"]
 
     def get_label_choices(self, obj):
         return [
-            {"value": choice.value, "label": choice.label}
-            for choice in RiskScore.RiskCategory
+            {"value": value, "label": label}
+            for value, label in RiskScore.RiskCategory.choices
         ]
 
 
