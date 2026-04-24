@@ -1,5 +1,5 @@
 # kyc/signals.py
-import json
+from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import KYCRecord, KYCStatus, RiskScore
