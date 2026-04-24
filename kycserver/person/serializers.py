@@ -3,6 +3,7 @@ from .models import Person
 
 class PersonSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+    date_of_death = serializers.DateField(required=False, allow_null=True)
 
     class Meta:
         model = Person
@@ -12,6 +13,7 @@ class PersonSerializer(serializers.ModelSerializer):
             "last_name",
             "full_name",
             "date_of_birth",
+            "date_of_death",
             "created_at",
             "updated_at",
         ]
