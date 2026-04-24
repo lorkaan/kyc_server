@@ -46,6 +46,9 @@ class PartyType(models.Model):
             serializer = Serializer(data=data)
             serializer.is_valid(raise_exception=True)
             return serializer.save()
+        except ValidationError as e:
+            logger.error(f"Validation errors: {e.detail}")
+            raise e
         except Exception as e:
             logger.error(f"Error in Serializer Validation: {e}")
             raise e
