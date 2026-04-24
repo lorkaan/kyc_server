@@ -126,6 +126,9 @@ class ModelSchemaMixin:
                 "default": getattr(field, "default", None),
             }
 
+            if callable(field_info["default"]):
+                field_info["default"] = None
+
             # Char/Text choices
             if include_choices and hasattr(field, "choices") and field.choices:
                 field_info["choices"] = [
