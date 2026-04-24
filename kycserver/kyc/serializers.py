@@ -16,6 +16,7 @@ from .models import (
     RelationshipRole,
     KYCStatus,
     KycQuestion,
+    RiskScore,
 )
 
 class ReferenceValueSerializer(serializers.ModelSerializer):
@@ -144,6 +145,21 @@ class KycAnswerSerializer(serializers.ModelSerializer):
             instance.selected_options.set(selected_options)
 
         return instance
+    
+class RiskScoreSerializer(serializers.ModelSerializer):
+
+    label_choices = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RiskScore
+        fields = ["id", "score", "label", "label_display", "label_choices"]
+
+    def get_label_choices(self, obj):
+        return [
+            {"value": choice.value, "label": choice.label}
+            for choice in RiskScore.RiskCategory
+        ]
+
 
 class KYCRecordSerializer(serializers.ModelSerializer):
     status = KYCStatusSerializer(read_only=True)
@@ -153,7 +169,11 @@ class KYCRecordSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
+    party = PartySerializer(read_only=True)  # 👈 THIS is the key
+
     answers = KycAnswerSerializer(many=True, read_only=True)
+
+    risk_score = RiskScoreSerializer()
 
     class Meta:
         model = KYCRecord
@@ -181,6 +201,8 @@ class KYCRecordPartySerializer(serializers.ModelSerializer):
     party = PartySerializer(read_only=True)  # 👈 THIS is the key
 
     answers = KycAnswerSerializer(many=True, read_only=True)
+
+    risk_score = RiskScoreSerializer()
 
     class Meta:
         model = KYCRecord

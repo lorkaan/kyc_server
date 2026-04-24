@@ -3,8 +3,6 @@ import traceback
 from django.db import models
 
 from kyc.handlers import ANSWER_HANDLERS, AnswerHandler
-from encrypt.cipherpol import CipherPol
-from encrypt.models import EncryptionValue
 from watchdog.generate_signals import create_signal
 from utils.type_utils import isList
 from party.models import PartyType
@@ -287,7 +285,7 @@ class KYCRecordViewSet(ModelViewSet):
             party=party,
             defaults={
                 "status": KYCStatus.objects.get(code="pending"),
-                "risk_score": 0
+                "risk_score": None
             }
         )
 

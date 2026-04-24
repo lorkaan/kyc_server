@@ -2,6 +2,7 @@ from django.db import models, transaction
 from django.db.models import Q
 from encrypt.models import REPRESENTATION_HANDLERS, EncryptionType, EncryptionValue
 from kyc.data_types import AnswerTypeEnum
+from utils.type_utils import isInteger
 from party.models import Party, PartyType
 import pghistory
 from django.core.exceptions import ValidationError
@@ -123,6 +124,84 @@ class KYCStatus(models.Model):
     def __str__(self):
         return self.name
 
+_default_risk_score = {
+    'H': 8,
+    'M': 6,
+    'L': 3
+}
+
+_risk_score_global_param_prefix = "risk_score_"
+
+class RiskScore(BaseModel):
+
+    class RiskCategory(models.TextChoices):
+        HIGH = 'H', "High"
+        MEDIUM = 'M', "Medium"
+        LOW = 'L', "Low"
+
+    score = models.IntegerField()
+
+    label = models.CharField(max_length=1, choices=RiskCategory.choices, default=RiskCategory.HIGH)
+
+    @classmethod
+    def get_score_for_category(cls, score_catergory):
+        from globalparams.models import GlobalParameter
+        if isinstance(score_catergory, cls.RiskCategory):
+            default_score = _default_risk_score.get(score_catergory, 10)
+            global_param_key = f"{_risk_score_global_param_prefix}{score_catergory.label.lower()}"
+            try:
+                global_param = GlobalParameter.objects.get(name=global_param_key)
+                global_val = global_param.get_value()
+                if isInteger(global_val) and global_val >= 0:
+                    return global_val
+                else:
+                    return default_score
+            except GlobalParameter.DoesNotExist:
+                return default_score
+        else:
+            raise TypeError(f"Expected a RiskCategory, but got: {type(score_catergory)} --> {score_catergory}")
+
+    @classmethod   
+    def get_category_for_score(cls, score: int):
+        high = cls.get_score_for_category(cls.RiskCategory.HIGH)
+        medium = cls.get_score_for_category(cls.RiskCategory.MEDIUM)
+
+        if score >= high:
+            return cls.RiskCategory.HIGH
+        elif score >= medium:
+            return cls.RiskCategory.MEDIUM
+        return cls.RiskCategory.LOW
+    
+    def normalize(self):
+        if (not isInteger(self.score) or self.score < 0) and not isinstance(self.label, self.__class__.RiskCategory):
+            # sensible default
+            raise ValidationError(f"Got Invalid score {type(self.score)} --> {self.score} and invalid label {type(self.label)} --> {self.label}")
+        elif not isinstance(self.label, self.__class__.RiskCategory):
+            self.label = self.get_category_for_score(self.score)
+        elif not isInteger(self.score) or self.score < 0:
+            self.score = self.__class__.get_score_for_category(self.label)
+        else:
+            # Both score and label given
+            temp_category = self.get_category_for_score(self.score)
+            if temp_category != self.label:
+                self.label = temp_category
+
+    def clean(self):
+        super().clean()
+        self.normalize()
+
+    def save(self, *args, **kwargs):
+        self.normalize()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def create(cls, score=None, label=None):
+        obj = cls(score=score, label=label)
+        obj.full_clean()
+        obj.save()
+        return obj
+        
+
 @pghistory.track()
 class KYCRecord(BaseModel):
     status = models.ForeignKey(
@@ -135,7 +214,7 @@ class KYCRecord(BaseModel):
         null=True,
         blank=True
     )
-    risk_score = models.IntegerField()
+    risk_score = models.ForeignKey(RiskScore, on_delete=models.CASCADE, null=True, blank=True)
     notes = models.TextField(blank=True)
     verified_at = models.DateTimeField(null=True, blank=True)
 

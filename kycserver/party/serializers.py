@@ -1,4 +1,5 @@
-from kyc.models import RelationshipRole
+from django.apps import apps
+
 from rest_framework import serializers
 from django.db import transaction
 
@@ -187,11 +188,14 @@ class PartyRelationshipSerializer(serializers.ModelSerializer):
 
         return data
     
+def get_relationship_role_model():
+    return apps.get_model("kyc", "RelationshipRole")
+    
 class RelationshipInputSerializer(serializers.Serializer):
     direction = serializers.ChoiceField(choices=["in", "out"])
     party = PartyInputField()
     role = serializers.PrimaryKeyRelatedField(
-        queryset=RelationshipRole.objects.all()
+        queryset=get_relationship_role_model().objects.all()
     )
     start_date = serializers.DateField()
     end_date = serializers.DateField(required=False, allow_null=True)
