@@ -40,14 +40,16 @@ class PartyType(models.Model):
                 data[v] = data.get(k, None)
                 del data[k]
         logger.error(f"Transformed data for {data}")
-        serializer = Serializer(data=data)
+        
         #self.__class__.logger.error(f"Prevalidation Data\n: {dictToStr(serializer.data, prefix="\t")}")
         try:
+            serializer = Serializer(data=data)
             serializer.is_valid(raise_exception=True)
+            return serializer.save()
         except Exception as e:
             logger.error(f"Error in Serializer Validation: {e}")
             raise e
-        return serializer.save()
+        
 
     def __str__(self):
         return self.name
