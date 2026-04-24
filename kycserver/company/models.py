@@ -2,10 +2,11 @@ from django.db import models
 
 # Create your models here.
 from kyc.models import ReferenceValue
-from kycserver.globalparams.models import GlobalParameter
+from globalparams.models import GlobalParameter
 import pghistory
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from base.models import BaseModel, ModelSchemaMixin
 
@@ -26,8 +27,8 @@ class Company(ModelSchemaMixin, BaseModel):
 
     is_domestic = models.BooleanField(default=False)
 
-    opening_date = models.DateField()
-    closeing_date = models.DateField(null=True, blank=True)
+    opening_date = models.DateField(default=timezone.now)
+    closing_date = models.DateField(null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
 
