@@ -142,7 +142,9 @@ class RiskScore(BaseModel):
     kyc_record = models.ForeignKey(
         "KYCRecord",
         on_delete=models.CASCADE,
-        related_name="risk_scores"
+        related_name="risk_scores",
+        null=True,
+        blank=True
     )
 
     score = models.IntegerField()
