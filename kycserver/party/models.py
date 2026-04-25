@@ -44,7 +44,8 @@ class PartyType(models.Model):
         #self.__class__.logger.error(f"Prevalidation Data\n: {dictToStr(serializer.data, prefix="\t")}")
         try:
             serializer = Serializer(data=data)
-            serializer.is_valid(raise_exception=True)
+            #serializer.is_valid(raise_exception=True)
+            serializer.is_valid()
             return serializer.save()
         except ValidationError as e:
             logger.error(f"Validation errors: {e.detail}")
