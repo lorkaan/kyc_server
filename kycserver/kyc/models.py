@@ -139,9 +139,18 @@ class RiskScore(BaseModel):
         MEDIUM = 'M', "Medium"
         LOW = 'L', "Low"
 
+    kyc_record = models.ForeignKey(
+        "KYCRecord",
+        on_delete=models.CASCADE,
+        related_name="risk_scores"
+    )
+
     score = models.IntegerField()
 
     label = models.CharField(max_length=1, choices=RiskCategory.choices, default=RiskCategory.HIGH)
+
+    class Meta:
+        ordering = ["-created_at"]
 
     @classmethod
     def get_score_for_category(cls, score_catergory):
@@ -214,11 +223,15 @@ class KYCRecord(BaseModel):
         null=True,
         blank=True
     )
-    risk_score = models.ForeignKey(RiskScore, on_delete=models.CASCADE, null=True, blank=True)
+
     notes = models.TextField(blank=True)
     verified_at = models.DateTimeField(null=True, blank=True)
 
     is_current = models.BooleanField(default=False)
+
+    @property
+    def risk_score(self):
+        return self.risk_scores.order_by("-created_at").first()
 
     class Meta:
         constraints = [

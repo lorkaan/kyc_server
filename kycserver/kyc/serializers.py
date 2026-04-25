@@ -160,6 +160,30 @@ class RiskScoreSerializer(serializers.ModelSerializer):
             for value, label in RiskScore.RiskCategory.choices
         ]
 
+class RiskScoreWriteSerializer(serializers.Serializer):
+    score = serializers.IntegerField(required=False)
+    label = serializers.ChoiceField(
+        choices=RiskScore.RiskCategory.choices,
+        required=False
+    )
+
+    def validate(self, attrs):
+        score = attrs.get("score", None)
+        label = attrs.get("label", None)
+
+        # ❗ reject empty input
+        if score is None and label is None:
+            raise serializers.ValidationError(
+                "Either 'score' or 'label' must be provided."
+            )
+
+        # optional: normalize empty dict cases explicitly
+        if score is not None and score < 0:
+            raise serializers.ValidationError({
+                "score": "Must be >= 0"
+            })
+
+        return attrs
 
 class KYCRecordSerializer(serializers.ModelSerializer):
     status = KYCStatusSerializer(read_only=True)
@@ -173,7 +197,9 @@ class KYCRecordSerializer(serializers.ModelSerializer):
 
     answers = KycAnswerSerializer(many=True, read_only=True)
 
-    risk_score = RiskScoreSerializer()
+    risk_score = RiskScoreSerializer(read_only=True)
+
+    risk_score_input = RiskScoreWriteSerializer(write_only=True, required=False)
 
     class Meta:
         model = KYCRecord
@@ -183,12 +209,47 @@ class KYCRecordSerializer(serializers.ModelSerializer):
             "status",
             "status_id",
             "risk_score",
+            "risk_score_input",
             "notes",
             "verified_at",
             "answers",
             "created_at",
             "updated_at",
         ]
+
+    # -------------------------
+    # CREATE
+    # -------------------------
+    def create(self, validated_data):
+        risk_data = validated_data.pop("risk_score_input", None)
+
+        kyc = KYCRecord.objects.create(**validated_data)
+
+        if risk_data:
+            RiskScore.objects.create(
+                kyc_record=kyc,
+                score=risk_data["score"],
+                label=risk_data.get("label")
+            )
+
+        return kyc
+
+    # -------------------------
+    # UPDATE
+    # -------------------------
+    def update(self, instance, validated_data):
+        risk_data = validated_data.pop("risk_score_input", None)
+
+        instance = super().update(instance, validated_data)
+
+        if risk_data:
+            RiskScore.objects.create(
+                kyc_record=instance,
+                score=risk_data["score"],
+                label=risk_data.get("label")
+            )
+
+        return instance
 
 class KYCRecordPartySerializer(serializers.ModelSerializer):
     status = KYCStatusSerializer(read_only=True)
