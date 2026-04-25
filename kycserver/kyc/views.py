@@ -129,7 +129,7 @@ class KYCRecordViewSet(ModelViewSet):
                 if risk_score != None:
                     risk_label = risk_score.get("label", None)
                     if risk_label != None:
-                        new_risk_score = RiskScore.create(label=risk_label)
+                        new_risk_score = RiskScore.create(kyc_record=record, label=risk_label)
                         new_risk_score.save()
                         record.risk_score = new_risk_score
             record.save()
