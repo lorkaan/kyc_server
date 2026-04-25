@@ -140,7 +140,7 @@ class PartyGraphViewSet(viewsets.ViewSet):
         self.logger.error("Creating Graph Start")
 
         serializer = PartyGraphSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid()
 
         self.logger.error(
             f"Validated Data for Create Graph: {serializer.validated_data}"

@@ -4,7 +4,6 @@ from django.dispatch import receiver
 
 
 from watchdog.models import Signal, SignalSeverity, SignalType
-import logging
 
 from django.apps import apps
 Party = apps.get_model("party", "Party")
