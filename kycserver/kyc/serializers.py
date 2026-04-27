@@ -201,6 +201,14 @@ class KYCRecordSerializer(serializers.ModelSerializer):
 
     risk_score_input = RiskScoreWriteSerializer(write_only=True, required=False)
 
+    risk_categories = serializers.SerializerMethodField()
+
+    def get_risk_categories(self, obj):
+        return [
+            {"value": choice.value, "label": choice.label}
+            for choice in RiskScore.RiskCategory
+        ]
+
     class Meta:
         model = KYCRecord
         fields = [
@@ -210,6 +218,7 @@ class KYCRecordSerializer(serializers.ModelSerializer):
             "status_id",
             "risk_score",
             "risk_score_input",
+            "risk_categories",
             "notes",
             "verified_at",
             "answers",
