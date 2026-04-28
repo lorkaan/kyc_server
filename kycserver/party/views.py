@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from base.views import BaseViewSet
+from kyc.models import KYCRecord
+from kycserver.kyc.serializers import KYCRecordSerializer
 from utils.dict_utils import dictToStr
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -102,6 +104,43 @@ class PartyViewSet(BaseViewSet):
 
         serializer = PartyRelationshipSerializer(relationships, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=["post"])
+    def edit(self, request, pk=None):
+        record = self.get_object()
+        data = request.data.get("party")
+        if data.get('id', None) != None and record.id == data.id:
+            record.name = data.get('name')
+            entity = record.content_object
+            entity_data = request.data.get("entity")
+
+            if entity and entity_data:
+                serializer_class = record.party_type.get_serializer()
+
+                serializer = serializer_class(
+                    entity,
+                    data=entity_data,
+                    partial=True
+                )
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+            record.save()
+            return Response({"update": True})
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=False, methods=["get"])
+    def kyc(self, request, pk=None):
+        party = self.get_object()
+        record = KYCRecord.objects.filter(party=party).order_by("-created_at").first()
+        if record is None:
+            return Response(
+                {"detail": "No KYC record found for this party"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        else:
+            output_serializer = KYCRecordSerializer(record)
+            return Response(output_serializer.data, status=status.HTTP_201_CREATED)
     
 class PartyRelationshipViewSet(BaseViewSet):
     queryset = PartyRelationship.objects.select_related(
