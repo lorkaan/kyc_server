@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from base.views import BaseViewSet
 from kyc.models import KYCRecord
-from kycserver.kyc.serializers import KYCRecordSerializer
+from kyc.serializers import KYCRecordSerializer
 from utils.dict_utils import dictToStr
 from rest_framework import viewsets, status
 from rest_framework.response import Response
