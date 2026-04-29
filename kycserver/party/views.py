@@ -129,7 +129,7 @@ class PartyViewSet(BaseViewSet):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
-    @action(detail=False, methods=["get"])
+    @action(detail=True, methods=["get"])
     def kyc(self, request, pk=None):
         party = self.get_object()
         record = KYCRecord.objects.filter(party=party).order_by("-created_at").first()
