@@ -117,7 +117,7 @@ class KYCRecordViewSet(ModelViewSet):
             "type": "verified_kyc_record"
         })
 
-    @action(detail=False, methods=["post"])
+    @action(detail=True, methods=["post"])
     def edit(self, request, pk=None):
         record = self.get_object()
         data = request.data.get("kyc")
