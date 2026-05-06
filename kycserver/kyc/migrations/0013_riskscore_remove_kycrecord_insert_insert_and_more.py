@@ -52,15 +52,5 @@ class Migration(migrations.Migration):
         pgtrigger.migrations.AddTrigger(
             model_name='kycrecord',
             trigger=pgtrigger.compiler.Trigger(name='update_update', sql=pgtrigger.compiler.UpsertTriggerSql(condition='WHEN (OLD.* IS DISTINCT FROM NEW.*)', func='INSERT INTO "kyc_kycrecordevent" ("created_at", "id", "is_current", "notes", "party_id", "pgh_context_id", "pgh_created_at", "pgh_label", "pgh_obj_id", "risk_score_id", "status_id", "updated_at", "verified_at") VALUES (NEW."created_at", NEW."id", NEW."is_current", NEW."notes", NEW."party_id", _pgh_attach_context(), NOW(), \'update\', NEW."id", NEW."risk_score_id", NEW."status_id", NEW."updated_at", NEW."verified_at"); RETURN NULL;', hash='2d6669ddeb68a582756b27794948cb7f9dc8744c', operation='UPDATE', pgid='pgtrigger_update_update_a4182', table='kyc_kycrecord', when='AFTER')),
-        ),
-        migrations.AlterField(
-            model_name='kycrecord',
-            name='risk_score',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='kyc.riskscore'),
-        ),
-        migrations.AlterField(
-            model_name='kycrecordevent',
-            name='risk_score',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', related_query_name='+', to='kyc.riskscore'),
-        ),
+        )
     ]
