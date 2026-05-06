@@ -77,7 +77,7 @@ else:
         "127.0.0.1",
         "localhost",
     ]
-    
+
     CORS_ALLOWED_ORIGINS = [
         "https://127.0.0.1",
         "https://localhost",
@@ -85,6 +85,7 @@ else:
 
     CSRF_TRUSTED_ORIGINS = [
         "https://nginx.kyc.internal",
+        "https://127.0.0.1"
     ]
 
 SESSION_COOKIE_HTTPONLY = True
