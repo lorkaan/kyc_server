@@ -49,24 +49,43 @@ DEBUG = True
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "localhost",
-    "django"
-]
+
 
 AUTH_USER_MODEL = "users.User"
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
-
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173"
-]
+if TEST_FLAG:
+
+    ALLOWED_HOSTS = [
+        "127.0.0.1",
+        "localhost",
+        "django"
+    ]
+
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:5173",
+    ]
+
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ]
+else:
+
+    ALLOWED_HOSTS = [
+        "127.0.0.1",
+        "localhost",
+    ]
+    
+    CORS_ALLOWED_ORIGINS = [
+        "https://127.0.0.1",
+        "https://localhost",
+    ]
+
+    CSRF_TRUSTED_ORIGINS = [
+        "https://nginx.kyc.internal",
+    ]
 
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
