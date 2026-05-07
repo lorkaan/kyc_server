@@ -91,9 +91,14 @@ else:
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 
-ENCRYPT_SERVICE_URL = "https://flask-encrypt:5000/encrypt_dek"
-DECRYPT_SERVICE_URL = "https://flask-decrypt:5000/decrypt_dek"
-ROTATE_SERVICE_URL = "https://flask-rotate:5000/rotate_deks"
+if TEST_FLAG:
+    ENCRYPT_SERVICE_URL = "https://flask-encrypt:5000/encrypt_dek"
+    DECRYPT_SERVICE_URL = "https://flask-decrypt:5000/decrypt_dek"
+    ROTATE_SERVICE_URL = "https://flask-rotate:5000/rotate_deks"
+else:
+    ENCRYPT_SERVICE_URL = "https://encrypt.kyc.internal:5000/encrypt_dek"
+    DECRYPT_SERVICE_URL = "https://decrypt.kyc.internal:5000/decrypt_dek"
+    ROTATE_SERVICE_URL = "https://rotate.kyc.internal:5000/rotate_deks"
 
 # Application definition
 
