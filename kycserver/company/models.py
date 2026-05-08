@@ -1,7 +1,7 @@
 from django.db import models
 
 # Create your models here.
-from kyc.models import ReferenceValue
+from kyc.models import ReferenceSet, ReferenceValue
 from globalparams.models import GlobalParameter
 import pghistory
 from django.db import models
@@ -41,7 +41,7 @@ class Company(ModelSchemaMixin, BaseModel):
             query = GlobalParameter.objects.get(name=domestic_country_key)
             cur_pk = query.get_value()
             try:
-                ref_val = ReferenceValue.objects.get(pk=cur_pk)
+                ref_val = ReferenceValue.objects.get(reference_set__key="countries", code=cur_pk)
                 return ref_val
             except ReferenceValue.DoesNotExist:
                 return None
