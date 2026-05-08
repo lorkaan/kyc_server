@@ -71,7 +71,7 @@ class PartyType(models.Model):
             return serializer.save()
         except ValidationError as e:
             logger.error(
-                f"Validation errors: {e.detail}"
+                f"Validation errors: {e}"
             )
             raise
         except Exception as e:
