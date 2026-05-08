@@ -1,6 +1,6 @@
 from django.db import models
 
-from base.models import GenericTargetMixin
+from base.models import GenericTargetMixin, NullableGenericTargetMixin
 from datetime import datetime
 import uuid
 
@@ -43,7 +43,7 @@ class DateTimeValue(BaseValue):
     value = models.DateTimeField()
 
 # Create your models here.
-class GlobalParameter(GenericTargetMixin):
+class GlobalParameter(NullableGenericTargetMixin):
 
     class Type(models.TextChoices):
         STRING = "S", "String"
