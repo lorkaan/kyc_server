@@ -67,6 +67,7 @@ class PartySerializer(serializers.ModelSerializer):
             "repr": str(target),
         }
 
+"""
 
 # --- PartyRelationship ---
 
@@ -106,7 +107,7 @@ class PartyCreateSerializer(serializers.ModelSerializer):
 
 class PartyInputField(serializers.Field):
     def to_internal_value(self, data):
-        """
+        '''
         Accepts:
         {
             "type": "new",
@@ -121,7 +122,7 @@ class PartyInputField(serializers.Field):
             "type": "existing",
             "id": "uuid"
         }
-        """
+        '''
         input_type = data.get("type")
 
         if input_type == "existing":
@@ -172,9 +173,9 @@ class PartyRelationshipSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
     def validate(self, data):
-        """
+        '''
         Prevent self-referencing relationships unless explicitly allowed
-        """
+        '''
         if data["party"] == data["target_party"]:
             raise serializers.ValidationError(
                 "A party cannot have a relationship with itself."
@@ -240,3 +241,315 @@ class PartyGraphResponseSerializer(serializers.Serializer):
     party = PartySerializer()
     relationships = PartyRelationshipSerializer(many=True)
     
+
+
+
+"""
+
+# --- PartyRelationship ---
+
+class PartyCreateSerializer(serializers.ModelSerializer):
+
+    party_type = serializers.SlugRelatedField(
+        slug_field="code",
+        queryset=PartyType.objects.all()
+    )
+
+    data = serializers.JSONField(write_only=True)
+
+    class Meta:
+        model = Party
+        fields = ["party_type", "name", "data"]
+
+    def validate_party_type(self, value):
+        if not value.is_active:
+            raise serializers.ValidationError(
+                "PartyType is not active"
+            )
+        return value
+
+    def create(self, validated_data):
+
+        entity_data = validated_data.pop("data")
+        party_type = validated_data["party_type"]
+
+        # create underlying entity
+        entity = party_type.create_entity(entity_data)
+
+        # create party
+        party = Party.objects.create(
+            content_object=entity,
+            **validated_data
+        )
+
+        return party
+
+
+class PartyInputField(serializers.Field):
+
+    def to_internal_value(self, data):
+        """
+        Accepts:
+
+        Existing:
+        {
+            "type": "existing",
+            "id": "uuid"
+        }
+
+        New:
+        {
+            "type": "new",
+            "party_type": "...",
+            "name": "...",
+            "data": {...}
+        }
+        """
+
+        input_type = data.get("type")
+
+        # -----------------------------
+        # EXISTING PARTY
+        # -----------------------------
+
+        if input_type == "existing":
+
+            party_id = data.get("id")
+
+            if not party_id:
+                raise serializers.ValidationError(
+                    "ID is required for existing party"
+                )
+
+            try:
+                return Party.objects.get(pk=party_id)
+
+            except Party.DoesNotExist:
+                raise serializers.ValidationError(
+                    "Party not found"
+                )
+
+        # -----------------------------
+        # NEW PARTY
+        # -----------------------------
+
+        elif input_type == "new":
+
+            payload = data.get("data", data)
+
+            serializer = PartyCreateSerializer(data=payload)
+
+            serializer.is_valid(raise_exception=True)
+
+            # IMPORTANT:
+            # DO NOT SAVE HERE
+            # ONLY RETURN VALIDATED DATA
+
+            return {
+                "_action": "create",
+                "validated_data": serializer.validated_data
+            }
+
+        # -----------------------------
+        # INVALID TYPE
+        # -----------------------------
+
+        raise serializers.ValidationError(
+            "Invalid type. Must be 'new' or 'existing'"
+        )
+
+    def to_representation(self, value):
+        return str(value.pk)
+
+
+class PartyRelationshipSerializer(serializers.ModelSerializer):
+
+    party = PartyInputField()
+
+    target_party = PartyInputField()
+
+    class Meta:
+        model = PartyRelationship
+
+        fields = [
+            "id",
+            "party",
+            "target_party",
+            "role",
+            "start_date",
+            "end_date",
+            "created_at",
+            "updated_at",
+        ]
+
+        read_only_fields = [
+            "id",
+            "created_at",
+            "updated_at"
+        ]
+
+    def validate(self, data):
+
+        party = self.resolve_party(data["party"])
+        target_party = self.resolve_party(data["target_party"])
+
+        if party == target_party:
+            raise serializers.ValidationError(
+                "A party cannot have a relationship with itself."
+            )
+
+        if (
+            data.get("end_date")
+            and data["end_date"] < data["start_date"]
+        ):
+            raise serializers.ValidationError(
+                "end_date cannot be before start_date."
+            )
+
+        return data
+
+    def resolve_party(self, value):
+
+        # already existing Party instance
+        if isinstance(value, Party):
+            return value
+
+        # deferred create payload
+        if (
+            isinstance(value, dict)
+            and value.get("_action") == "create"
+        ):
+
+            serializer = PartyCreateSerializer()
+
+            return serializer.create(
+                value["validated_data"]
+            )
+
+        raise serializers.ValidationError(
+            "Invalid party payload"
+        )
+
+
+def get_relationship_role_model():
+    return apps.get_model("kyc", "RelationshipRole")
+
+
+class RelationshipInputSerializer(serializers.Serializer):
+
+    direction = serializers.ChoiceField(
+        choices=["in", "out"]
+    )
+
+    party = PartyInputField()
+
+    role = serializers.PrimaryKeyRelatedField(
+        queryset=get_relationship_role_model().objects.all()
+    )
+
+    start_date = serializers.DateField()
+
+    end_date = serializers.DateField(
+        required=False,
+        allow_null=True
+    )
+
+
+class PartyGraphSerializer(serializers.Serializer):
+
+    party = PartyInputField()
+
+    relationships = RelationshipInputSerializer(
+        many=True
+    )
+
+    # -----------------------------
+    # Helper
+    # -----------------------------
+
+    def resolve_party(self, value):
+
+        # existing party instance
+        if isinstance(value, Party):
+            return value
+
+        # deferred create payload
+        if (
+            isinstance(value, dict)
+            and value.get("_action") == "create"
+        ):
+
+            serializer = PartyCreateSerializer()
+
+            return serializer.create(
+                value["validated_data"]
+            )
+
+        raise serializers.ValidationError(
+            "Invalid party payload"
+        )
+
+    # -----------------------------
+    # CREATE GRAPH
+    # -----------------------------
+
+    def create(self, validated_data):
+
+        with transaction.atomic():
+
+            # resolve main party
+            main_party = self.resolve_party(
+                validated_data["party"]
+            )
+
+            relationships_data = validated_data.get(
+                "relationships",
+                []
+            )
+
+            created_relationships = []
+
+            for rel in relationships_data:
+
+                # resolve nested party
+                other_party = self.resolve_party(
+                    rel["party"]
+                )
+
+                # determine direction
+                if rel["direction"] == "out":
+
+                    party = main_party
+                    target_party = other_party
+
+                else:
+
+                    party = other_party
+                    target_party = main_party
+
+                # create relationship
+                relationship = PartyRelationship.objects.create(
+                    party=party,
+                    target_party=target_party,
+                    role=rel["role"],
+                    start_date=rel["start_date"],
+                    end_date=rel.get("end_date"),
+                )
+
+                created_relationships.append(
+                    relationship
+                )
+
+            return {
+                "party": main_party,
+                "relationships": created_relationships
+            }
+
+
+class PartyGraphResponseSerializer(serializers.Serializer):
+
+    party = PartySerializer()
+
+    relationships = PartyRelationshipSerializer(
+        many=True
+    )
