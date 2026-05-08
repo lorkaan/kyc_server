@@ -29,34 +29,56 @@ class PartyType(models.Model):
         return Serializer.Meta.model
 
     def create_entity(self, data):
+
         from base.serializers import KeyConversionSerializer
+
         logger = logging.getLogger()
         logger.error(f"Creating entity for {data}")
+
         Serializer = self.get_serializer()
+
         logger.error(f"\tUsing serializer for {Serializer}")
+
+        # ---------------------------------
+        # Key conversion handling
+        # ---------------------------------
+
         if issubclass(Serializer, KeyConversionSerializer):
+
+            # avoid mutating original payload
+            data = data.copy()
             for k, v in Serializer.CONVERSION_KEYS.items():
                 logger.error(f"Checking key: {k}")
-                data[v] = data.get(k, None)
-                del data[k]
+                # preserve existing behavior safely
+                if k in data:
+                    data[v] = data.get(k, None)
+                    del data[k]
         logger.error(f"Transformed data for {data}")
-        
-        #self.__class__.logger.error(f"Prevalidation Data\n: {dictToStr(serializer.data, prefix="\t")}")
+
+        # ---------------------------------
+        # Serializer validation + save
+        # ---------------------------------
+
         try:
             serializer = Serializer(data=data)
-            #serializer.is_valid(raise_exception=True)
-            serializer.is_valid()
+
+            # IMPORTANT FIX:
+            # raise validation errors properly
+            serializer.is_valid(raise_exception=True)
+            logger.error(
+                f"Validated data: {serializer.validated_data}"
+            )
             return serializer.save()
         except ValidationError as e:
-            logger.error(f"Validation errors: {e.detail}")
-            raise e
+            logger.error(
+                f"Validation errors: {e.detail}"
+            )
+            raise
         except Exception as e:
-            logger.error(f"Error in Serializer Validation: {e}")
-            raise e
-        
-
-    def __str__(self):
-        return self.name
+            logger.error(
+                f"Error in Serializer Validation: {e}"
+            )
+            raise
 
     def get_model_fields(self):
         model_cls = self.get_model()
