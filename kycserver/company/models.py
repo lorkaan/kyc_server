@@ -44,8 +44,10 @@ class Company(ModelSchemaMixin, BaseModel):
                 ref_val = ReferenceValue.objects.get(reference_set__key="countries", code=cur_pk)
                 return ref_val
             except ReferenceValue.DoesNotExist:
+                print(f"#### ---- No Reference value: {cur_pk}")
                 return None
         except GlobalParameter.DoesNotExist:
+            print(f"#### ---- No Global Parameter value: {domestic_country_key}")
             return None
     
     def clean(self):
@@ -57,6 +59,8 @@ class Company(ModelSchemaMixin, BaseModel):
                     self.country = domestic_country
                 elif self.country.pk != domestic_country.pk:
                     raise ValidationError(f"{self.country.code} is not the Domestic Country -> ({self.country.pk}, {self.country.code}) != ({domestic_country.pk}, {domestic_country.code})")
+            else:
+                print(f"##### No Domestic {domestic_country}")        
         if not isinstance(self.country, ReferenceValue) or self.country.reference_set.key != "countries":
             raise ValidationError("Country must come from 'countries' reference set")
 
