@@ -19,7 +19,9 @@ class CompanySerializer(KeyConversionSerializer):
             reference_set__key="countries",
             is_active=True
         ),
-        write_only=True
+        write_only=True,
+        required=False,
+        allow_null=True
     )
 
     class Meta:
