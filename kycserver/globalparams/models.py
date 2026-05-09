@@ -1,10 +1,10 @@
 from django.db import models
 
-from base.models import GenericTargetMixin, NullableGenericTargetMixin
+from base.models import BaseModel, NullableGenericTargetMixin
 from datetime import datetime
 import uuid
 
-class BaseValue(models.Model):
+class BaseValue(BaseModel):
 
     parameter = models.OneToOneField(
         "GlobalParameter",
