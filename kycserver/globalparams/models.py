@@ -89,12 +89,17 @@ class GlobalParameter(NullableGenericTargetMixin):
         Custom value objects (with get_value) are evaluated.
         The result is validated against the declared type.
         """
+        import logging
+        logger = logging.getLogger()
+        logger.error(f"### SELF ### -- {self}")
+        logger.error(f"### SELF CONTENT OBJECT ### -- {self.content_object}")
         if not self.content_object:
             return None
         if not isinstance(self.content_object, BaseValue):
             raise TypeError(f"{self.content_object} is not an accepted Value for a parameter")
 
         val = self.content_object.get_value()
+        logger.error(f"### SELF CONTENT VALUE ### -- {self.val}")
 
         # Map single-char codes to Python types
         expected_type = self.TYPE_MAP.get(self.type)
