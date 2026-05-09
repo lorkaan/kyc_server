@@ -41,7 +41,9 @@ class Company(ModelSchemaMixin, BaseModel):
     def get_domestic_country(cls):
         try:
             query = GlobalParameter.objects.get(name=domestic_country_key)
+            logger.error(f"###### -------- {query}")
             cur_pk = query.get_value()
+            logger.error(f"###### -------- Query Value: {cur_pk}")
             try:
                 ref_val = ReferenceValue.objects.get(reference_set__key="countries", code=cur_pk)
                 return ref_val
