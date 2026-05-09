@@ -3,7 +3,7 @@ from django.contrib import admin
 from .forms import GlobalParameterAdminForm
 from .models import GlobalParameter, StringValue
 
-
+'''
 @admin.register(GlobalParameter)
 class GlobalParameterAdmin(admin.ModelAdmin):
     form = GlobalParameterAdminForm
@@ -17,5 +17,7 @@ class GlobalParameterAdmin(admin.ModelAdmin):
             return obj.get_value()
         except Exception:
             return "⚠️ Invalid"
+'''
         
 admin.site.register(StringValue)
+admin.site.register(GlobalParameter)
