@@ -1,10 +1,10 @@
 from django.db import models
 
-from base.models import NullableGenericTargetIntMixin
+from base.models import BaseModel, NullableGenericTargetIntMixin, NullableGenericTargetMixin
 from datetime import datetime
 import uuid
 
-class BaseValue(models.Model):
+class BaseValue(BaseModel):
 
     parameter = models.OneToOneField(
         "GlobalParameter",
@@ -43,7 +43,7 @@ class DateTimeValue(BaseValue):
     value = models.DateTimeField()
 
 # Create your models here.
-class GlobalParameter(NullableGenericTargetIntMixin):
+class GlobalParameter(NullableGenericTargetMixin):
 
     class Type(models.TextChoices):
         STRING = "S", "String"
