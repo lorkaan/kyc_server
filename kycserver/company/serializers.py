@@ -29,6 +29,7 @@ class CompanySerializer(KeyConversionSerializer):
         fields = [
             "id",
             "name",
+            "is_domestic",
             "registration_number",
             "country",     # 👈 read (full object)
             "country_id",  # 👈 write (pk only)
@@ -40,4 +41,5 @@ class CompanySerializer(KeyConversionSerializer):
             "id",
             "created_at",
             "updated_at",
+            "country"
         ]
