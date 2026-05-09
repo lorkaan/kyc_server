@@ -1,112 +1,187 @@
-from django.db import models
-
-from base.models import GenericTargetMixin, NullableGenericTargetMixin
-from datetime import datetime
+import json
 import uuid
+from datetime import datetime
 
-class BaseValue(models.Model):
+import pandas as pd
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from django.utils.dateparse import parse_datetime
 
-    parameter = models.OneToOneField(
-        "GlobalParameter",
-        on_delete=models.CASCADE,
-        related_name="%(class)s",
-        null=True,
-        blank=True,
-    )
+from globalparams.models import (
+    GlobalParameter,
+    StringValue,
+    IntValue,
+    FloatValue,
+    BooleanValue,
+    UUIDValue,
+    DateTimeValue,
+    JsonValue,
+)
 
-    class Meta:
-        abstract = True
 
-    def get_value(self):
-        """Return the raw value or perform preprocessing for custom types"""
-        return self.value
+"""
+Type mappings:
 
-class StringValue(BaseValue):
-    value = models.CharField(max_length=255)
+    S → String
+    I → Integer
+    F → Float
+    B → Boolean
+    U → UUID
+    D → Datetime
+    J → JSON
+"""
 
-class JsonValue(BaseValue):
-    value = models.JSONField()
 
-class IntValue(BaseValue):
-    value = models.IntegerField()
+class Command(BaseCommand):
+    help = "Import GlobalParameters and their values from CSV/XLSX/ODS"
 
-class FloatValue(BaseValue):
-    value = models.FloatField()
+    VALUE_MODEL_MAP = {
+        GlobalParameter.Type.STRING: StringValue,
+        GlobalParameter.Type.INT: IntValue,
+        GlobalParameter.Type.FLOAT: FloatValue,
+        GlobalParameter.Type.BOOLEAN: BooleanValue,
+        GlobalParameter.Type.UUID: UUIDValue,
+        GlobalParameter.Type.DATETIME: DateTimeValue,
+        GlobalParameter.Type.JSON: JsonValue,
+    }
 
-class BooleanValue(BaseValue):
-    value = models.BooleanField()
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "file_path",
+            type=str,
+            help="Path to CSV/XLSX/ODS file"
+        )
 
-class UUIDValue(BaseValue):
-    value = models.UUIDField(default=uuid.uuid4)
+    def load_file(self, file_path):
+        if file_path.endswith(".csv"):
+            return pd.read_csv(file_path)
 
-class DateTimeValue(BaseValue):
-    value = models.DateTimeField()
+        elif file_path.endswith(".xlsx"):
+            return pd.read_excel(file_path)
 
-# Create your models here.
-class GlobalParameter(NullableGenericTargetMixin):
+        elif file_path.endswith(".ods"):
+            return pd.read_excel(file_path, engine="odf")
 
-    class Type(models.TextChoices):
-        STRING = "S", "String"
-        INT = "I", "Integer"
-        FLOAT = "F", "Float"
-        BOOLEAN = "B", "Boolean"
-        UUID = "U", "UUID"
-        DATETIME = "D", "Datetime"
-        JSON = "J", "JSON"
+        else:
+            raise ValueError("Unsupported file format")
 
-    TYPE_MAP = {
-            Type.STRING: str,
-            Type.INT: int,
-            Type.FLOAT: float,
-            Type.BOOLEAN: bool,
-            Type.UUID: uuid.UUID,
-            Type.DATETIME: datetime,
-            Type.JSON: object
-        }
+    def parse_bool(self, value):
+        if isinstance(value, bool):
+            return value
 
-    description = models.TextField(blank=True)
+        if pd.isna(value):
+            return False
 
-    name = models.CharField(max_length=255, unique=True, null=False, blank=False)
+        return str(value).strip().lower() in (
+            "1", "true", "yes", "y", "t"
+        )
 
-    is_active = models.BooleanField(default=True)
-
-    type = models.CharField(
-        max_length=1,
-        choices=Type.choices,
-        default=Type.STRING,
-    )
-
-    def set_target(self, obj):
-        if not isinstance(obj, BaseValue):
-            raise TypeError(f"{obj} is not assignable as a Value for a parameter")
-        obj.parameter = self
-        obj.save()
-        return super().set_target(obj)
-
-    def get_value(self):
+    def parse_value(self, param_type, raw_value):
         """
-        Return the resolved value of the parameter.
-        Custom value objects (with get_value) are evaluated.
-        The result is validated against the declared type.
+        Convert spreadsheet values into typed Python values.
         """
-        import logging
-        logger = logging.getLogger()
-        logger.error(f"### SELF ### -- {self}")
-        logger.error(f"### SELF CONTENT OBJECT ### -- {self.content_object}")
-        if not self.content_object:
+
+        if pd.isna(raw_value):
             return None
-        if not isinstance(self.content_object, BaseValue):
-            raise TypeError(f"{self.content_object} is not an accepted Value for a parameter")
 
-        val = self.content_object.get_value()
-        logger.error(f"### SELF CONTENT VALUE ### -- {self.val}")
+        if param_type == GlobalParameter.Type.STRING:
+            return str(raw_value)
 
-        # Map single-char codes to Python types
-        expected_type = self.TYPE_MAP.get(self.type)
-        if expected_type and not isinstance(val, expected_type):
-            raise TypeError(f"GlobalParameter {self.name} expected {expected_type} but got {type(val)}")
+        elif param_type == GlobalParameter.Type.INT:
+            return int(raw_value)
 
-        return val
+        elif param_type == GlobalParameter.Type.FLOAT:
+            return float(raw_value)
 
-    def __str__(self):
-        return f"{self.name} ({self.get_type_display()})"
+        elif param_type == GlobalParameter.Type.BOOLEAN:
+            return self.parse_bool(raw_value)
+
+        elif param_type == GlobalParameter.Type.UUID:
+            return uuid.UUID(str(raw_value))
+
+        elif param_type == GlobalParameter.Type.DATETIME:
+            if isinstance(raw_value, datetime):
+                return raw_value
+
+            parsed = parse_datetime(str(raw_value))
+            if not parsed:
+                raise ValueError(f"Invalid datetime value: {raw_value}")
+
+            return parsed
+
+        elif param_type == GlobalParameter.Type.JSON:
+            if isinstance(raw_value, dict):
+                return raw_value
+
+            return json.loads(raw_value)
+
+        raise ValueError(f"Unsupported parameter type: {param_type}")
+
+    @transaction.atomic
+    def handle(self, *args, **options):
+        file_path = options["file_path"]
+        df = self.load_file(file_path)
+
+        imported = 0
+
+        for index, row in df.iterrows():
+            try:
+                param_type = row["type"]
+
+                if param_type not in self.VALUE_MODEL_MAP:
+                    raise ValueError(f"Unsupported type '{param_type}'")
+
+                value_model = self.VALUE_MODEL_MAP[param_type]
+
+                parsed_value = self.parse_value(
+                    param_type,
+                    row["value"]
+                )
+
+                parameter, _ = GlobalParameter.objects.update_or_create(
+                    name=row["name"],
+                    defaults={
+                        "description": row.get("description", ""),
+                        "type": param_type,
+                        "is_active": self.parse_bool(
+                            row.get("is_active", True)
+                        ),
+                    }
+                )
+
+                # --- HANDLE VALUE OBJECT CLEANLY ---
+
+                existing_obj = parameter.content_object
+
+                # If type changed → delete old object and clear relation
+                if existing_obj and not isinstance(existing_obj, value_model):
+                    existing_obj.delete()
+                    parameter.set_target(None)
+                    existing_obj = None
+
+                # If correct type already exists → update it
+                if existing_obj and isinstance(existing_obj, value_model):
+                    existing_obj.value = parsed_value
+                    existing_obj.save()
+                    value_obj = existing_obj
+
+                else:
+                    # Create new value object
+                    value_obj = value_model.objects.create(
+                        value=parsed_value
+                    )
+
+                # Link via Generic FK (single source of truth)
+                parameter.set_target(value_obj)
+
+                imported += 1
+
+            except Exception as e:
+                self.stderr.write(f"Row {index} failed: {e}")
+                raise
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Imported {imported} global parameters"
+            )
+        )
