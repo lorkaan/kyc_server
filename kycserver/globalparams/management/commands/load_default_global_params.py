@@ -1,5 +1,4 @@
 import json
-import os
 import uuid
 from datetime import datetime
 
@@ -19,6 +18,7 @@ from globalparams.models import (
     JsonValue,
 )
 
+
 """
 Type mappings:
 
@@ -30,6 +30,8 @@ Type mappings:
     D → Datetime
     J → JSON
 """
+
+
 class Command(BaseCommand):
     help = "Import GlobalParameters and their values from CSV/XLSX/ODS"
 
@@ -71,16 +73,12 @@ class Command(BaseCommand):
             return False
 
         return str(value).strip().lower() in (
-            "1",
-            "true",
-            "yes",
-            "y",
-            "t"
+            "1", "true", "yes", "y", "t"
         )
 
     def parse_value(self, param_type, raw_value):
         """
-        Convert spreadsheet string values into typed Python values.
+        Convert spreadsheet values into typed Python values.
         """
 
         if pd.isna(raw_value):
@@ -106,11 +104,8 @@ class Command(BaseCommand):
                 return raw_value
 
             parsed = parse_datetime(str(raw_value))
-
             if not parsed:
-                raise ValueError(
-                    f"Invalid datetime value: {raw_value}"
-                )
+                raise ValueError(f"Invalid datetime value: {raw_value}")
 
             return parsed
 
@@ -125,7 +120,6 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
         file_path = options["file_path"]
-
         df = self.load_file(file_path)
 
         imported = 0
@@ -135,9 +129,7 @@ class Command(BaseCommand):
                 param_type = row["type"]
 
                 if param_type not in self.VALUE_MODEL_MAP:
-                    raise ValueError(
-                        f"Unsupported type '{param_type}'"
-                    )
+                    raise ValueError(f"Unsupported type '{param_type}'")
 
                 value_model = self.VALUE_MODEL_MAP[param_type]
 
@@ -157,28 +149,35 @@ class Command(BaseCommand):
                     }
                 )
 
-                # Remove old value object if type changed
-                if parameter.content_object:
-                    existing_obj = parameter.content_object
+                # --- HANDLE VALUE OBJECT CLEANLY ---
 
-                    if not isinstance(existing_obj, value_model):
-                        existing_obj.delete()
+                existing_obj = parameter.content_object
 
-                value_obj, _ = value_model.objects.update_or_create(
-                    parameter=parameter,
-                    defaults={
-                        "value": parsed_value
-                    }
-                )
+                # If type changed → delete old object and clear relation
+                if existing_obj and not isinstance(existing_obj, value_model):
+                    existing_obj.delete()
+                    parameter.set_target(None)
+                    existing_obj = None
 
+                # If correct type already exists → update it
+                if existing_obj and isinstance(existing_obj, value_model):
+                    existing_obj.value = parsed_value
+                    existing_obj.save()
+                    value_obj = existing_obj
+
+                else:
+                    # Create new value object
+                    value_obj = value_model.objects.create(
+                        value=parsed_value
+                    )
+
+                # Link via Generic FK (single source of truth)
                 parameter.set_target(value_obj)
 
                 imported += 1
 
             except Exception as e:
-                self.stderr.write(
-                    f"Row {index} failed: {e}"
-                )
+                self.stderr.write(f"Row {index} failed: {e}")
                 raise
 
         self.stdout.write(
