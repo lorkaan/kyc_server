@@ -99,7 +99,7 @@ class GlobalParameter(NullableGenericTargetMixin):
             raise TypeError(f"{self.content_object} is not an accepted Value for a parameter")
 
         val = self.content_object.get_value()
-        logger.error(f"### SELF CONTENT VALUE ### -- {self.val}")
+        logger.error(f"### SELF CONTENT VALUE ### -- {val}")
 
         # Map single-char codes to Python types
         expected_type = self.TYPE_MAP.get(self.type)
