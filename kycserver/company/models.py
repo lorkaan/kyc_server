@@ -9,6 +9,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from base.models import BaseModel, ModelSchemaMixin
+import logging
+logger = logging.getLogger(__name__)
 
 domestic_country_key = "Domestic"
 
@@ -44,25 +46,25 @@ class Company(ModelSchemaMixin, BaseModel):
                 ref_val = ReferenceValue.objects.get(reference_set__key="countries", code=cur_pk)
                 return ref_val
             except ReferenceValue.DoesNotExist:
-                print(f"#### ---- No Reference value: {cur_pk}")
+                logger.error(f"#### ---- No Reference value: {cur_pk}")
                 return None
         except GlobalParameter.DoesNotExist:
-            print(f"#### ---- No Global Parameter value: {domestic_country_key}")
+            logger.error(f"#### ---- No Global Parameter value: {domestic_country_key}")
             return None
     
     def clean(self):
         if self.is_domestic:
             domestic_country = self.__class__.get_domestic_country()
             if isinstance(domestic_country, ReferenceValue) and domestic_country.reference_set.key == "countries":
-                print(f"----- Domestic {domestic_country}")
+                logger.error(f"----- Domestic {domestic_country}")
                 if self.country == None:
                     # Set the domestic country
                     self.country = domestic_country
                 elif self.country.pk != domestic_country.pk:
                     raise ValidationError(f"{self.country.code} is not the Domestic Country -> ({self.country.pk}, {self.country.code}) != ({domestic_country.pk}, {domestic_country.code})")
             else:
-                print(f"##### No Domestic {domestic_country}")
-        print(f"--- Is Domestic Flag {self.is_domestic}")
+                logger.error(f"##### No Domestic {domestic_country}")
+        logger.error(f"--- Is Domestic Flag {self.is_domestic}")
         if not isinstance(self.country, ReferenceValue) or self.country.reference_set.key != "countries":
             raise ValidationError("Country must come from 'countries' reference set")
 
