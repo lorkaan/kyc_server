@@ -330,8 +330,8 @@ class ReferenceValue(models.Model):
 @pghistory.track()
 class KycQuestion(models.Model):
 
-    key = models.SlugField(unique=True)
-    label = models.CharField(max_length=255)
+    key = models.SlugField(unique=True, max_length=255)
+    label = models.CharField(max_length=500)
 
     party_type = models.ForeignKey(
         PartyType,
