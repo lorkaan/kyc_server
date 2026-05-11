@@ -11,3 +11,4 @@ class AnswerTypeEnum(models.TextChoices):
         RANGE  = "R", "date_range"
         PHONE  = "P", "phone_number"
         EMAIL  = "E", "email_address"
+        FILE = "F", "file"
