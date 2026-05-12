@@ -122,9 +122,8 @@ class KYCRecordViewSet(ModelViewSet):
         logger = logging.getLogger()
         record = self.get_object()
         data = request.data.get("kyc")
-        logger.error(f"### ____ RECORD ___ {type(record)} -> {record}")
-        logger.error(f"### ____ DATA ID ___ {type(data.get('id', None))} -> {data}")
-        if data.get('id', None) != None and record.id == data.id:
+        data_id = data.get('id', None)
+        if data_id != None and record.id == data_id:
 
             record.notes = data.get("notes", "")
             if record.risk_score == None:
