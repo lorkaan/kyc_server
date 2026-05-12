@@ -22,22 +22,6 @@
         "is_system": true
     },
     {
-        "name": "all_current_kyc_records",
-        "description": "Gets all the KYC Records that are current",
-        "query": {
-            "model": "kyc.KYCRecord",
-            "params": {},
-            "query": {
-                "where": {
-                    "field": "is_current",
-                    "op": "eq",
-                    "value": true
-                }
-            }
-        },
-        "is_system": true
-    },
-    {
         "name": "Current KYC by Nickname",
         "description": "Find a current KYC based on the Party",
         "is_system": true,
