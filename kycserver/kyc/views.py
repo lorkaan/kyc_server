@@ -123,7 +123,8 @@ class KYCRecordViewSet(ModelViewSet):
         record = self.get_object()
         data = request.data.get("kyc")
         data_id = data.get('id', None)
-        if data_id != None and record.id == data_id:
+        record_id_str = str(record.id)
+        if data_id != None and record_id_str == data_id:
             record.notes = data.get("notes", "")
             if record.risk_score == None:
                 risk_score = data.get("risk_score", None)
@@ -136,7 +137,7 @@ class KYCRecordViewSet(ModelViewSet):
             record.save()
             return Response({"update": True})
         else:
-            return Response({'msg': "Data Id was None or Record ID did not equal the Data ID", 'record_id': f"{type(record.id)} -> {record.id}", 'data_id': f"{type(data_id)} -> {data_id}"},status=status.HTTP_400_BAD_REQUEST)
+            return Response({'msg': "Data Id was None or Record ID did not equal the Data ID", 'record_id': f"{type(record_id_str)} -> {record_id_str}", 'data_id': f"{type(data_id)} -> {data_id}"},status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["get"])
     def history(self, request, pk=None):
