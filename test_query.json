@@ -77,5 +77,46 @@
                 }
             ]
         }
+    },
+    {
+        "name": "current_kyc_by_company_id",
+        "description": "Get the current KYC by Company",
+        "is_system": true,
+        "query": {
+            "model": "kyc.KYCRecord",
+            "params": {
+                "person_id": { "type": "uuid", "required": false }
+            },
+            "query": {
+                "where": {
+                    "and": [
+                        {
+                            "field": "party__id",
+                            "op": "eq",
+                            "value": { "$param": "person_id" }
+                        },
+                        {
+                            "field": "party__party_type__code",
+                            "op": "eq",
+                            "value": "company"
+                        }
+                    ]
+                }
+            },
+            "fields": [
+                {
+                    "path": "party__name",
+                    "name": "NickName"
+                },
+                {
+                    "path": "created_at",
+                    "name": "Created"
+                },
+                {
+                    "path": "updated_at",
+                    "name": "Updated"
+                }
+            ]
+        }
     }
 ]
