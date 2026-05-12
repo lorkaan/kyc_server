@@ -38,6 +38,47 @@
         "is_system": true
     },
     {
+        "name": "Current KYC by Nickname",
+        "description": "Find a current KYC based on the Party",
+        "is_system": true,
+        "query": {
+            "model": "kyc.KYCRecord",
+            "params": {
+                "nickname": { "type": "string", "required": false }
+            },
+            "query": {
+                "where": {
+                    "and": [
+                        {
+                            "field": "party__name",
+                            "op": "contains",
+                            "value": { "$param": "nickname" }
+                        },
+                        {
+                            "field": "party__party_type__code",
+                            "op": "eq",
+                            "value": "person"
+                        }
+                    ]
+                }
+            },
+            "fields": [
+                    {
+                        "path": "party__name",
+                        "name": "NickName"
+                    },
+                    {
+                        "path": "created_at",
+                        "name": "Created"
+                    },
+                    {
+                        "path": "updated_at",
+                        "name": "Updated"
+                    }
+                ]
+        }
+    },
+    {
         "name": "current_kyc_by_person_id",
         "description": "Get the current KYC by Person",
         "is_system": true,
@@ -85,7 +126,7 @@
         "query": {
             "model": "kyc.KYCRecord",
             "params": {
-                "person_id": { "type": "uuid", "required": false }
+                "company_id": { "type": "uuid", "required": false }
             },
             "query": {
                 "where": {
