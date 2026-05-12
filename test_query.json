@@ -22,6 +22,53 @@
         "is_system": true
     },
     {
+        "name": "Unverified KYC Records",
+        "description": "Find a current KYC based on the Party",
+        "is_system": true,
+        "query": {
+            "model": "kyc.KYCRecord",
+            "params": {
+                "created_start_date": { "type": "datetime", "required": false },
+                "created_end_date": { "type": "datetime", "required": false }
+            },
+            "query": {
+                "where": {
+                    "and": [
+                        {
+                            "field": "created_at",
+                            "op": "gte",
+                            "value": { "$param": "created_start_date" }
+                        },
+                        {
+                            "field": "created_at",
+                            "op": "lte",
+                            "value": { "$param": "created_end_date" }
+                        },
+                        {
+                            "field": "verified_at",
+                            "op": "isnull",
+                            "value": null
+                        }
+                    ]
+                }
+            },
+            "fields": [
+                    {
+                        "path": "party__name",
+                        "name": "NickName"
+                    },
+                    {
+                        "path": "created_at",
+                        "name": "Created"
+                    },
+                    {
+                        "path": "updated_at",
+                        "name": "Updated"
+                    }
+                ]
+        }
+    },
+    {
         "name": "Current KYC by Nickname",
         "description": "Find a current KYC based on the Party",
         "is_system": true,
