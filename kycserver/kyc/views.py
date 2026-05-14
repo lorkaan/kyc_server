@@ -127,7 +127,7 @@ class KYCRecordViewSet(ModelViewSet):
         if data_id != None and record_id_str == data_id:
             logger.error(f"ID Check good: {data_id}")
             record.notes = data.get("notes", "")
-            risk_score = data.get("risk_score", None)
+            risk_score = data.get("risk_score_input", None)
             logger.error(f"Risk Score from data: {risk_score}")
             if risk_score != None:
                 risk_label = risk_score.get("label", None)
