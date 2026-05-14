@@ -207,7 +207,18 @@ class RiskScore(BaseModel):
 
     @classmethod
     def create(cls, kyc_record=None, score=None, label=None):
-        obj = cls(kyc_record=kyc_record, score=score, label=label)
+        if label is not None and not isinstance(label, cls.RiskCategory):
+            try:
+                label = cls.RiskCategory(label)  # 🔥 converts "M" → RiskCategory.MEDIUM
+            except ValueError:
+                raise ValidationError(f"Invalid label: {label}")
+
+        obj = cls(
+            kyc_record=kyc_record,
+            score=score,
+            label=label
+        )
+
         obj.full_clean()
         obj.save()
         return obj
