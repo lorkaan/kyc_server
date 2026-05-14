@@ -206,8 +206,8 @@ class RiskScore(BaseModel):
         super().save(*args, **kwargs)
 
     @classmethod
-    def create(cls, score=None, label=None):
-        obj = cls(score=score, label=label)
+    def create(cls, kyc_record=None, score=None, label=None):
+        obj = cls(kyc_record, score=score, label=label)
         obj.full_clean()
         obj.save()
         return obj
