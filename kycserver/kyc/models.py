@@ -204,6 +204,10 @@ class RiskScore(BaseModel):
             temp_category = self.get_category_for_score(self.score)
             if temp_category != self.label:
                 self.label = temp_category
+        import logging
+        logger = logging.getLogger()
+        logger.error(f"FINAL SCORE: {self.score}")
+        logger.error(f"FINAL LABEL: {self.label}")
 
     def clean(self):
         super().clean()
