@@ -157,8 +157,11 @@ class RiskScore(BaseModel):
     @classmethod
     def get_score_for_category(cls, score_catergory):
         from globalparams.models import GlobalParameter
+        import logging
+        logger = logging.getLogger()
+        logger.error(f"Score Category: {score_catergory} -> {type(score_catergory)}")
         if isinstance(score_catergory, cls.RiskCategory):
-            default_score = _default_risk_score.get(score_catergory, 10)
+            default_score = _default_risk_score.get(score_catergory.value, 10)
             global_param_key = f"{_risk_score_global_param_prefix}{score_catergory.label.lower()}"
             try:
                 global_param = GlobalParameter.objects.get(name=global_param_key)
