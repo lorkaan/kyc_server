@@ -210,12 +210,16 @@ class RiskScore(BaseModel):
         logger.error(f"FINAL LABEL: {self.label}")
 
     def clean(self):
-        super().clean()
         self.normalize()
+        super().clean()
 
     def save(self, *args, **kwargs):
         self.normalize()
         super().save(*args, **kwargs)
+
+    def full_clean(self, *args, **kwargs):
+        self.normalize()
+        return super().full_clean(*args, **kwargs)
 
     @classmethod
     def create(cls, kyc_record=None, score=None, label=None):
