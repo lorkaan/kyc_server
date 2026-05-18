@@ -161,7 +161,9 @@ class RiskScore(BaseModel):
         logger = logging.getLogger()
         logger.error(f"Score Category: {score_catergory} -> {type(score_catergory)}")
         if isinstance(score_catergory, cls.RiskCategory):
+            logger.error(f"Score Category Value: {score_catergory.value} -> {type(score_catergory) == cls.RiskCategory}")
             default_score = _default_risk_score.get(score_catergory.value, 10)
+            logger.error(f"Default Score: {default_score} -> {type(default_score)}")
             global_param_key = f"{_risk_score_global_param_prefix}{score_catergory.label.lower()}"
             try:
                 global_param = GlobalParameter.objects.get(name=global_param_key)
@@ -171,6 +173,9 @@ class RiskScore(BaseModel):
                 else:
                     return default_score
             except GlobalParameter.DoesNotExist:
+                return default_score
+            except Exception as e:
+                logger.error(e)
                 return default_score
         else:
             raise TypeError(f"Expected a RiskCategory, but got: {type(score_catergory)} --> {score_catergory}")
