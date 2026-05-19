@@ -157,13 +157,8 @@ class RiskScore(BaseModel):
     @classmethod
     def get_score_for_category(cls, score_catergory):
         from globalparams.models import GlobalParameter
-        import logging
-        logger = logging.getLogger()
-        logger.error(f"Score Category: {score_catergory} -> {type(score_catergory)}")
         if isinstance(score_catergory, cls.RiskCategory):
-            logger.error(f"Score Category Value: {score_catergory.value} -> {type(score_catergory) == cls.RiskCategory}")
             default_score = _default_risk_score.get(score_catergory.value, 10)
-            logger.error(f"Default Score: {default_score} -> {type(default_score)}")
             global_param_key = f"{_risk_score_global_param_prefix}{score_catergory.label.lower()}"
             try:
                 global_param = GlobalParameter.objects.get(name=global_param_key)
@@ -175,6 +170,8 @@ class RiskScore(BaseModel):
             except GlobalParameter.DoesNotExist:
                 return default_score
             except Exception as e:
+                import logging
+                logger = logging.getLogger()
                 logger.error(e)
                 return default_score
         else:
@@ -339,21 +336,26 @@ class KYCRecord(BaseModel):
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
-            is_new = self.pk is None
-            if is_new:
-                has_current = KYCRecord.objects.filter(
-                    party=self.party, is_current=True
-                ).exists()
-                if not has_current and self.is_current is False:
-                    self.is_current = True
-
-            self.full_clean()
             super().save(*args, **kwargs)
 
-            if self.is_current:
-                KYCRecord.objects.filter(
-                    party=self.party, is_current=True
-                ).exclude(pk=self.pk).update(is_current=False)
+            # Only recalculate if this record has a verified_at OR affects ordering
+            if self.verified_at is not None:
+                latest_verified = (
+                    KYCRecord.objects
+                    .filter(party=self.party, verified_at__isnull=False)
+                    .order_by("-verified_at")
+                    .first()
+                )
+
+                if latest_verified:
+                    # Set correct current
+                    KYCRecord.objects.filter(
+                        party=self.party
+                    ).exclude(pk=latest_verified.pk).update(is_current=False)
+
+                    if not latest_verified.is_current:
+                        latest_verified.is_current = True
+                        super(KYCRecord, latest_verified).save(update_fields=["is_current"])
 
 @pghistory.track()
 class KycQuestionGroup(models.Model):
