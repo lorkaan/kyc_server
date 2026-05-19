@@ -261,7 +261,7 @@ class KYCRecord(BaseModel):
 
     notes = models.TextField(blank=True)
     verified_at = models.DateTimeField(null=True, blank=True)
-    verified_by = models.ForeignKey(User, null=True, blank=True)
+    verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
     is_current = models.BooleanField(default=False)
 
@@ -275,13 +275,25 @@ class KYCRecord(BaseModel):
     def risk_score(self):
         return self.risk_scores.order_by("-created_at").first()
     
-    def verify(self, user=None):
-        if user == None:
-            # System Verification
-            pass
-        elif isinstance(user, User):
-            # Manual Verification
-            pass
+    def verify_manual(self, user):
+        if not isinstance(user, User):
+            raise ValidationError("Manual verification requires a valid user")
+
+        self.verification_type = self.VerificationType.MANUAL
+        self.verified_by = user
+        self.verified_at = timezone.now()
+
+        self.full_clean()
+        self.save()
+
+
+    def verify_system(self):
+        self.verification_type = self.VerificationType.SYSTEM
+        self.verified_by = None
+        self.verified_at = timezone.now()
+
+        self.full_clean()
+        self.save()
 
     class Meta:
         constraints = [
