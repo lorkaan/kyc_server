@@ -253,10 +253,6 @@ class QueryAstHandler(DslEvaluator):
         op = spec["op"]
         value = spec.get("value")
 
-        # If value is None (optional param not provided), skip this predicate
-        if value is None:
-            return None
-
         if op not in cls.OPS:
             raise ValueError(f"Unsupported operator: {op}")
         
