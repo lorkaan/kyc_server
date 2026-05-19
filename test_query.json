@@ -47,7 +47,12 @@
                         {
                             "field": "verified_at",
                             "op": "isnull",
-                            "value": null
+                            "value": true
+                        },
+                        {
+                            "field": "status__code",
+                            "op": "neq",
+                            "value": "rejected"
                         }
                     ]
                 }

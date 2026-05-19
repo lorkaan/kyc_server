@@ -129,6 +129,8 @@ class Party(GenericTargetMixin, BaseModel):
             )
 
     def save(self, *args, **kwargs):
+        if self.name == "":
+            self.name = None
         self.full_clean()  # enforce validation before saving
         super().save(*args, **kwargs)
     

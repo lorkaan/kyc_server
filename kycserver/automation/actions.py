@@ -17,7 +17,7 @@ manual_verify_signal_name = "manual_verify_required_kyc_record"
 
 new_risk_score_signal_name = "new_risk_score_created"
 global_risk_score_threshold_key = "risk_score_threshold"
-_default_global_risk_score_threshold_value = 7
+_default_global_risk_score_threshold_value = 5
 
 
 
