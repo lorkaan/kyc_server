@@ -1,6 +1,6 @@
 
 import logging
-from kyc.models import KYCRecord, KYCStatus
+from kyc.models import KYCRecord, KYCStatus, RiskScore
 from globalparams.actions import getGlobalParamByName
 from utils.type_utils import isNumber, isString
 from watchdog.generate_signals import create_signal
@@ -13,6 +13,11 @@ logger = logging.getLogger(__name__)
 verify_signal_name = "verify_kyc_record"
 verified_signal_name = "verified_kyc_record"
 manual_verify_signal_name = "manual_verify_required_kyc_record"
+
+new_risk_score_signal_name = "new_risk_score_created"
+global_risk_score_threshold_key = "risk_score_threshold"
+_default_global_risk_score_threshold_value = 7
+
 
 
 def getSignal(signal_id):
@@ -82,6 +87,53 @@ def kyc_submitted(results, config, context):
             except KYCStatus.DoesNotExist as e:
                 logger.error(f"Can not get status pending for signal: {signal_obj.pk}")
             return
+        else:
+            return
+    else:
+        return
+    
+def check_risk_score(risk_score_value):
+    if isNumber(risk_score_value, lambda x: x > 0):
+        from globalparams.models import GlobalParameter
+        try:
+            global_param = GlobalParameter.objects.get(name=global_risk_score_threshold_key)
+            global_val = global_param.get_value()
+            if isNumber(global_val) and global_val >= 0:
+                return global_val > risk_score_value
+            else:
+                return _default_global_risk_score_threshold_value > risk_score_value
+        except GlobalParameter.DoesNotExist as e:
+            import logging
+            logger = logging.getLogger()
+            logger.error(e)
+            return _default_global_risk_score_threshold_value > risk_score_value
+    else:
+        return False
+    
+@ActionRunner.register("risk_score_update")
+def risk_score_updated_for_record(results, config, context):
+    signal_obj = getSignal(context.get("signal_id", None))
+    if signal_obj != None:
+        target = signal_obj.content_object
+        if isinstance(target, RiskScore):
+            record = target.kyc_record
+            auto_check = check_risk_score(target.score)
+            if auto_check:
+                try:
+                    kyc_status = KYCStatus.objects.get(code="approved")
+                    record.status = kyc_status
+                    record.verify_system()
+                except KYCStatus.DoesNotExist as e:
+                    logger.error(f"Can not get status pending for signal: {signal_obj.pk}")
+                return
+            else:
+                try:
+                    kyc_status = KYCStatus.objects.get(code="under_review")
+                    record.status = kyc_status
+                    record.save()
+                except KYCStatus.DoesNotExist as e:
+                    logger.error(f"Can not get status pending for signal: {signal_obj.pk}")
+                return
         else:
             return
     else:

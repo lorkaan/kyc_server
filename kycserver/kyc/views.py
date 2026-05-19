@@ -119,21 +119,18 @@ class KYCRecordViewSet(ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def edit(self, request, pk=None):
-        logger = logging.getLogger()
         record = self.get_object()
         data = request.data.get("kyc")
         data_id = data.get('id', None)
         record_id_str = str(record.id)
         if data_id != None and record_id_str == data_id:
-            logger.error(f"ID Check good: {data_id}")
             record.notes = data.get("notes", "")
             risk_score = data.get("risk_score_input", None)
-            logger.error(f"Risk Score from data: {risk_score}")
             if risk_score != None:
                 risk_label = risk_score.get("label", None)
                 if risk_label != None:
                     new_risk_score = RiskScore.create(kyc_record=record, label=risk_label)
-                    record.risk_score = new_risk_score
+                    create_signal(new_risk_score, "new_risk_score_created")
             record.save()
             return Response({"update": True})
         else:
@@ -722,7 +719,7 @@ def kyc_review_stream(request):
         def event_stream():
             # 1️⃣ Send existing KYCRecords
             existing = KYCRecord.objects.filter(
-                status__code__in=["pending", "in_progress", "requires_update", "under_review"]
+                status__code__in=["under_review"]
             )
             
             for record in existing:

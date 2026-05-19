@@ -242,6 +242,12 @@ class RiskScore(BaseModel):
 
 @pghistory.track()
 class KYCRecord(BaseModel):
+
+    class VerificationType(models.TextChoices):
+        MANUAL = 'M', "Manual"
+        SYSTEM = 'S', "System"
+        NOT_SET = "N", "Not Set"
+
     status = models.ForeignKey(
         "KYCStatus",
         on_delete=models.PROTECT,
@@ -255,12 +261,27 @@ class KYCRecord(BaseModel):
 
     notes = models.TextField(blank=True)
     verified_at = models.DateTimeField(null=True, blank=True)
+    verified_by = models.ForeignKey(User, null=True, blank=True)
 
     is_current = models.BooleanField(default=False)
+
+    verification_type = models.CharField(
+        max_length=1,
+        choices=VerificationType.choices,
+        default=VerificationType.NOT_SET
+    )
 
     @property
     def risk_score(self):
         return self.risk_scores.order_by("-created_at").first()
+    
+    def verify(self, user=None):
+        if user == None:
+            # System Verification
+            pass
+        elif isinstance(user, User):
+            # Manual Verification
+            pass
 
     class Meta:
         constraints = [
@@ -283,6 +304,26 @@ class KYCRecord(BaseModel):
                 "A current KYC record already exists for this party. "
                 "You must explicitly set is_current=True to replace it."
             )
+        
+        vt = self.verification_type
+
+        if vt == self.VerificationType.NOT_SET:
+            if self.verified_at is not None or self.verified_by is not None:
+                raise ValidationError(
+                    "NOT_SET verification must not have verified_at or verified_by."
+                )
+
+        elif vt == self.VerificationType.MANUAL:
+            if self.verified_at is None:
+                raise ValidationError("Manual verification requires verified_at.")
+            if self.verified_by is None:
+                raise ValidationError("Manual verification requires verified_by.")
+
+        elif vt == self.VerificationType.SYSTEM:
+            if self.verified_at is None:
+                raise ValidationError("System verification requires verified_at.")
+            if self.verified_by is not None:
+                raise ValidationError("System verification must not have verified_by.")
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
