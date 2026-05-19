@@ -2,7 +2,7 @@
 import logging
 from kyc.models import KYCRecord, KYCStatus, RiskScore
 from globalparams.actions import getGlobalParamByName
-from kycserver.users.models import User
+from users.models import User
 from utils.type_utils import isNumber, isString
 from watchdog.generate_signals import create_signal
 from watchdog.models import Alert, AlertReason, AlertSeverity, AlertStatus, Signal, SignalType
