@@ -105,7 +105,7 @@ class PartyViewSet(BaseViewSet):
         serializer = PartyRelationshipSerializer(relationships, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=["post"])
+    @action(detail=True, methods=["post"])
     def edit(self, request, pk=None):
         record = self.get_object()
         data = request.data.get("party")

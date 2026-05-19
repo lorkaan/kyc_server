@@ -2,6 +2,7 @@
 import logging
 from kyc.models import KYCRecord, KYCStatus, RiskScore
 from globalparams.actions import getGlobalParamByName
+from kycserver.users.models import User
 from utils.type_utils import isNumber, isString
 from watchdog.generate_signals import create_signal
 from watchdog.models import Alert, AlertReason, AlertSeverity, AlertStatus, Signal, SignalType
@@ -87,6 +88,50 @@ def kyc_submitted(results, config, context):
             except KYCStatus.DoesNotExist as e:
                 logger.error(f"Can not get status pending for signal: {signal_obj.pk}")
             return
+        else:
+            return
+    else:
+        return
+    
+@ActionRunner.register("decline_verification_kyc")
+def decline_verification_kyc(results, config, context):
+    signal_obj = getSignal(context.get("signal_id", None))
+    if signal_obj != None:
+        target = signal_obj.content_object
+        if isinstance(target, KYCRecord):
+            try:
+                kyc_status = KYCStatus.objects.get(code="rejected")
+                target.status = kyc_status
+                target.save()
+            except KYCStatus.DoesNotExist as e:
+                logger.error(f"Can not get status rejected for signal: {signal_obj.pk}")
+            return
+        else:
+            return
+    else:
+        return
+
+@ActionRunner.register("manual_verify_kyc")
+def manually_verify_record(results, config, context):
+    signal_obj = getSignal(context.get("signal_id", None))
+    if signal_obj != None:
+        target = signal_obj.content_object
+        if isinstance(target, KYCRecord):
+            user_id = signal_obj.metadata.get("user_id", None)
+            if user_id != None:
+                try:
+                    user = User.objects.get(pk=user_id)
+                    try:
+                        kyc_status = KYCStatus.objects.get(code="approved")
+                        target.status = kyc_status
+                        target.verify_manual(user)
+                    except KYCStatus.DoesNotExist as e:
+                        logger.error(f"Can not get status pending for signal: {signal_obj.pk}")
+                except User.DoesNotExist as e:
+                    logger.error(f"Can not find user for id: {user_id}")
+                return
+            else:
+                return
         else:
             return
     else:
