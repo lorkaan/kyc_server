@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from utils.queryAstHandler import AnnotatedQueryAstHandler, QueryAstHandler
 
 from .models import SavedQuery, SavedQueryPermission
-from .serializers import SavedQuerySerializer, SavedQueryPermissionSerializer
+from .serializers import DynamicResultSerializer, SavedQuerySerializer, SavedQueryPermissionSerializer
 from utils.type_utils import isList
 import csv
 from django.http import HttpResponse
@@ -124,10 +124,26 @@ class SavedQueryViewSet(ModelViewSet):
             "filters": data.get("filters")    # additional ad-hoc filtering
         }
         query_results = AnnotatedQueryAstHandler.run(query.to_ast_payload(), params, annotateFlag = not query_result_return)
-        if not query_result_return:
-            return list(self.__class__.apply_extra_options(query_results, extra_options).values())
+        qs = self.__class__.apply_extra_options(query_results, extra_options)
+        if query_result_return:
+            return qs
         else:
-            return self.__class__.apply_extra_options(query_results, extra_options)
+            model_class = query.get_model_class()
+            class _Serializer(DynamicResultSerializer):
+                class Meta(DynamicResultSerializer.Meta):
+                    model = model_class
+
+            new_data = _Serializer(qs, many=True).data
+            virtual_fields = getattr(qs, "_virtual_fields", [])
+
+            if virtual_fields:
+                new_data = AnnotatedQueryAstHandler.apply_virtual_fields(
+                    new_data,
+                    qs,
+                    virtual_fields
+                )
+
+            return new_data
     
     @action(detail=True, methods=['post'])
     def run(self, request, pk=None):

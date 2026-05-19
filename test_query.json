@@ -63,8 +63,8 @@
                         "name": "NickName"
                     },
                     {
-                        "path": "created_at",
-                        "name": "Created"
+                        "path": "status__label",
+                        "name": "Status"
                     },
                     {
                         "path": "updated_at",
@@ -145,8 +145,12 @@
                     "name": "NickName"
                 },
                 {
-                    "path": "created_at",
-                    "name": "Created"
+                    "path": "status__label",
+                    "name": "Status"
+                },
+                {
+                    "path": "party.target.full_name",
+                    "name": "Name"
                 },
                 {
                     "path": "updated_at",
@@ -186,12 +190,12 @@
                     "name": "NickName"
                 },
                 {
-                    "path": "created_at",
-                    "name": "Created"
+                    "path": "status__label",
+                    "name": "Status"
                 },
                 {
-                    "path": "updated_at",
-                    "name": "Updated"
+                    "path": "party.target.name",
+                    "name": "Company Name"
                 }
             ]
         }

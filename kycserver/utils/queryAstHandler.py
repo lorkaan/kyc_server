@@ -414,6 +414,77 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
     annotate_flag_key = "annotateFlag"
 
     @classmethod
+    def split_fields(cls, field_defs):
+        """
+        Separates field definitions into:
+        - db_fields: handled by ORM (__ paths)
+        - virtual_fields: handled in Python (. paths)
+        """
+        db_fields = []
+        virtual_fields = []
+
+        if not isList(field_defs):
+            return db_fields, virtual_fields
+
+        for fd in field_defs:
+            if not fd or not isString(fd.field_path):
+                continue
+
+            if "." in fd.field_path:
+                virtual_fields.append(fd)
+            else:
+                db_fields.append(fd)
+
+        return db_fields, virtual_fields
+    
+    @classmethod
+    def resolve_dot_path(cls, obj, path):
+        """
+        Resolve dot-notation paths dynamically.
+
+        Supports:
+        - party.target.name
+        - party.name
+        - target.name
+
+        Special keyword:
+        - 'target' → resolves GenericForeignKey (content_object)
+        """
+        if not obj or not isString(path):
+            return None
+
+        parts = path.split(".")
+        cur = obj
+
+        for part in parts:
+            if cur is None:
+                return None
+
+            if part == "target":
+                cur = getattr(cur, "content_object", None)
+            else:
+                cur = getattr(cur, part, None)
+
+        return cur
+    
+    @classmethod
+    def apply_virtual_fields(cls, data, queryset, virtual_fields):
+        """
+        Inject computed fields into serialized rows.
+        """
+        if not isList(data) or not isList(virtual_fields):
+            return data
+
+        for row, obj in zip(data, queryset):
+            for fd in virtual_fields:
+                path = fd.field_path
+                key = fd.custom_name or path.replace(".", "_")
+
+                row[key] = cls.resolve_dot_path(obj, path)
+
+        return data
+
+    @classmethod
     def find_value_from_path(cls, obj, path):
         if not isString(path):
             cls.logger.error(f"Path is: {type(path)} -> {path}")
@@ -478,7 +549,8 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             if not isList(field_list):
                 return results
             else:
-                select_related_fields = cls.get_select_related_fields(field_list)
+                db_fields, virtual_fields = cls.split_fields(field_list)
+                select_related_fields = cls.get_select_related_fields(db_fields)
                 if select_related_fields:
                     results = results.select_related(*select_related_fields)
 
@@ -487,6 +559,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
                 cls.logger.error(f"Annotations: {type(annotations)} --> {annotations}")
                 if annotations:
                     results = results.annotate(**annotations)
+                results._virtual_fields = virtual_fields
                 return results
         else:
             return results

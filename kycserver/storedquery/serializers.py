@@ -92,3 +92,15 @@ class SavedQueryPermissionWriteSerializer(serializers.ModelSerializer):
 
         return data
 
+class DynamicResultSerializer(serializers.ModelSerializer):
+    target_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = None  # set dynamically
+        fields = "__all__"
+
+    def get_target_name(self, obj):
+        # handles GenericForeignKey
+        if hasattr(obj, "content_object") and obj.content_object:
+            return getattr(obj.content_object, "name", None)
+        return None
