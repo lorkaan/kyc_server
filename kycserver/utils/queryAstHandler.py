@@ -266,6 +266,7 @@ class QueryAstHandler(DslEvaluator):
             raise ValueError("Lookup path too deep")
 
         django_lookup = field + cls.OPS[op]
+        cls.logger.error(f"Django Lookup: {django_lookup}")
         q = Q(**{django_lookup: value})
 
         if op == "neq":
@@ -286,6 +287,7 @@ class QueryAstHandler(DslEvaluator):
         )
 
         django_lookup = lookup + cls.OPS[op]
+        cls.logger.error(f"Django Lookup: {django_lookup}")
 
         # correlated subquery
         sub_qs = final_model.objects.filter(
