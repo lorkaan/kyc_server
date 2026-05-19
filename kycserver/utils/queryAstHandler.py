@@ -259,6 +259,17 @@ class QueryAstHandler(DslEvaluator):
 
         if op not in cls.OPS:
             raise ValueError(f"Unsupported operator: {op}")
+        
+        # 🔥 HANDLE isnull FIRST
+        if op == "isnull":
+            if value is None:
+                value = True  # treat null as IS NULL
+            elif not isinstance(value, bool):
+                raise ValueError("isnull must be boolean or null")
+
+        # 🔥 THEN skip None for other operators
+        elif value is None:
+            return None
 
         final_model, lookup = cls._resolve_lookup_path(root_model, field)
 
