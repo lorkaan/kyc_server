@@ -468,6 +468,20 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         return cur
     
     @classmethod
+    def normalize_value(cls, value):
+
+        if isinstance(value, Model):
+            return str(value)
+
+        if isinstance(value, UUID):
+            return str(value)
+
+        if isinstance(value, (datetime, date)):
+            return value.isoformat()
+
+        return value
+    
+    @classmethod
     def apply_virtual_fields(cls, data, objects, virtual_fields):
 
         if not isList(data) or not isList(virtual_fields):
