@@ -63,7 +63,7 @@
                         "name": "NickName"
                     },
                     {
-                        "path": "status__label",
+                        "path": "status__name",
                         "name": "Status"
                     },
                     {
@@ -104,12 +104,8 @@
                         "name": "NickName"
                     },
                     {
-                        "path": "created_at",
-                        "name": "Created"
-                    },
-                    {
-                        "path": "updated_at",
-                        "name": "Updated"
+                        "path": "status__name",
+                        "name": "Status"
                     }
                 ]
         }
@@ -145,7 +141,7 @@
                     "name": "NickName"
                 },
                 {
-                    "path": "status__label",
+                    "path": "status__name",
                     "name": "Status"
                 },
                 {
@@ -190,7 +186,7 @@
                     "name": "NickName"
                 },
                 {
-                    "path": "status__label",
+                    "path": "status__name",
                     "name": "Status"
                 },
                 {
