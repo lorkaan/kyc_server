@@ -550,6 +550,8 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
                 return results
             else:
                 db_fields, virtual_fields = cls.split_fields(field_list)
+                cls.logger.error(f"DB FIELDS --> {db_fields}")
+                cls.logger.error(f"VIRUTAL FIELDS -->{virtual_fields}")
                 select_related_fields = cls.get_select_related_fields(db_fields)
                 if select_related_fields:
                     results = results.select_related(*select_related_fields)
