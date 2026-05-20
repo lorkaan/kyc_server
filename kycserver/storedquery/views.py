@@ -128,14 +128,9 @@ class SavedQueryViewSet(ModelViewSet):
         if query_result_return:
             return qs
         else:
-            model_class = query.get_model_class()
-            class _Serializer(DynamicResultSerializer):
-                class Meta(DynamicResultSerializer.Meta):
-                    model = model_class
-
-            new_data = _Serializer(qs, many=True).data
+            
             virtual_fields = getattr(qs, "_virtual_fields", [])
-
+            new_data = list(qs)
             if virtual_fields:
                 new_data = AnnotatedQueryAstHandler.apply_virtual_fields(
                     new_data,
