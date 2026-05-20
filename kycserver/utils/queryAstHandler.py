@@ -1,4 +1,4 @@
-from django.db.models import F, Q, Exists, OuterRef
+from django.db.models import F, Q, Exists, Model, OuterRef
 
 from globalparams.models import GlobalParameter
 from utils.dsl_evaluator import DslEvaluator
@@ -19,7 +19,7 @@ import pghistory
 from django.apps import apps
 from django.db import models
 from copy import deepcopy
-from datetime import datetime
+from datetime import date, datetime
 import uuid
 
 class QueryAstHandler(DslEvaluator):
@@ -473,7 +473,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         if isinstance(value, Model):
             return str(value)
 
-        if isinstance(value, UUID):
+        if isinstance(value, uuid.UUID):
             return str(value)
 
         if isinstance(value, (datetime, date)):
