@@ -468,19 +468,23 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         return cur
     
     @classmethod
-    def apply_virtual_fields(cls, data, queryset, virtual_fields):
-        """
-        Inject computed fields into serialized rows.
-        """
+    def apply_virtual_fields(cls, data, objects, virtual_fields):
+
         if not isList(data) or not isList(virtual_fields):
             return data
 
-        for row, obj in zip(data, queryset):
+        for row, obj in zip(data, objects):
+
+            if not isinstance(row, dict):
+                continue
+
             for fd in virtual_fields:
                 path = fd.field_path
                 key = fd.custom_name or path.replace(".", "_")
 
-                row[key] = cls.resolve_dot_path(obj, path)
+                row[key] = cls.normalize_value(
+                    cls.resolve_dot_path(obj, path)
+                )
 
         return data
 

@@ -130,11 +130,12 @@ class SavedQueryViewSet(ModelViewSet):
         else:
             
             virtual_fields = getattr(qs, "_virtual_fields", [])
-            new_data = list(qs)
+            objects = list(qs)
+            new_data = list(qs.values())
             if virtual_fields:
                 new_data = AnnotatedQueryAstHandler.apply_virtual_fields(
                     new_data,
-                    qs,
+                    objects,
                     virtual_fields
                 )
 
