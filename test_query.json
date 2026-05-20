@@ -28,8 +28,13 @@
         "query": {
             "model": "kyc.KYCRecord",
             "params": {
+                "status": {"type": "string", "required": false},
                 "created_start_date": { "type": "datetime", "required": false },
-                "created_end_date": { "type": "datetime", "required": false }
+                "created_end_date": { "type": "datetime", "required": false },
+                "updated_start_date": { "type": "datetime", "required": false },
+                "updated_end_date": { "type": "datetime", "required": false },
+                "nickname": {"type": "string", "required": false},
+                "notes": {"type": "string", "required": false}
             },
             "query": {
                 "where": {
@@ -43,6 +48,31 @@
                             "field": "created_at",
                             "op": "lte",
                             "value": { "$param": "created_end_date" }
+                        },
+                        {
+                            "field": "updated_at",
+                            "op": "gte",
+                            "value": { "$param": "updated_start_date" }
+                        },
+                        {
+                            "field": "updated_at",
+                            "op": "lte",
+                            "value": { "$param": "updated_end_date" }
+                        },
+                        {
+                            "field": "status__name",
+                            "op": "contains",
+                            "value": { "$param": "status" }
+                        },
+                        {
+                            "field": "party__name",
+                            "op": "contains",
+                            "value": { "$param": "nickname" }
+                        },
+                        {
+                            "field": "notes",
+                            "op": "contains",
+                            "value": { "$param": "notes" }
                         },
                         {
                             "field": "verified_at",
@@ -90,20 +120,51 @@
         "query": {
             "model": "kyc.KYCRecord",
             "params": {
-                "nickname": { "type": "string", "required": false }
+                "status": {"type": "string", "required": false},
+                "created_start_date": { "type": "datetime", "required": false },
+                "created_end_date": { "type": "datetime", "required": false },
+                "updated_start_date": { "type": "datetime", "required": false },
+                "updated_end_date": { "type": "datetime", "required": false },
+                "nickname": {"type": "string", "required": false},
+                "notes": {"type": "string", "required": false}
             },
             "query": {
                 "where": {
                     "and": [
+                        {
+                            "field": "created_at",
+                            "op": "gte",
+                            "value": { "$param": "created_start_date" }
+                        },
+                        {
+                            "field": "created_at",
+                            "op": "lte",
+                            "value": { "$param": "created_end_date" }
+                        },
+                        {
+                            "field": "updated_at",
+                            "op": "gte",
+                            "value": { "$param": "updated_start_date" }
+                        },
+                        {
+                            "field": "updated_at",
+                            "op": "lte",
+                            "value": { "$param": "updated_end_date" }
+                        },
+                        {
+                            "field": "status__name",
+                            "op": "contains",
+                            "value": { "$param": "status" }
+                        },
                         {
                             "field": "party__name",
                             "op": "contains",
                             "value": { "$param": "nickname" }
                         },
                         {
-                            "field": "party__party_type__code",
-                            "op": "eq",
-                            "value": "person"
+                            "field": "notes",
+                            "op": "contains",
+                            "value": { "$param": "notes" }
                         }
                     ]
                 }
@@ -135,13 +196,20 @@
         }
     },
     {
-        "name": "current_kyc_by_person_id",
+        "name": "KYC for Person",
         "description": "Get the current KYC by Person",
         "is_system": true,
         "query": {
             "model": "kyc.KYCRecord",
             "params": {
-                "person_id": { "type": "uuid", "required": false }
+                "person_id": { "type": "uuid", "required": false },
+                "status": {"type": "string", "required": false},
+                "created_start_date": { "type": "datetime", "required": false },
+                "created_end_date": { "type": "datetime", "required": false },
+                "updated_start_date": { "type": "datetime", "required": false },
+                "updated_end_date": { "type": "datetime", "required": false },
+                "nickname": {"type": "string", "required": false},
+                "notes": {"type": "string", "required": false}
             },
             "query": {
                 "where": {
@@ -150,6 +218,41 @@
                             "field": "party__id",
                             "op": "eq",
                             "value": { "$param": "person_id" }
+                        },
+                        {
+                            "field": "created_at",
+                            "op": "gte",
+                            "value": { "$param": "created_start_date" }
+                        },
+                        {
+                            "field": "created_at",
+                            "op": "lte",
+                            "value": { "$param": "created_end_date" }
+                        },
+                        {
+                            "field": "updated_at",
+                            "op": "gte",
+                            "value": { "$param": "updated_start_date" }
+                        },
+                        {
+                            "field": "updated_at",
+                            "op": "lte",
+                            "value": { "$param": "updated_end_date" }
+                        },
+                        {
+                            "field": "status__name",
+                            "op": "contains",
+                            "value": { "$param": "status" }
+                        },
+                        {
+                            "field": "party__name",
+                            "op": "contains",
+                            "value": { "$param": "nickname" }
+                        },
+                        {
+                            "field": "notes",
+                            "op": "contains",
+                            "value": { "$param": "notes" }
                         },
                         {
                             "field": "party__party_type__code",
@@ -190,13 +293,20 @@
         }
     },
     {
-        "name": "current_kyc_by_company_id",
+        "name": "KYC for Company",
         "description": "Get the current KYC by Company",
         "is_system": true,
         "query": {
             "model": "kyc.KYCRecord",
             "params": {
-                "company_id": { "type": "uuid", "required": false }
+                "company_id": { "type": "uuid", "required": false },
+                "status": {"type": "string", "required": false},
+                "created_start_date": { "type": "datetime", "required": false },
+                "created_end_date": { "type": "datetime", "required": false },
+                "updated_start_date": { "type": "datetime", "required": false },
+                "updated_end_date": { "type": "datetime", "required": false },
+                "nickname": {"type": "string", "required": false},
+                "notes": {"type": "string", "required": false}
             },
             "query": {
                 "where": {
@@ -205,6 +315,41 @@
                             "field": "party__id",
                             "op": "eq",
                             "value": { "$param": "person_id" }
+                        },
+                        {
+                            "field": "created_at",
+                            "op": "gte",
+                            "value": { "$param": "created_start_date" }
+                        },
+                        {
+                            "field": "created_at",
+                            "op": "lte",
+                            "value": { "$param": "created_end_date" }
+                        },
+                        {
+                            "field": "updated_at",
+                            "op": "gte",
+                            "value": { "$param": "updated_start_date" }
+                        },
+                        {
+                            "field": "updated_at",
+                            "op": "lte",
+                            "value": { "$param": "updated_end_date" }
+                        },
+                        {
+                            "field": "status__name",
+                            "op": "contains",
+                            "value": { "$param": "status" }
+                        },
+                        {
+                            "field": "party__name",
+                            "op": "contains",
+                            "value": { "$param": "nickname" }
+                        },
+                        {
+                            "field": "notes",
+                            "op": "contains",
+                            "value": { "$param": "notes" }
                         },
                         {
                             "field": "party__party_type__code",
