@@ -264,7 +264,7 @@ class QueryAstHandler(DslEvaluator):
                 raise ValueError("isnull must be boolean or null")
 
         # 🔥 THEN skip None for other operators
-        elif value is None or not isString(value.strip()):
+        elif value is None or (isinstance(value, str) and value.strip() == ""):
             return None
 
         final_model, lookup = cls._resolve_lookup_path(root_model, field)
