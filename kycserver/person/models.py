@@ -17,4 +17,8 @@ class Person(ModelSchemaMixin, BaseModel):
     def get_serializer_class(self):
         from .serializers import PersonSerializer
         return PersonSerializer
+    
+    @property
+    def name(self):
+        return f"{self.first_name} {self.last_name}"
 
