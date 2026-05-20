@@ -555,7 +555,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
                     results = results.select_related(*select_related_fields)
 
                 # Step 4: annotate fields
-                annotations = cls.build_annotations(field_list)
+                annotations = cls.build_annotations(db_fields)
                 cls.logger.error(f"Annotations: {type(annotations)} --> {annotations}")
                 if annotations:
                     results = results.annotate(**annotations)

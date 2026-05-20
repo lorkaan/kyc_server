@@ -64,7 +64,7 @@
                     },
                     {
                         "path": "status__name",
-                        "name": "Status"
+                        "name": "StatusName"
                     },
                     {
                         "path": "updated_at",
@@ -105,7 +105,7 @@
                     },
                     {
                         "path": "status__name",
-                        "name": "Status"
+                        "name": "StatusName"
                     }
                 ]
         }
@@ -142,10 +142,10 @@
                 },
                 {
                     "path": "status__name",
-                    "name": "Status"
+                    "name": "StatusName"
                 },
                 {
-                    "path": "party.target.full_name",
+                    "path": "party.target.name",
                     "name": "Name"
                 },
                 {
@@ -187,7 +187,7 @@
                 },
                 {
                     "path": "status__name",
-                    "name": "Status"
+                    "name": "StatusName"
                 },
                 {
                     "path": "party.target.name",
