@@ -11,6 +11,12 @@ class AgendaEventType(models.Model):
         help_text="Human-readable name for the event type, e.g., 'Meeting'."
     )
 
+    code = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="A code for the internal system to identify the data row without ambiguous spaces"
+    )
+
     description = models.TextField(
         blank=True,
         help_text="Optional description of what this event type represents."
