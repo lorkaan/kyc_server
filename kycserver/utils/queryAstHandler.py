@@ -19,10 +19,16 @@ import pghistory
 from django.apps import apps
 from django.db import models
 from copy import deepcopy
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import uuid
 
 class QueryAstHandler(DslEvaluator):
+
+    precompute_functions = {
+        "now": lambda : datetime.now().isoformat(),
+        "now_date": lambda: datetime.now().date().isoformat(),
+        "tomorrow_date": lambda: (datetime.now().date() + timedelta(days=1)).isoformat()
+    }
 
     eval_statement_key = "query.where"
 
@@ -64,6 +70,22 @@ class QueryAstHandler(DslEvaluator):
     }
 
     @classmethod
+    def get_computed_params(cls, param_def: dict):
+        precomputed_params = {}
+        if isDict(param_def):
+            for name, objDef in param_def.items():
+                if objDef.get("type", "") != "computed":
+                    continue
+                else:
+                    compute_func = cls.precompute_functions.get(name, None)
+                    if callable(compute_func):
+                        precomputed_params[name] = compute_func()
+                    else:
+                        continue
+        return precomputed_params
+            
+
+    @classmethod
     def clean_params(cls, param_def: dict, params: dict):
         """
             This function will clean the parameters so it can be properly evaluated. 
@@ -73,7 +95,7 @@ class QueryAstHandler(DslEvaluator):
             return {}
         if not isinstance(param_def, dict):
             raise ValueError(f"Expected a parameter dictionary to handle having parameters:\nParams: \n{dictToStr(params, prefix="\t")}\nInstead got: {type(param_def)} -> {param_def}")
-        new_params = {}
+        new_params = cls.get_computed_params(param_def)
         for name, value in params.items():
             if not param_def[name].get("required", False):
                 expected_type = param_def[name].get("type")

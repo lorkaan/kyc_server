@@ -8,6 +8,8 @@ from watchdog.generate_signals import create_signal
 from watchdog.models import Alert, AlertReason, AlertSeverity, AlertStatus, Signal, SignalType
 from utils.action_runner import ActionRunner
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime, parse_date
+from datetime import datetime, time
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +34,29 @@ def getSignal(signal_id):
         except Exception as e:
             return None
         
-def create_alert(message, reason=None, status=None, severity=None, obj=None):
+
+def normalize_datetime(value):
+    if value is None:
+        return None
+
+    # Already a datetime
+    if isinstance(value, datetime):
+        return value
+
+    # Try full datetime string
+    dt = parse_datetime(value)
+    if dt:
+        return dt
+
+    # Try date-only string
+    d = parse_date(value)
+    if d:
+        # Convert date → datetime (midnight)
+        return datetime.combine(d, time.min)
+
+    raise ValueError("Invalid datetime/date format for triggered_at")
+        
+def create_alert(message, reason=None, status=None, severity=None, obj=None, triggered_at=None):
 
     def resolve_fk(value, model):
         if value is None:
@@ -45,18 +69,32 @@ def create_alert(message, reason=None, status=None, severity=None, obj=None):
         raise ValueError("create_alert requires 'obj' (target object)")
 
     try:
-        alert_obj = Alert(
-            message=message,
-            reason=resolve_fk(reason, AlertReason),
-            status=resolve_fk(status, AlertStatus),
-            severity=resolve_fk(severity, AlertSeverity),
-        )
+        try:
+            normalized_triggered_at = normalize_datetime(triggered_at)
+        except ValueError:
+            normalized_triggered_at = None
+        finally:
+            if normalized_triggered_at == None:
+                alert_obj = Alert(
+                    message=message,
+                    reason=resolve_fk(reason, AlertReason),
+                    status=resolve_fk(status, AlertStatus),
+                    severity=resolve_fk(severity, AlertSeverity),
+                )
+            else:
+                alert_obj = Alert(
+                    message=message,
+                    reason=resolve_fk(reason, AlertReason),
+                    status=resolve_fk(status, AlertStatus),
+                    severity=resolve_fk(severity, AlertSeverity),
+                    triggered_at=normalized_triggered_at
+                )
 
-        # ✅ Properly set GenericForeignKey
-        alert_obj.set_target(obj)
+            # ✅ Properly set GenericForeignKey
+            alert_obj.set_target(obj)
 
-        alert_obj.save()
-        return alert_obj
+            alert_obj.save()
+            return alert_obj
 
     except Exception as e:
         raise ValueError(f"Failed to create alert: {e}")

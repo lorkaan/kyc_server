@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from django.db import models
 
 import pghistory
@@ -42,7 +44,10 @@ class Alert(BaseModel, GenericTargetMixin):
     severity = models.ForeignKey(AlertSeverity, on_delete=models.PROTECT)
     status = models.ForeignKey(AlertStatus, on_delete=models.PROTECT)
     message = models.TextField()
-    triggered_at = models.DateTimeField(auto_now_add=True)
+    triggered_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["triggered_at"]
 
 class SignalSeverity(models.Model):
     code = models.CharField(max_length=20, unique=True)

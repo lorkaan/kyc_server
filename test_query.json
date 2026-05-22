@@ -22,6 +22,25 @@
         "is_system": true
     },
     {
+        "name": "Alerts",
+        "description": "A Query to get all active alerts",
+        "query": {
+            "model": "watchdog.Alert",
+            "params": {
+                "now_date": { "type": "computed", "required": false }
+            },
+            "query":{
+                "where":{
+                    "and": [
+                        {"field": "triggered_at", "op": "gte", "value": {"$param": "now_date"}},
+                        {"field": "triggered_at", "op": "lte", "value": {"$param": "tomorrow_date"}}
+                    ]
+                }
+            }
+        },
+        "is_system": true
+    },
+    {
         "name": "Unverified KYC Records",
         "description": "Find a current KYC based on the Party",
         "is_system": true,

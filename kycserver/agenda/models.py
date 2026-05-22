@@ -1,7 +1,11 @@
 from django.db import models
+from base.models import BaseModel
+from watchdog.models import AlertSeverity
+from .data_type import EventStatus, TimeMeasurement
 import pghistory
 from django.utils import timezone
-from base.models import BaseModel
+from datetime import timedelta
+
 
 class AgendaEventType(models.Model):
     
@@ -36,14 +40,28 @@ class AgendaEventType(models.Model):
     def __str__(self):
         return self.name
 
+class AgendaEventTypeAlertSchedule(models.Model):
+
+    event_type = models.ForeignKey(AgendaEventType, on_delete=models.CASCADE, related_name="agenda_event_alert_schedule")
+
+    value = models.IntegerField()
+
+    measurement = models.CharField(max_length=1, choices=TimeMeasurement.choices, default=TimeMeasurement.DAILY)
+
+    severity = models.ForeignKey(AlertSeverity, models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["event_type", "value", "measurement"],
+                name="unique_type_value_measurement"
+            )
+        ]
+
+
 # Create your models here.
 @pghistory.track()
 class AgendaEvent(BaseModel):
-    
-    class EventStatus(models.TextChoices):
-        SCHEDULED = "S", "Scheduled"
-        CANCELLED = "C", "Cancelled"
-        FINISHED = "F", "Finished"
 
     title = models.CharField(
         max_length=255
@@ -55,9 +73,9 @@ class AgendaEvent(BaseModel):
 
     event_type = models.ForeignKey(AgendaEventType, on_delete=models.CASCADE, related_name="agenda_events", null=True, blank=True)
 
-    start_time = models.DateTimeField()
+    start_time = models.DateTimeField(null=True, blank=True)
 
-    end_time = models.DateTimeField()
+    end_time = models.DateTimeField(null=True, blank=True)
 
     all_day = models.BooleanField(
         default=False
@@ -99,14 +117,57 @@ class AgendaEvent(BaseModel):
         """
         Validate event time range.
         """
+        if not self.end_time and not self.start_time:
+            raise ValueError("Start Time and End Time can not both be null")
         if self.end_time and self.start_time and self.end_time < self.start_time:
             raise ValueError("end_time must be after start_time")
 
     @property
     def is_past(self):
-        return self.end_time < timezone.now()
+        if self.end_time:
+            return self.end_time < timezone.now()
+        elif self.start_time:
+            return self.end_time < timezone.now()
+        else:
+            return False
 
     @property
     def is_active(self):
         now = timezone.now()
-        return self.start_time <= now <= self.end_time
+        if self.end_time and self.start_time:
+            return self.start_time <= now <= self.end_time
+        elif self.all_day:
+            if self.start_time:
+                next_day_midnight = (
+                    self.start_time.replace(
+                        hour=0,
+                        minute=0,
+                        second=0,
+                        microsecond=0
+                    ) + timedelta(days=1)
+                )
+                return self.start_time <= now <= next_day_midnight
+            elif self.end_time:
+                prev_day_midnight = (
+                    self.start_time.replace(
+                        hour=0,
+                        minute=0,
+                        second=0,
+                        microsecond=0
+                    ) + timedelta(days=1)
+                )
+                return prev_day_midnight <= now <= self.end_time
+            else:
+                return False
+        else:
+            return False
+        
+    @property
+    def normalize_start(self):
+        if self.start_time:
+            return self.start_time
+        elif self.end_time:
+            return self.end_time
+        else:
+            return None
+        

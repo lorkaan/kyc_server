@@ -50,6 +50,8 @@ def run_due_triggers():
         if trigger.should_run():
             run_trigger.delay(trigger.id)
 
+def get_param_dict(param_def):
+    return {}
 
 # -----------------------------
 # Thread-safe trigger runner
@@ -88,7 +90,7 @@ def run_trigger(self, trigger_id, signal_id=None):
         if trigger.rule:
             results = QueryAstHandler.run(
                 trigger.rule.query.query_def,
-                trigger.rule.query.params or {}
+                get_param_dict(trigger.rule.query.params) # This needs to be the param dictionary of bindable values
             )
 
         context = {
