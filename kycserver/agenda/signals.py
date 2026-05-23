@@ -3,6 +3,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from datetime import timedelta
+import logging
 
 from automation.actions import create_alert
 from watchdog.models import AlertReason, AlertStatus
@@ -23,9 +24,11 @@ def calculate_time_diff(ref_datetime, value, measurement):
 
 @receiver(post_save, sender=AgendaEvent)
 def create_alerts_for_event(sender, instance, created, **kwargs):
+    signal_logger = logging.getLogger()
+    signal_logger.error(f"Signal to create Alert made: \n\tInstance: {instance} \n\tCreated: {created}")
     if not created:
+        signal_logger.error(f"Can not run: {created}")
         return
-
     def _create_alerts():
         try:
             alert_reason = AlertReason.objects.get(code="EVENT")
@@ -34,6 +37,7 @@ def create_alerts_for_event(sender, instance, created, **kwargs):
                 e_type = instance.event_type
                 reference_start = instance.normalize_start
                 schedule = list(AgendaEventTypeAlertSchedule.objects.filter(event_type=e_type).values("value", "measurement"))
+                signal_logger.error(f"Schedule: {schedule}")
                 for sched_obj in schedule:
                     cur_val = sched_obj.get("value", 0)
                     cur_measurement = sched_obj.get("measurement", None)
@@ -45,16 +49,13 @@ def create_alerts_for_event(sender, instance, created, **kwargs):
                             continue
                         else:
                             create_alert(instance.title, alert_reason, alert_status, instance.severity if instance.severity else alert_reason.default_severity, instance, triggered_time)
-            except AlertStatus.DoesNotExist as e:
-                import logging
+            except AlertStatus.DoesNotExist as e:  
                 logger = logging.getLogger()
                 logger.error(f"Can not find the Open Alert Status: {e}")
         except AlertReason.DoesNotExist as e:
-            import logging
             logger = logging.getLogger()
             logger.error(f"Can not find the Event Alert Reason: {e}")
         except Exception as e:
-            import logging
             logger = logging.getLogger()
             logger.error(f"Unknown Error occured: {e}")
 
