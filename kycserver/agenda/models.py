@@ -127,7 +127,7 @@ class AgendaEvent(BaseModel):
         if self.end_time:
             return self.end_time < timezone.now()
         elif self.start_time:
-            return self.end_time < timezone.now()
+            return self.start_time < timezone.now()
         else:
             return False
 
