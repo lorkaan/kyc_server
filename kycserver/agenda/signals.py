@@ -48,7 +48,7 @@ def create_alerts_for_event(sender, instance, created, **kwargs):
                         if triggered_time < timezone.now():
                             continue
                         else:
-                            create_alert(instance.title, alert_reason, alert_status, instance.severity if instance.severity else alert_reason.default_severity, instance, triggered_time)
+                            create_alert(instance.title, alert_reason, alert_status, e_type.severity if e_type.severity else alert_reason.default_severity, instance, triggered_time)
             except AlertStatus.DoesNotExist as e:  
                 logger = logging.getLogger()
                 logger.error(f"Can not find the Open Alert Status: {e}")
