@@ -58,5 +58,5 @@ def create_alerts_for_event(sender, instance, created, **kwargs):
             logger = logging.getLogger()
             logger.error(f"Unknown Error occured: {e}")
 
-    #transaction.on_commit(_create_alerts)
-    _create_alerts()
+    transaction.on_commit(_create_alerts)
+    #_create_alerts()
