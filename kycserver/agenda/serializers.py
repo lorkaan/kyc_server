@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.utils import timezone
 from .models import AgendaEventType, AgendaEvent
 from users.models import User
 
@@ -34,6 +35,13 @@ class AgendaEventSerializer(serializers.ModelSerializer):
     # Computed fields
     is_past = serializers.ReadOnlyField()
     is_active = serializers.ReadOnlyField()
+
+    def validate(self, data):
+        for field in ["start_time", "end_time"]:
+            value = data.get(field)
+            if value and timezone.is_naive(value):
+                data[field] = timezone.make_aware(value)
+        return data
 
     class Meta:
         model = AgendaEvent

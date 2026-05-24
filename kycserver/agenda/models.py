@@ -121,6 +121,10 @@ class AgendaEvent(BaseModel):
             raise ValueError("Start Time and End Time can not both be null")
         if self.end_time and self.start_time and self.end_time < self.start_time:
             raise ValueError("end_time must be after start_time")
+        
+    def save(self, *args, **kwargs):
+        self.full_clean()  # runs clean() + field validation
+        super().save(*args, **kwargs)
 
     @property
     def is_past(self):
