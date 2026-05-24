@@ -36,11 +36,12 @@ def create_alerts_for_event(sender, instance, created, **kwargs):
                 alert_status = AlertStatus.objects.get(code="open")
                 e_type = instance.event_type
                 reference_start = instance.normalize_start
-                schedule = list(AgendaEventTypeAlertSchedule.objects.filter(event_type=e_type).values("value", "measurement"))
+                schedule = list(AgendaEventTypeAlertSchedule.objects.filter(event_type=e_type).values("value", "measurement", "severity"))
                 signal_logger.error(f"Schedule: {schedule}")
                 for sched_obj in schedule:
                     cur_val = sched_obj.get("value", 0)
                     cur_measurement = sched_obj.get("measurement", None)
+                    cur_severity = sched_obj.get("severity", None)
                     if cur_measurement == None:
                         continue
                     else:
@@ -50,7 +51,7 @@ def create_alerts_for_event(sender, instance, created, **kwargs):
                             signal_logger.error(f"Triggered time is less than now time: {triggered_time} < {now_time}")
                             continue
                         else:
-                            create_alert(instance.title, alert_reason, alert_status, sched_obj.severity if sched_obj.severity else alert_reason.default_severity, instance, triggered_time)
+                            create_alert(instance.title, alert_reason, alert_status, cur_severity if cur_severity else alert_reason.default_severity, instance, triggered_time)
             except AlertStatus.DoesNotExist as e:  
                 logger = logging.getLogger()
                 logger.error(f"Can not find the Open Alert Status: {e}")
