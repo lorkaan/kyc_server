@@ -45,7 +45,9 @@ def create_alerts_for_event(sender, instance, created, **kwargs):
                         continue
                     else:
                         triggered_time = calculate_time_diff(reference_start, cur_val, cur_measurement)
-                        if triggered_time < timezone.now():
+                        now_time = timezone.now()
+                        if triggered_time < now_time:
+                            signal_logger.error(f"Triggered time is less than now time: {triggered_time} < {now_time}")
                             continue
                         else:
                             create_alert(instance.title, alert_reason, alert_status, sched_obj.severity if sched_obj.severity else alert_reason.default_severity, instance, triggered_time)
