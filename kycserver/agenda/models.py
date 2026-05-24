@@ -119,8 +119,21 @@ class AgendaEvent(BaseModel):
         """
         if not self.end_time and not self.start_time:
             raise ValueError("Start Time and End Time can not both be null")
+        if self.end_time and timezone.is_naive(self.end_time):
+            self.end_time = timezone.make_aware(self.end_time)
+        if self.start_time and timezone.is_naive(self.start_time):
+            self.start_time = timezone.make_aware(self.start_time)
         if self.end_time and self.start_time and self.end_time < self.start_time:
             raise ValueError("end_time must be after start_time")
+        
+        
+        
+    def validate(self, data):
+        for field in ["start_time", "end_time"]:
+            value = data.get(field)
+            if value and timezone.is_naive(value):
+                data[field] = timezone.make_aware(value)
+        return data
         
     def save(self, *args, **kwargs):
         self.full_clean()  # runs clean() + field validation
