@@ -25,33 +25,39 @@ class AlertViewSet(ModelViewSet):
     def edit(self, request, pk=None):
         cur_alert = self.get_object()
 
-        new_alert = request.data.get("alert")
+        payload = request.data.get("alert")
 
-        if not new_alert:
+        if payload is None:
             return Response(
                 {"detail": "Missing 'alert' payload."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Prevent generic target fields from being overwritten
+        payload.pop("content_type", None)
+        payload.pop("object_id", None)
+        payload.pop("content_object", None)
+        payload.pop("target", None)
+
         serializer = AlertSerializer(
             cur_alert,
-            data=new_alert,
+            data=payload,
             partial=True,
             context={"request": request},
         )
 
-        if serializer.is_valid():
-            updated_alert = serializer.save()
-
+        if not serializer.is_valid():
             return Response(
-                AlertSerializer(
-                    updated_alert,
-                    context={"request": request},
-                ).data,
-                status=status.HTTP_200_OK,
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
+        updated_alert = serializer.save()
+
         return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST,
+            AlertSerializer(
+                updated_alert,
+                context={"request": request},
+            ).data,
+            status=status.HTTP_200_OK,
         )
