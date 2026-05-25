@@ -36,6 +36,11 @@ class AgendaEventSerializer(serializers.ModelSerializer):
     is_past = serializers.ReadOnlyField()
     is_active = serializers.ReadOnlyField()
 
+    status_label = serializers.CharField(
+        source="get_status_display",
+        read_only=True
+    )
+
     def validate(self, data):
         for field in ["start_time", "end_time"]:
             value = data.get(field)
@@ -58,6 +63,7 @@ class AgendaEventSerializer(serializers.ModelSerializer):
             "organizer",
             "organizer_id",
             "status",
+            "status_label",
             "is_past",
             "is_active",
         ]
