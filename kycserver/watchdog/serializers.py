@@ -81,12 +81,12 @@ class AlertSerializer(serializers.ModelSerializer):
         ]
 
     def get_target(self, obj):
-        """
-        Expose GenericTargetMixin safely
-        """
+        if not obj.content_type or not obj.object_id:
+            return None
+
         return {
-            "type": obj.target_type,
-            "id": obj.target_id,
+            "type": obj.content_type.model,
+            "id": str(obj.object_id),
         }
 
 class SignalSeveritySerializer(serializers.ModelSerializer):
