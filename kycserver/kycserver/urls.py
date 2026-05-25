@@ -28,5 +28,6 @@ urlpatterns = [
     path('api/', include('storedquery.urls')),
     path('api/', include('users.urls')),
     path('api/', include('party.urls')),
-    path('api/', include('agenda.urls'))
+    path('api/', include('agenda.urls')),
+    path('api/', include('watchdog.urls'))
 ]
