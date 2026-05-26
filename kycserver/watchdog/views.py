@@ -74,8 +74,7 @@ class AlertViewSet(ModelViewSet):
             return Response(
                 {
                     "success": True,
-                    "updated": AlertSerializer(updated_alert).data,
-                    "validated_data": serializer.validated_data,
+                    "updated": AlertSerializer(updated_alert).data
                 },
                 status=status.HTTP_200_OK,
             )

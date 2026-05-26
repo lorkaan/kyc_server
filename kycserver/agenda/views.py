@@ -1,4 +1,6 @@
 from rest_framework import viewsets, filters
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import AgendaEventType, AgendaEvent
 from .serializers import AgendaEventTypeSerializer, AgendaEventSerializer
@@ -28,3 +30,12 @@ class AgendaEventViewSet(viewsets.ModelViewSet):
     search_fields = ["title", "description", "location"]
     ordering_fields = ["start_time", "end_time", "title"]
     ordering = ["start_time"]
+
+class EventStatusListView(APIView):
+    def get(self, request):
+        from .models import EventStatus
+
+        return Response([
+            {"value": choice.value, "label": choice.label}
+            for choice in EventStatus
+        ])
