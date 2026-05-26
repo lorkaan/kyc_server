@@ -44,7 +44,6 @@ class AlertViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Prevent generic target fields from being overwritten
         payload.pop("content_type", None)
         payload.pop("object_id", None)
         payload.pop("content_object", None)
@@ -57,18 +56,18 @@ class AlertViewSet(ModelViewSet):
             context={"request": request},
         )
 
-        if not serializer.is_valid():
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         updated_alert = serializer.save()
 
+        # Force DB refresh to verify persistence
+        updated_alert.refresh_from_db()
+
         return Response(
-            AlertSerializer(
-                updated_alert,
-                context={"request": request},
-            ).data,
+            {
+                "success": True,
+                "updated": AlertSerializer(updated_alert).data,
+                "validated_data": serializer.validated_data,
+            },
             status=status.HTTP_200_OK,
         )
