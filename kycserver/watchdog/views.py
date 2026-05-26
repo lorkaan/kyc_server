@@ -38,6 +38,10 @@ class AlertViewSet(ModelViewSet):
 
         payload = request.data.get("alert")
 
+        import logging
+        logger = logging.getLogger()
+        logger.error(f"Payload is: {payload}")
+
         if payload is None:
             return Response(
                 {"detail": "Missing 'alert' payload."},
@@ -53,8 +57,7 @@ class AlertViewSet(ModelViewSet):
             serializer = AlertSerializer(
                 cur_alert,
                 data=payload,
-                partial=True,
-                context={"request": request},
+                partial=True
             )
 
             serializer.is_valid(raise_exception=True)
