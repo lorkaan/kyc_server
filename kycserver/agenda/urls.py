@@ -1,4 +1,5 @@
 from rest_framework.routers import DefaultRouter
+from django.urls import path
 from .views import (
     AgendaEventTypeViewSet,
     AgendaEventViewSet,
@@ -8,6 +9,5 @@ from .views import (
 router = DefaultRouter()
 router.register(r"event-types", AgendaEventTypeViewSet)
 router.register(r"events", AgendaEventViewSet)
-router.register(r'event_status', EventStatusListView)
 
-urlpatterns = router.urls
+urlpatterns = router.urls + [path('event_status/', EventStatusListView.as_view(), name='event-status-list')]
