@@ -49,25 +49,31 @@ class AlertViewSet(ModelViewSet):
         payload.pop("content_object", None)
         payload.pop("target", None)
 
-        serializer = AlertSerializer(
-            cur_alert,
-            data=payload,
-            partial=True,
-            context={"request": request},
-        )
+        try:
+            serializer = AlertSerializer(
+                cur_alert,
+                data=payload,
+                partial=True,
+                context={"request": request},
+            )
 
-        serializer.is_valid(raise_exception=True)
+            serializer.is_valid(raise_exception=True)
 
-        updated_alert = serializer.save()
+            updated_alert = serializer.save()
 
-        # Force DB refresh to verify persistence
-        updated_alert.refresh_from_db()
+            # Force DB refresh to verify persistence
+            updated_alert.refresh_from_db()
 
-        return Response(
-            {
-                "success": True,
-                "updated": AlertSerializer(updated_alert).data,
-                "validated_data": serializer.validated_data,
-            },
-            status=status.HTTP_200_OK,
-        )
+            return Response(
+                {
+                    "success": True,
+                    "updated": AlertSerializer(updated_alert).data,
+                    "validated_data": serializer.validated_data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"Error": f"{e}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
