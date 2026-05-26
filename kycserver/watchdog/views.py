@@ -5,10 +5,21 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from base.serializers import HistoryEventSerializer
-from .models import Alert
-from .serializers import AlertSerializer
+from .models import Alert, AlertSeverity, AlertStatus
+from .serializers import AlertSerializer, AlertSeveritySerializer, AlertStatusSerializer
 
 # Create your views here.
+
+class AlertStatusViewSet(ModelViewSet):
+    queryset = AlertStatus.objects.all().order_by("name")
+    serializer_class = AlertStatusSerializer
+    lookup_field = "id"  # optional (default anyway)
+
+
+class AlertSeverityViewSet(ModelViewSet):
+    queryset = AlertSeverity.objects.all().order_by("rank")
+    serializer_class = AlertSeveritySerializer
+    lookup_field = "id"
 
 class AlertViewSet(ModelViewSet):
     queryset = Alert.objects.all()
