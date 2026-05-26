@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from utils.dict_utils import isDict
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -37,6 +38,9 @@ class AlertViewSet(ModelViewSet):
         cur_alert = self.get_object()
 
         payload = request.data.get("alert")
+
+        if isDict(payload, keys=['alert']):
+            payload = payload.get('alert', None)
 
         import logging
         logger = logging.getLogger()
