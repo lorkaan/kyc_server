@@ -66,5 +66,7 @@ class AgendaEventSerializer(serializers.ModelSerializer):
             "status_label",
             "is_past",
             "is_active",
+            "created_at",
+            "updated_at"
         ]
         read_only_fields = ["id", "is_past", "is_active"]
