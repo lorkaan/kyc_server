@@ -1,27 +1,5 @@
 [
     {
-        "name": "current_alerts",
-        "description": "A Query to get all active alerts",
-        "query": {
-            "model": "watchdog.Alert",
-            "params": {
-                "before_time": {
-                    "type": "date",
-                    "required": true
-                }
-            },
-            "query":{
-                "where":{
-                    "and": [
-                        {"field": "status__is_terminal", "op": "eq", "value": false},
-                        {"field": "created_at", "op": "lt", "value": {"$param": "before_time"}}
-                    ]
-                }
-            }
-        },
-        "is_system": true
-    },
-    {
         "name": "Alerts",
         "description": "A Query to get all active alerts",
         "query": {
@@ -33,10 +11,35 @@
                 "where":{
                     "and": [
                         {"field": "triggered_at", "op": "gte", "value": {"$param": "now_date"}},
-                        {"field": "triggered_at", "op": "lte", "value": {"$param": "tomorrow_date"}}
+                        {"field": "triggered_at", "op": "lte", "value": {"$param": "tomorrow_date"}},
+                        {"field": "status__is_terminal", "op": "eq", "value": false}
                     ]
                 }
-            }
+            },
+            "fields": [
+                {
+                    "path": "status__name",
+                    "name": "Status"
+                },
+                {
+                    "path": "severity__name",
+                    "name": "Priority"
+                },
+                {
+                    "path": "party.target.name",
+                    "name": "Name"
+                },
+                {
+                    "path": "triggered_at",
+                    "name": "Triggered"
+                }
+            ],
+            "default_fields": [
+                "message",
+                "Status",
+                "Priority",
+                "Triggered"
+            ]
         },
         "is_system": true
     },

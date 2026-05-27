@@ -47,7 +47,7 @@ class Alert(BaseModel, GenericTargetMixin):
     triggered_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        ordering = ["triggered_at"]
+        ordering = ["triggered_at", "-severity"]
 
 class SignalSeverity(models.Model):
     code = models.CharField(max_length=20, unique=True)
