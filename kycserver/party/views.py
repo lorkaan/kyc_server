@@ -110,7 +110,7 @@ class PartyViewSet(BaseViewSet):
         record = self.get_object()
         data = request.data.get("party")
         party_id = data.get('id', None)
-        if party_id != None and record.id == party_id:
+        if party_id != None and str(record.id).strip() == str(party_id).strip():
             record.name = data.get('name')
             entity = record.content_object
             entity_data = request.data.get("entity")
@@ -130,7 +130,7 @@ class PartyViewSet(BaseViewSet):
         else:
             import logging
             logger = logging.getLogger()
-            logger.error(f"Party ID: {party_id} -> {record.id}")
+            logger.error(f"Party ID: {type(party_id)} -> {type(record.id)}")
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
     @action(detail=True, methods=["get"])
