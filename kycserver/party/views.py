@@ -129,7 +129,7 @@ class PartyViewSet(BaseViewSet):
             return Response({"update": True})
         else:
             import logging
-            logger = logging.getError()
+            logger = logging.getLogger()
             logger.error(f"Party ID: {party_id} -> {record.id}")
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
