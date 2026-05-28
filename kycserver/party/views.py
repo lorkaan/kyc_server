@@ -109,7 +109,8 @@ class PartyViewSet(BaseViewSet):
     def edit(self, request, pk=None):
         record = self.get_object()
         data = request.data.get("party")
-        if data.get('id', None) != None and record.id == data.id:
+        party_id = data.get('id', None)
+        if party_id != None and record.id == party_id:
             record.name = data.get('name')
             entity = record.content_object
             entity_data = request.data.get("entity")
