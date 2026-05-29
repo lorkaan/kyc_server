@@ -1,7 +1,11 @@
+from datetime import timedelta
+
 from django.db import models, transaction
 from django.db.models import Q
 from encrypt.models import REPRESENTATION_HANDLERS, EncryptionType, EncryptionValue
 from kyc.data_types import AnswerTypeEnum
+from globalparams.models import GlobalParameter
+from watchdog.generate_signals import create_signal
 from utils.type_utils import isInteger
 from party.models import Party, PartyType
 import pghistory
@@ -236,6 +240,8 @@ class RiskScore(BaseModel):
         obj.save()
         return obj
         
+_default_kyc_expiry_time_in_days = 365 * 2
+_kyc_expiry_global_key = "kyc_expiry"
 
 @pghistory.track()
 class KYCRecord(BaseModel):
@@ -259,6 +265,8 @@ class KYCRecord(BaseModel):
     notes = models.TextField(blank=True)
     verified_at = models.DateTimeField(null=True, blank=True)
     verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    expiry_date = models.DateField(null=True, blank=True)
 
     is_current = models.BooleanField(default=False)
 
@@ -301,6 +309,20 @@ class KYCRecord(BaseModel):
             )
         ]
 
+    @classmethod
+    def get_days_til_expiry_from_global(cls):
+        try:
+            query = GlobalParameter.objects.get(name=_kyc_expiry_global_key)
+            num_in_days = query.get_value()
+            if isInteger(num_in_days, lambda x: x > 0):
+                return num_in_days
+            else:
+                return _default_kyc_expiry_time_in_days
+        except GlobalParameter.DoesNotExist:
+            return _default_kyc_expiry_time_in_days
+        except Exception:
+            return _default_kyc_expiry_time_in_days
+
     def clean(self):
         existing_current = (
             KYCRecord.objects
@@ -336,10 +358,28 @@ class KYCRecord(BaseModel):
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
+            is_new_verification = False
+
+            if self.pk:
+                old = self.__class__.objects.filter(pk=self.pk).only("verified_at").first()
+                if old and old.verified_at is None and self.verified_at is not None:
+                    is_new_verification = True
+            else:
+                # brand new object
+                if self.verified_at is not None:
+                    is_new_verification = True
+
+            if is_new_verification:
+                days_til_expiry = self.__class__.get_days_til_expiry_from_global()
+                self.expiry_date = (self.verified_at + timedelta(days=days_til_expiry)).date()
+
             super().save(*args, **kwargs)
 
-            # Only recalculate if this record has a verified_at OR affects ordering
+            if is_new_verification:
+                create_signal(self, "create_expiry_event")
+
             if self.verified_at is not None:
+
                 latest_verified = (
                     KYCRecord.objects
                     .filter(party=self.party, verified_at__isnull=False)

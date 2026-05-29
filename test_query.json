@@ -5,7 +5,8 @@
         "query": {
             "model": "watchdog.Alert",
             "params": {
-                "now_date": { "type": "computed", "required": false }
+                "now_date": { "type": "computed", "required": false },
+                "tomorrow_date": { "type": "computed", "required": false }
             },
             "query":{
                 "where":{
@@ -147,6 +148,8 @@
                 "created_end_date": { "type": "date", "required": false },
                 "updated_start_date": { "type": "date", "required": false },
                 "updated_end_date": { "type": "date", "required": false },
+                "expire_after": { "type": "date", "required": false },
+                "expire_before": { "type": "date", "required": false },
                 "nickname": {"type": "string", "required": false},
                 "notes": {"type": "string", "required": false}
             },
@@ -172,6 +175,16 @@
                             "field": "updated_at",
                             "op": "lte",
                             "value": { "$param": "updated_end_date" }
+                        },
+                        {
+                            "field": "expiry_date",
+                            "op": "gte",
+                            "value": { "$param": "expire_after" }
+                        },
+                        {
+                            "field": "expiry_date",
+                            "op": "lte",
+                            "value": { "$param": "expire_before" }
                         },
                         {
                             "field": "status__name",
@@ -230,6 +243,8 @@
                 "created_end_date": { "type": "date", "required": false },
                 "updated_start_date": { "type": "date", "required": false },
                 "updated_end_date": { "type": "date", "required": false },
+                "expire_after": { "type": "date", "required": false },
+                "expire_before": { "type": "date", "required": false },
                 "nickname": {"type": "string", "required": false},
                 "notes": {"type": "string", "required": false}
             },
@@ -260,6 +275,16 @@
                             "field": "updated_at",
                             "op": "lte",
                             "value": { "$param": "updated_end_date" }
+                        },
+                        {
+                            "field": "expiry_date",
+                            "op": "gte",
+                            "value": { "$param": "expire_after" }
+                        },
+                        {
+                            "field": "expiry_date",
+                            "op": "lte",
+                            "value": { "$param": "expire_before" }
                         },
                         {
                             "field": "status__name",
@@ -327,6 +352,8 @@
                 "created_end_date": { "type": "date", "required": false },
                 "updated_start_date": { "type": "date", "required": false },
                 "updated_end_date": { "type": "date", "required": false },
+                "expire_after": { "type": "date", "required": false },
+                "expire_before": { "type": "date", "required": false },
                 "nickname": {"type": "string", "required": false},
                 "notes": {"type": "string", "required": false}
             },
@@ -357,6 +384,16 @@
                             "field": "updated_at",
                             "op": "lte",
                             "value": { "$param": "updated_end_date" }
+                        },
+                        {
+                            "field": "expiry_date",
+                            "op": "gte",
+                            "value": { "$param": "expire_after" }
+                        },
+                        {
+                            "field": "expiry_date",
+                            "op": "lte",
+                            "value": { "$param": "expire_before" }
                         },
                         {
                             "field": "status__name",
@@ -406,5 +443,48 @@
                 "verified_at"
             ]
         }
+    },
+    {
+        "name": "Expired KYC Records",
+        "description": "A Query to show all Expired KYC Records",
+        "query": {
+            "model": "kyc.KYCRecord",
+            "params": {
+                "now_date": { "type": "computed", "required": false }
+            },
+            "query":{
+                "where":{
+                    "and": [
+                        {"field": "expiry_date", "op": "lte", "value": {"$param": "now_date"}},
+                        {"field": "is_current", "op": "eq", "value": true}
+                    ]
+                }
+            },
+            "fields": [
+                {
+                    "path": "party__name",
+                    "name": "NickName"
+                },
+                {
+                    "path": "status__name",
+                    "name": "Status"
+                },
+                {
+                    "path": "party.target.name",
+                    "name": "Company Name"
+                }
+            ],
+            "default_fields": [
+                "Company Name",
+                "NickName",
+                "Status",
+                "notes",
+                "is_current",
+                "created_at",
+                "updated_at",
+                "verified_at"
+            ]
+        },
+        "is_system": true
     }
 ]

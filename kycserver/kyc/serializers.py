@@ -224,6 +224,7 @@ class KYCRecordSerializer(serializers.ModelSerializer):
             "answers",
             "created_at",
             "updated_at",
+            "expiry_date"
         ]
 
     # -------------------------

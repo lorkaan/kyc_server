@@ -2,6 +2,9 @@
 import logging
 from kyc.models import KYCRecord, KYCStatus, RiskScore
 from globalparams.actions import getGlobalParamByName
+from agenda.models import AgendaEvent, AgendaEventType
+from base.models import ModelSchemaMixin
+from party.models import Party
 from users.models import User
 from utils.type_utils import isNumber, isString
 from watchdog.generate_signals import create_signal
@@ -55,6 +58,39 @@ def normalize_datetime(value):
         return datetime.combine(d, time.min)
 
     raise ValueError("Invalid datetime/date format for triggered_at")
+
+@ActionRunner.register("create_expiry_event")
+def create_expiry_event_action(results, config, context):
+    signal_obj = getSignal(context.get("signal_id", None))
+    if signal_obj != None:
+        target = signal_obj.content_object
+        if isinstance(target, KYCRecord) and target.expiry_date != None:
+            try:
+                event_type = AgendaEventType.objects.get(code="kyc_record_expiry")
+            except KYCStatus.DoesNotExist as e:
+                logger.error(f"Can not get status pending for signal: {signal_obj.pk}")
+                event_type=None
+            finally:
+                expiry_date = target.expiry_date
+                if isinstance(target.party, Party):
+                    if len(target.party.name) > 0:
+                        event_title = f"KYC Expired for Party: {str(target.party.name)}"
+                    elif isinstance(target.party.content_object, ModelSchemaMixin):
+                        event_title = f"KYC Expired for Party: {str(target.party.content_object.name)}"
+                    else:
+                        event_title = f"KYC Expired for Party: {str(target.party.id)}"
+                else:
+                    event_title = f"KYC Expired - {str(target.id)}"
+                try:
+                    event_obj = AgendaEvent.objects.create(title=event_title, event_type=event_type, start_time=expiry_date)
+                    event_obj.save()
+                except Exception as e:
+                    logger.error(f"Error saving event: {e}")
+                return
+        else:
+            return
+    else:
+        return
         
 def create_alert(message, reason=None, status=None, severity=None, obj=None, triggered_at=None):
 
