@@ -76,7 +76,7 @@ else:
     ALLOWED_HOSTS = [
         "127.0.0.1",
         "localhost",
-        "sunmail.prospectchambers.com:46443"
+        "sunmail.prospectchambers.com"
     ]
 
     CORS_ALLOWED_ORIGINS = [
