@@ -141,7 +141,6 @@ class DslEvaluator:
     def fill(cls, query_def, params={}):
         eval_statement = cls.get_eval_statement(query_def)
         resolved_params = cls.resolve_parameters(query_def.get(cls.param_key) or {}, query_def.get(cls.global_param_key) or {}, params)
-        cls.logger.error(f"Resolved Params: \n{dictToStr(resolved_params, prefix="\t")}")
         return cls.bind_params(eval_statement, resolved_params)
     
     @classmethod
@@ -151,5 +150,4 @@ class DslEvaluator:
     @classmethod
     def run(cls, query_def, params={}, **kwargs):
         ast_obj = cls.fill(query_def, params)
-        cls.logger.error(f"AST Object: \n{dictToStr(ast_obj, prefix="\t")}")
         return cls.evaluate(ast_obj, **kwargs)
