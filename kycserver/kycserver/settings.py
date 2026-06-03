@@ -76,19 +76,24 @@ else:
     ALLOWED_HOSTS = [
         "127.0.0.1",
         "localhost",
-        "sunmail.prospectchambers.com"
+        "sunmail.prospectchambers.com",
+        "lexid.prospectchambers.com/"
     ]
 
     CORS_ALLOWED_ORIGINS = [
         "https://127.0.0.1",
         "https://localhost",
-        "https://sunmail.prospectchambers.com:46443"
+        "https://sunmail.prospectchambers.com:46443",
+        "http://lexid.prospectchambers.com/",
+        "https://lexid.prospectchambers.com/"
     ]
 
     CSRF_TRUSTED_ORIGINS = [
         "https://nginx.kyc.internal",
         "https://127.0.0.1",
-        "https://sunmail.prospectchambers.com:46443"
+        "https://sunmail.prospectchambers.com:46443",
+        "http://lexid.prospectchambers.com/",
+        "http://lexid.prospectchambers.com/"
     ]
 
 SESSION_COOKIE_HTTPONLY = True
