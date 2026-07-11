@@ -151,9 +151,21 @@ class Command(BaseCommand):
 
                 # --- HANDLE VALUE OBJECT CLEANLY ---
 
-                existing_obj = parameter.content_object
+                existing_obj = value_model.objects.filter(parameter=parameter).first()
+
+                if existing_obj:
+                    existing_obj.value = parsed_value
+                    existing_obj.save(update_fields=["value"])
+                else:
+                    existing_obj = value_model.objects.create(
+                        parameter=parameter,
+                        value=parsed_value,
+                    )
+
+                parameter.set_target(existing_obj)
 
                 # If type changed → delete old object and clear relation
+                """
                 if existing_obj and not isinstance(existing_obj, value_model):
                     existing_obj.delete()
                     parameter.set_target(None)
@@ -173,6 +185,7 @@ class Command(BaseCommand):
 
                 # Link via Generic FK (single source of truth)
                 parameter.set_target(value_obj)
+                """
 
                 imported += 1
 
