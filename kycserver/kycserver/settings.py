@@ -77,7 +77,7 @@ else:
         "127.0.0.1",
         "localhost",
         "sunmail.prospectchambers.com",
-        "lexid.prospectchambers.com/"
+        "lexid.prospectchambers.com"
     ]
 
     CORS_ALLOWED_ORIGINS = [
