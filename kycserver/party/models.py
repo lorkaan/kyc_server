@@ -161,5 +161,7 @@ class PartyRelationship(BaseModel):
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
 
+    contact = models.BooleanField(default=False)
+
     class Meta:
         unique_together = ("party", "target_party", "role", "start_date")

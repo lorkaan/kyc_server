@@ -8,7 +8,7 @@ def seed_relationship_roles(apps, schema_editor):
     roles = [
         {"code": "director", "name": "Director"},
         {"code": "owner", "name": "Owner"},
-        {"code": "employee", "name": "Employee"},
+        {"code": "authorised_person", "name": "Authorized Person"},
         {"code": "beneficial_owner", "name": "Beneficial Owner"},
     ]
 

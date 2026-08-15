@@ -1,14 +1,28 @@
-
+from django.db import transaction
 from watchdog.models import Signal, SignalSeverity, SignalType
 
 
-def create_signal(instance, signal_type_label, **kwargs):
-    signal_type, _ = SignalType.objects.get_or_create(label=signal_type_label)    # This is core to the system, so it needs to create if it does not exist
-    severity = SignalSeverity.objects.get(code="info")  # or whatever default
+@transaction.atomic
+def create_signal(*, instance, signal_type_label: str, metadata: dict | None = None, signal_model=None):
+    """
+    Core signal creation entrypoint.
 
-    Signal.objects.create(
-        signal_type=signal_type,
-        severity=severity,
-        content_object=instance,  # 👈 Generic FK target
-        metadata=kwargs
+    This is intentionally simple and stable so all apps can rely on it.
+    """
+
+    if not signal_type_label or not signal_type_label.strip():
+        raise ValueError("signal_type_label cannot be empty")
+
+    signal_model = signal_model or Signal
+
+    signal_type, _ = SignalType.objects.get_or_create(
+        label=signal_type_label.strip()
     )
+
+    signal = signal_model.objects.create(
+        signal_type=signal_type,
+        content_object=instance,
+        metadata=metadata or {}
+    )
+
+    return signal

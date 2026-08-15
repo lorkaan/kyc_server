@@ -147,6 +147,9 @@ class GenericPointerToClassMixin(models.Model):
         return f"{model}.{self.field_name} → {self.label}"
     
     
+"""
+    This needs to be in a separate app from BASE. Put it in an app called SCHEMA
+"""
 class ModelSchemaMixin:
 
     def get_serializer_class(self):

@@ -168,6 +168,7 @@ class PartyRelationshipSerializer(serializers.ModelSerializer):
             "end_date",
             "created_at",
             "updated_at",
+            'contact'
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
@@ -199,6 +200,7 @@ class RelationshipInputSerializer(serializers.Serializer):
     )
     start_date = serializers.DateField()
     end_date = serializers.DateField(required=False, allow_null=True)
+    contact = serializers.BooleanField(required=False, allow_null=True)
 
 class PartyGraphSerializer(serializers.Serializer):
     party = PartyInputField()
@@ -227,6 +229,7 @@ class PartyGraphSerializer(serializers.Serializer):
                     role=rel["role"],
                     start_date=rel["start_date"],
                     end_date=rel.get("end_date"),
+                    contact=rel.get("contact")
                 )
 
                 created_relationships.append(relationship)

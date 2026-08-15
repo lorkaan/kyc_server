@@ -3,6 +3,7 @@ from django.db import models
 # Create your models here.
 from kyc.models import ReferenceSet, ReferenceValue
 from globalparams.models import GlobalParameter
+from person.models import Person
 import pghistory
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -80,3 +81,8 @@ class Company(ModelSchemaMixin, BaseModel):
         unique_together = ("country", "registration_number")
         ordering = ["name"]
 
+@pghistory.track()
+class CompanyContact(BaseModel):
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    person = models.ForeignKey(Person, on_delete=models.CASCADE)
