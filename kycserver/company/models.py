@@ -81,8 +81,3 @@ class Company(ModelSchemaMixin, BaseModel):
         unique_together = ("country", "registration_number")
         ordering = ["name"]
 
-@pghistory.track()
-class CompanyContact(BaseModel):
-
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    person = models.ForeignKey(Person, on_delete=models.CASCADE)
