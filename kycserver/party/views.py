@@ -13,6 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import PartyType, Party, PartyRelationship
 from .serializers import (
     PartyGraphSerializer,
+    PartyRelationshipReadSerializer,
     PartyTypeSerializer,
     PartySerializer,
     PartyRelationshipSerializer,
@@ -152,7 +153,7 @@ class PartyRelationshipViewSet(BaseViewSet):
         "target_party",
         "role"
     )
-    serializer_class = PartyRelationshipSerializer
+    serializer_class = PartyRelationshipReadSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()

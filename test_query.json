@@ -547,7 +547,7 @@
                     "name": "Company_Name"
                 },
                 {
-                    "path": "target.country__label",
+                    "path": "target.country.label",
                     "name": "Country"
                 },
                 {

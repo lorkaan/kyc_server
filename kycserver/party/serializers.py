@@ -67,8 +67,28 @@ class PartySerializer(serializers.ModelSerializer):
             "repr": str(target),
         }
 
-
 # --- PartyRelationship ---
+
+class PartyRelationshipReadSerializer(serializers.ModelSerializer):
+
+    party = PartySerializer()
+    target_party = PartySerializer()
+
+    class Meta:
+            model = PartyRelationship
+            fields = [
+                "id",
+                "party",
+                "target_party",
+                "role",
+                "start_date",
+                "end_date",
+                "created_at",
+                "updated_at",
+                'contact'
+            ]
+            read_only_fields = ["id", "created_at", "updated_at"]
+
 
 class PartyCreateSerializer(serializers.ModelSerializer):
     # Use SlugRelatedField to map 'party_type' from its code
