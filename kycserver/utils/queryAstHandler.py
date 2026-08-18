@@ -1,6 +1,7 @@
 from django.db.models import F, Q, Exists, Model, OuterRef
 
 from globalparams.models import GlobalParameter
+from party.models import Party, PartyRelationship
 from utils.dsl_evaluator import DslEvaluator
 
 from .model_utils import getModelFromName
@@ -66,7 +67,9 @@ class QueryAstHandler(DslEvaluator):
         Alert,
         SignalSeverity,
         SignalType,
-        Signal
+        Signal,
+        Party,
+        PartyRelationship
     }
 
     @classmethod
