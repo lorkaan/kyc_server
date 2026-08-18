@@ -200,7 +200,7 @@ class RelationshipInputSerializer(serializers.Serializer):
     )
     start_date = serializers.DateField()
     end_date = serializers.DateField(required=False, allow_null=True)
-    contact = serializers.BooleanField(required=False, allow_null=True)
+    contact = serializers.BooleanField(required=False, default=False)
 
 class PartyGraphSerializer(serializers.Serializer):
     party = PartyInputField()
