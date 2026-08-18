@@ -509,8 +509,8 @@
                         {"field": "party__id", "op": "eq", "value": {"$param": "person_id"}},
                         {"field": "party__party_type__code", "op": "eq", "value": "person"},
                         {"field": "party__name", "op": "contains", "value": {"$param": "party_nickname"}},
-                        {"field": "party__target__first_name", "op": "contains", "value": {"$param": "person_first_name"}},
-                        {"field": "party__target__last_name", "op": "contains", "value": {"$param": "person_last_name"}},
+                        {"field": "party__content_object__first_name", "op": "contains", "value": {"$param": "person_first_name"}},
+                        {"field": "party__content_object__last_name", "op": "contains", "value": {"$param": "person_last_name"}},
                         {
                             "field": "start_date",
                             "op": "gte",
@@ -598,7 +598,7 @@
                         {"field": "target_party__id", "op": "eq", "value": {"$param": "company_id"}},
                         {"field": "target_party__party_type__code", "op": "eq", "value": "company"},
                         {"field": "target_party__name", "op": "contains", "value": {"$param": "company_nickname"}},
-                        {"field": "target_party__target__name", "op": "contains", "value": {"$param": "company_name"}},
+                        {"field": "target_party__content_object__name", "op": "contains", "value": {"$param": "company_name"}},
                         {
                             "field": "start_date",
                             "op": "gte",
@@ -688,30 +688,30 @@
                         {"field": "id", "op": "eq", "value": {"$param": "company_id"}},
                         {"field": "party_type__code", "op": "eq", "value": "company"},
                         {"field": "name", "op": "contains", "value": {"$param": "company_nickname"}},
-                        {"field": "target__name", "op": "contains", "value": {"$param": "company_name"}},
-                        {"field": "target__registration_number", "op": "contains", "value": {"$param": "registration_number"}},
+                        {"field": "content_object__name", "op": "contains", "value": {"$param": "company_name"}},
+                        {"field": "content_object__registration_number", "op": "contains", "value": {"$param": "registration_number"}},
                         {
-                            "field": "target__opening_date",
+                            "field": "content_object__opening_date",
                             "op": "gte",
                             "value": { "$param": "opening_date_after" }
                         },
                         {
-                            "field": "target__opening_date",
+                            "field": "content_object__opening_date",
                             "op": "lte",
                             "value": { "$param": "opening_date_before" }
                         },
                         {
-                            "field": "target__closing_date",
+                            "field": "content_object__closing_date",
                             "op": "gte",
                             "value": { "$param": "closing_date_after" }
                         },
                         {
-                            "field": "target__closing_date",
+                            "field": "content_object__closing_date",
                             "op": "lte",
                             "value": { "$param": "closing_date_before" }
                         },
-                        {"field": "target__is_active", "op": "eq", "value": {"$param": "is_active"}},
-                        {"field": "target__country__label", "op": "contains", "value": {"$param": "country_name"}}
+                        {"field": "content_object__is_active", "op": "eq", "value": {"$param": "is_active"}},
+                        {"field": "content_object__country__label", "op": "contains", "value": {"$param": "country_name"}}
                     ]
                 }
             },
@@ -721,23 +721,23 @@
                     "name": "NickName"
                 },
                 {
-                    "path": "target__name",
+                    "path": "content_object__name",
                     "name": "Company_Name"
                 },
                 {
-                    "path": "target__country__label",
+                    "path": "content_object__country__label",
                     "name": "Country"
                 },
                 {
-                    "path": "target__opening_date",
+                    "path": "content_object__opening_date",
                     "name": "Opening_Date"
                 },
                 {
-                    "path": "target__closing_date",
+                    "path": "content_object__closing_date",
                     "name": "Closing_Date"
                 },
                 {
-                    "path": "target__is_active",
+                    "path": "content_object__is_active",
                     "name": "Active"
                 }
             ],
@@ -773,25 +773,25 @@
                         {"field": "id", "op": "eq", "value": {"$param": "person_id"}},
                         {"field": "party_type__code", "op": "eq", "value": "person"},
                         {"field": "name", "op": "contains", "value": {"$param": "party_nickname"}},
-                        {"field": "target__first_name", "op": "contains", "value": {"$param": "person_first_name"}},
-                        {"field": "target__last_name", "op": "contains", "value": {"$param": "person_last_name"}},
+                        {"field": "content_object__first_name", "op": "contains", "value": {"$param": "person_first_name"}},
+                        {"field": "content_object__last_name", "op": "contains", "value": {"$param": "person_last_name"}},
                         {
-                            "field": "target__date_of_birth",
+                            "field": "content_object__date_of_birth",
                             "op": "gte",
                             "value": { "$param": "date_of_birth_after" }
                         },
                         {
-                            "field": "target__date_of_birth",
+                            "field": "content_object__date_of_birth",
                             "op": "lte",
                             "value": { "$param": "date_of_birth_before" }
                         },
                         {
-                            "field": "target__date_of_death",
+                            "field": "content_object__date_of_death",
                             "op": "gte",
                             "value": { "$param": "date_of_death_after" }
                         },
                         {
-                            "field": "target__date_of_death",
+                            "field": "content_object__date_of_death",
                             "op": "lte",
                             "value": { "$param": "date_of_death_before" }
                         }
@@ -808,11 +808,11 @@
                     "name": "Name"
                 },
                 {
-                    "path": "target__date_of_birth",
+                    "path": "content_object__date_of_birth",
                     "name": "Date_of_Birth"
                 },
                 {
-                    "path": "target__date_of_death",
+                    "path": "content_object__date_of_death",
                     "name": "Date_of_Death"
                 }
             ],
