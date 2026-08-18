@@ -1,6 +1,7 @@
 from django.apps import apps
 
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from django.db import transaction
 
 from .models import PartyType, Party, PartyRelationship
@@ -89,6 +90,32 @@ class PartyRelationshipReadSerializer(serializers.ModelSerializer):
             ]
             read_only_fields = ["id", "created_at", "updated_at"]
 
+class PartyRelationshipUpdateSerializer(serializers.ModelSerializer):
+    end_date = serializers.DateField(required=False, allow_null=True)
+    contact = serializers.BooleanField(required=False)
+
+    class Meta:
+        model = PartyRelationship
+        fields = ["end_date", "contact"]
+
+    def validate(self, data):
+        instance = self.instance
+
+        # Handle end_date rules
+        if "end_date" in data:
+            # Prevent modifying once already set
+            if instance.end_date is not None:
+                raise ValidationError({
+                    "end_date": "Cannot modify end_date once it is set."
+                })
+
+            # Prevent explicitly setting null (optional rule)
+            if data["end_date"] is None:
+                raise ValidationError({
+                    "end_date": "Cannot be null once set."
+                })
+
+        return data
 
 class PartyCreateSerializer(serializers.ModelSerializer):
     # Use SlugRelatedField to map 'party_type' from its code

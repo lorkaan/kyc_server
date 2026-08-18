@@ -3,7 +3,7 @@ from base.views import BaseViewSet
 from kyc.models import KYCRecord
 from kyc.serializers import KYCRecordSerializer
 from utils.dict_utils import dictToStr
-from rest_framework import viewsets, status
+from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db.models import Q
@@ -14,6 +14,7 @@ from .models import PartyType, Party, PartyRelationship
 from .serializers import (
     PartyGraphSerializer,
     PartyRelationshipReadSerializer,
+    PartyRelationshipUpdateSerializer,
     PartyTypeSerializer,
     PartySerializer,
     PartyRelationshipSerializer,
@@ -196,3 +197,12 @@ class PartyGraphViewSet(viewsets.ViewSet):
                 rel.id for rel in result["relationships"]
             ]
         }, status=status.HTTP_201_CREATED)
+
+class PartyRelationshipUpdateViewSet(
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = PartyRelationship.objects.all()
+    serializer_class = PartyRelationshipUpdateSerializer
+
+    http_method_names = ["patch"]
