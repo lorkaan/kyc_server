@@ -1,5 +1,6 @@
 from django.apps import apps
 
+from kyc.serializers import RelationshipRoleSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
@@ -74,6 +75,7 @@ class PartyRelationshipReadSerializer(serializers.ModelSerializer):
 
     party = PartySerializer()
     target_party = PartySerializer()
+    role = RelationshipRoleSerializer()
 
     class Meta:
             model = PartyRelationship
