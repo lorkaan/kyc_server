@@ -429,11 +429,11 @@
                 },
                 {
                     "path": "party.target.name",
-                    "name": "Company Name"
+                    "name": "Company_Name"
                 }
             ],
             "default_fields": [
-                "Company Name",
+                "Company_Name",
                 "NickName",
                 "Status",
                 "notes",
@@ -471,11 +471,11 @@
                 },
                 {
                     "path": "party.target.name",
-                    "name": "Company Name"
+                    "name": "Company_Name"
                 }
             ],
             "default_fields": [
-                "Company Name",
+                "Company_Name",
                 "NickName",
                 "Status",
                 "notes",
@@ -542,11 +542,11 @@
                 },
                 {
                     "path": "party.target.name",
-                    "name": "Full Name"
+                    "name": "Name"
                 },
                 {
                     "path": "target_party.target.name",
-                    "name": "Related Name"
+                    "name": "Target_Name"
                 },
                 {
                     "path": "role.name",
@@ -562,17 +562,17 @@
                 },
                 {
                     "path": "contact",
-                    "name": "Primary Contact"
+                    "name": "Primary_Contact"
                 }
             ],
             "default_fields": [
                 "NickName",
-                "Full Name",
+                "Name",
                 "Role",
-                "Related Name",
+                "Target_Name",
                 "Start",
                 "End",
-                "Primary Contact"
+                "Primary_Contact"
             ]
         },
         "is_system": true
@@ -630,11 +630,11 @@
                 },
                 {
                     "path": "party.target.name",
-                    "name": "Full Name"
+                    "name": "Name"
                 },
                 {
                     "path": "target_party.target.name",
-                    "name": "Company Name"
+                    "name": "Target_Name"
                 },
                 {
                     "path": "role.name",
@@ -650,17 +650,17 @@
                 },
                 {
                     "path": "contact",
-                    "name": "Primary Contact"
+                    "name": "Primary_Contact"
                 }
             ],
             "default_fields": [
                 "NickName",
-                "Full Name",
+                "Name",
                 "Role",
-                "Company Name",
+                "Target_Name",
                 "Start",
                 "End",
-                "Primary Contact"
+                "Primary_Contact"
             ]
         },
         "is_system": true
@@ -722,7 +722,7 @@
                 },
                 {
                     "path": "target__name",
-                    "name": "Company Name"
+                    "name": "Company_Name"
                 },
                 {
                     "path": "target__country__label",
@@ -730,11 +730,11 @@
                 },
                 {
                     "path": "target__opening_date",
-                    "name": "Opening Date"
+                    "name": "Opening_Date"
                 },
                 {
                     "path": "target__closing_date",
-                    "name": "Closing Date"
+                    "name": "Closing_Date"
                 },
                 {
                     "path": "target__is_active",
@@ -743,10 +743,10 @@
             ],
             "default_fields": [
                 "NickName",
-                "Company Name",
+                "Company_Name",
                 "Country",
-                "Opening Date",
-                "Closing Date",
+                "Opening_Date",
+                "Closing_Date",
                 "Active"
             ]
         },
@@ -805,22 +805,22 @@
                 },
                 {
                     "path": "target.name",
-                    "name": "Full Name"
+                    "name": "Name"
                 },
                 {
                     "path": "target__date_of_birth",
-                    "name": "Date of Birth"
+                    "name": "Date_of_Birth"
                 },
                 {
                     "path": "target__date_of_death",
-                    "name": "Date of Death"
+                    "name": "Date_of_Death"
                 }
             ],
             "default_fields": [
                 "NickName",
-                "Full Name",
-                "Date of Birth",
-                "Date of Death"
+                "Name",
+                "Date_of_Birth",
+                "Date_of_Death"
             ]
         },
         "is_system": true
