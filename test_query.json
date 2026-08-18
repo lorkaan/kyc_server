@@ -486,5 +486,343 @@
             ]
         },
         "is_system": true
+    },
+    {
+        "name": "Party Relationships for Person",
+        "description": "A Query to relationships between Parties by Person",
+        "query": {
+            "model": "party.PartyRelationship",
+            "params": {
+                "person_id": { "type": "uuid", "required": false },
+                "party_nickname": {"type": "string", "required": false},
+                "person_first_name": {"type": "string", "required": false},
+                "person_last_name": {"type": "string", "required": false},
+                "start_date_after": { "type": "date", "required": false },
+                "start_date_before": { "type": "date", "required": false },
+                "end_date_after": { "type": "date", "required": false },
+                "end_date_before": { "type": "date", "required": false },
+                "primary_contact": {"type": "boolean", "required": false}
+            },
+            "query":{
+                "where":{
+                    "and": [
+                        {"field": "party__id", "op": "eq", "value": {"$param": "person_id"}},
+                        {"field": "party__type", "op": "eq", "value": "person"},
+                        {"field": "party__name", "op": "contains", "value": {"$param": "party_nickname"}},
+                        {"field": "party__target__first_name", "op": "contains", "value": {"$param": "person_first_name"}},
+                        {"field": "party__target__last_name", "op": "contains", "value": {"$param": "person_last_name"}},
+                        {
+                            "field": "start_date",
+                            "op": "gte",
+                            "value": { "$param": "start_date_after" }
+                        },
+                        {
+                            "field": "start_date",
+                            "op": "lte",
+                            "value": { "$param": "start_date_before" }
+                        },
+                        {
+                            "field": "end_date",
+                            "op": "gte",
+                            "value": { "$param": "end_date_after" }
+                        },
+                        {
+                            "field": "end_date",
+                            "op": "lte",
+                            "value": { "$param": "end_date_before" }
+                        },
+                        {"field": "contact", "op": "eq", "value": {"$param": "primary_contact"}}
+                    ]
+                }
+            },
+            "fields": [
+                {
+                    "path": "party__name",
+                    "name": "NickName"
+                },
+                {
+                    "path": "party.target.name",
+                    "name": "Full Name"
+                },
+                {
+                    "path": "target_party.target.name",
+                    "name": "Related Name"
+                },
+                {
+                    "path": "role.name",
+                    "name": "Role"
+                },
+                {
+                    "path": "start_date",
+                    "name": "Start"
+                },
+                {
+                    "path": "end_date",
+                    "name": "End"
+                },
+                {
+                    "path": "contact",
+                    "name": "Primary Contact"
+                }
+            ],
+            "default_fields": [
+                "NickName",
+                "Full Name",
+                "Role",
+                "Related Name",
+                "Start",
+                "End",
+                "Primary Contact"
+            ]
+        },
+        "is_system": true
+    },
+    {
+        "name": "Party Relationships for Company",
+        "description": "A Query to relationships between Parties by Company",
+        "query": {
+            "model": "party.PartyRelationship",
+            "params": {
+                "company_id": { "type": "uuid", "required": false },
+                "company_nickname": {"type": "string", "required": false},
+                "company_name": {"type": "string", "required": false},
+                "start_date_after": { "type": "date", "required": false },
+                "start_date_before": { "type": "date", "required": false },
+                "end_date_after": { "type": "date", "required": false },
+                "end_date_before": { "type": "date", "required": false },
+                "primary_contact": {"type": "boolean", "required": false}
+            },
+            "query":{
+                "where":{
+                    "and": [
+                        {"field": "target_party__id", "op": "eq", "value": {"$param": "company_id"}},
+                        {"field": "target_party__type", "op": "eq", "value": "company"},
+                        {"field": "target_party__name", "op": "contains", "value": {"$param": "company_nickname"}},
+                        {"field": "target_party__target__name", "op": "contains", "value": {"$param": "company_name"}},
+                        {
+                            "field": "start_date",
+                            "op": "gte",
+                            "value": { "$param": "start_date_after" }
+                        },
+                        {
+                            "field": "start_date",
+                            "op": "lte",
+                            "value": { "$param": "start_date_before" }
+                        },
+                        {
+                            "field": "end_date",
+                            "op": "gte",
+                            "value": { "$param": "end_date_after" }
+                        },
+                        {
+                            "field": "end_date",
+                            "op": "lte",
+                            "value": { "$param": "end_date_before" }
+                        },
+                        {"field": "contact", "op": "eq", "value": {"$param": "primary_contact"}}
+                    ]
+                }
+            },
+            "fields": [
+                {
+                    "path": "party__name",
+                    "name": "NickName"
+                },
+                {
+                    "path": "party.target.name",
+                    "name": "Full Name"
+                },
+                {
+                    "path": "target_party.target.name",
+                    "name": "Company Name"
+                },
+                {
+                    "path": "role.name",
+                    "name": "Role"
+                },
+                {
+                    "path": "start_date",
+                    "name": "Start"
+                },
+                {
+                    "path": "end_date",
+                    "name": "End"
+                },
+                {
+                    "path": "contact",
+                    "name": "Primary Contact"
+                }
+            ],
+            "default_fields": [
+                "NickName",
+                "Full Name",
+                "Role",
+                "Company Name",
+                "Start",
+                "End",
+                "Primary Contact"
+            ]
+        },
+        "is_system": true
+    },
+    {
+        "name": "Company",
+        "description": "Search Companies",
+        "query": {
+            "model": "party.Party",
+            "params": {
+                "company_id": { "type": "uuid", "required": false },
+                "company_nickname": {"type": "string", "required": false},
+                "company_name": {"type": "string", "required": false},
+                "registration_number": { "type": "string", "required": false },
+                "country_name": {"type": "string", "required": false},
+                "opening_date_after": { "type": "date", "required": false},
+                "opening_date_before": { "type": "date", "required": false},
+                "closing_date_after": { "type": "date", "required": false},
+                "closing_date_before": { "type": "date", "required": false},
+                "is_active": {"type": "boolean", "required": false}
+            },
+            "query":{
+                "where":{
+                    "and": [
+                        {"field": "id", "op": "eq", "value": {"$param": "company_id"}},
+                        {"field": "type", "op": "eq", "value": "company"},
+                        {"field": "name", "op": "contains", "value": {"$param": "company_nickname"}},
+                        {"field": "target__name", "op": "contains", "value": {"$param": "company_name"}},
+                        {"field": "target__registration_number", "op": "contains", "value": {"$param": "registration_number"}},
+                        {
+                            "field": "target__opening_date",
+                            "op": "gte",
+                            "value": { "$param": "opening_date_after" }
+                        },
+                        {
+                            "field": "target__opening_date",
+                            "op": "lte",
+                            "value": { "$param": "opening_date_before" }
+                        },
+                        {
+                            "field": "target__closing_date",
+                            "op": "gte",
+                            "value": { "$param": "closing_date_after" }
+                        },
+                        {
+                            "field": "target__closing_date",
+                            "op": "lte",
+                            "value": { "$param": "closing_date_before" }
+                        },
+                        {"field": "target__is_active", "op": "eq", "value": {"$param": "is_active"}},
+                        {"field": "target__country__label", "op": "contains", "value": {"$param": "country_name"}}
+                    ]
+                }
+            },
+            "fields": [
+                {
+                    "path": "name",
+                    "name": "NickName"
+                },
+                {
+                    "path": "target__name",
+                    "name": "Company Name"
+                },
+                {
+                    "path": "target__country__label",
+                    "name": "Country"
+                },
+                {
+                    "path": "target__opening_date",
+                    "name": "Opening Date"
+                },
+                {
+                    "path": "target__closing_date",
+                    "name": "Closing Date"
+                },
+                {
+                    "path": "target__is_active",
+                    "name": "Active"
+                }
+            ],
+            "default_fields": [
+                "NickName",
+                "Company Name",
+                "Country",
+                "Opening Date",
+                "Closing Date",
+                "Active"
+            ]
+        },
+        "is_system": true
+    },
+    {
+        "name": "Person",
+        "description": "Search for Person",
+        "query": {
+            "model": "party.Party",
+            "params": {
+                "person_id": { "type": "uuid", "required": false },
+                "pperson_nickname": {"type": "string", "required": false},
+                "person_first_name": {"type": "string", "required": false},
+                "person_last_name": {"type": "string", "required": false},
+                "date_of_birth_after": { "type": "date", "required": false },
+                "date_of_birth_before": { "type": "date", "required": false },
+                "date_of_death_after": { "type": "date", "required": false },
+                "date_of_death_before": { "type": "date", "required": false }
+            },
+            "query":{
+                "where":{
+                    "and": [
+                        {"field": "id", "op": "eq", "value": {"$param": "person_id"}},
+                        {"field": "type", "op": "eq", "value": "person"},
+                        {"field": "name", "op": "contains", "value": {"$param": "party_nickname"}},
+                        {"field": "target__first_name", "op": "contains", "value": {"$param": "person_first_name"}},
+                        {"field": "target__last_name", "op": "contains", "value": {"$param": "person_last_name"}},
+                        {
+                            "field": "target__date_of_birth",
+                            "op": "gte",
+                            "value": { "$param": "date_of_birth_after" }
+                        },
+                        {
+                            "field": "target__date_of_birth",
+                            "op": "lte",
+                            "value": { "$param": "date_of_birth_before" }
+                        },
+                        {
+                            "field": "target__date_of_death",
+                            "op": "gte",
+                            "value": { "$param": "date_of_death_after" }
+                        },
+                        {
+                            "field": "target__date_of_death",
+                            "op": "lte",
+                            "value": { "$param": "date_of_death_before" }
+                        }
+                    ]
+                }
+            },
+            "fields": [
+                {
+                    "path": "name",
+                    "name": "NickName"
+                },
+                {
+                    "path": "target.name",
+                    "name": "Full Name"
+                },
+                {
+                    "path": "target__date_of_birth",
+                    "name": "Date of Birth"
+                },
+                {
+                    "path": "target__date_of_death",
+                    "name": "Date of Death"
+                }
+            ],
+            "default_fields": [
+                "NickName",
+                "Full Name",
+                "Date of Birth",
+                "Date of Death"
+            ]
+        },
+        "is_system": true
     }
 ]
