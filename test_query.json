@@ -721,23 +721,23 @@
                     "name": "NickName"
                 },
                 {
-                    "path": "content_object__name",
+                    "path": "target.name",
                     "name": "Company_Name"
                 },
                 {
-                    "path": "content_object__country__label",
+                    "path": "target.country__label",
                     "name": "Country"
                 },
                 {
-                    "path": "content_object__opening_date",
+                    "path": "target.opening_date",
                     "name": "Opening_Date"
                 },
                 {
-                    "path": "content_object__closing_date",
+                    "path": "target.closing_date",
                     "name": "Closing_Date"
                 },
                 {
-                    "path": "content_object__is_active",
+                    "path": "target.is_active",
                     "name": "Active"
                 }
             ],
@@ -808,11 +808,11 @@
                     "name": "Name"
                 },
                 {
-                    "path": "content_object__date_of_birth",
+                    "path": "target.date_of_birth",
                     "name": "Date_of_Birth"
                 },
                 {
-                    "path": "content_object__date_of_death",
+                    "path": "target.date_of_death",
                     "name": "Date_of_Death"
                 }
             ],
