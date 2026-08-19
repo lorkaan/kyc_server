@@ -70,15 +70,13 @@ class PartySerializer(serializers.ModelSerializer):
 
 # --- PartyRelationship ---
 
-def get_relationship_role_serializer():
-    from kyc.serializers import RelationshipRoleSerializer
-    return RelationshipRoleSerializer
+
 
 class PartyRelationshipReadSerializer(serializers.ModelSerializer):
 
     party = PartySerializer()
     target_party = PartySerializer()
-    role = get_relationship_role_serializer()()
+    role = serializers.SerializerMethodField()
 
     class Meta:
             model = PartyRelationship
@@ -94,6 +92,10 @@ class PartyRelationshipReadSerializer(serializers.ModelSerializer):
                 'contact'
             ]
             read_only_fields = ["id", "created_at", "updated_at"]
+
+    def get_role(self, obj):
+        from kyc.serializers import RelationshipRoleSerializer
+        return RelationshipRoleSerializer(obj.role).data
 
 class PartyRelationshipUpdateSerializer(serializers.ModelSerializer):
     end_date = serializers.DateField(required=False, allow_null=True)
