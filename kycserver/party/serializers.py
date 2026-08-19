@@ -71,11 +71,15 @@ class PartySerializer(serializers.ModelSerializer):
 
 # --- PartyRelationship ---
 
+def get_relationship_role_serializer():
+    from kyc.serializers import RelationshipRoleSerializer
+    return RelationshipRoleSerializer
+
 class PartyRelationshipReadSerializer(serializers.ModelSerializer):
 
     party = PartySerializer()
     target_party = PartySerializer()
-    role = RelationshipRoleSerializer()
+    role = get_relationship_role_serializer()()
 
     class Meta:
             model = PartyRelationship
