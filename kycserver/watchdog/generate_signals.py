@@ -3,7 +3,7 @@ from watchdog.models import Signal, SignalSeverity, SignalType
 
 
 @transaction.atomic
-def create_signal(*, instance, signal_type_label: str, metadata: dict | None = None, signal_model=None):
+def create_signal(*, instance, signal_type_label: str, severity_code: str ="action", metadata: dict | None = None, signal_model=None):
     """
     Core signal creation entrypoint.
 
@@ -19,7 +19,10 @@ def create_signal(*, instance, signal_type_label: str, metadata: dict | None = N
         label=signal_type_label.strip()
     )
 
+    signal_severity = SignalSeverity.objects.get(code=severity_code)
+
     signal = signal_model.objects.create(
+        signal_severity=signal_severity,
         signal_type=signal_type,
         content_object=instance,
         metadata=metadata or {}
