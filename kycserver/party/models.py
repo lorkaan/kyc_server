@@ -3,6 +3,7 @@ from django.utils import timezone
 from base.models import BaseModel, GenericTargetMixin, ModelSchemaMixin
 from django.utils.module_loading import import_string
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 import pghistory
 import logging
 
@@ -162,6 +163,8 @@ class PartyRelationship(BaseModel):
     end_date = models.DateField(null=True, blank=True)
 
     contact = models.BooleanField(default=False)
+
+    share_percentage = models.DecimalField(verbose_name="Percentage Of Shares", max_digits=7, decimal_places=4, default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
 
     class Meta:
         unique_together = ("party", "target_party", "role", "start_date")

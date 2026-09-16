@@ -10,6 +10,7 @@ class PersonSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "first_name",
+            "middle_name",
             "last_name",
             "name",
             "full_name",
