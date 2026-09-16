@@ -80,7 +80,7 @@ class KYCRecordViewSet(ModelViewSet):
 
         try:
             record = KYCRecord.objects.select_related("party__party_type").get(id=record_id)
-            create_signal(record, "kyc_verification_failed")
+            create_signal(instance=record, signal_type_label="kyc_verification_failed")
         except KYCRecord.DoesNotExist:
             return Response(
                 {"error": "KYCRecord not found"},
@@ -105,7 +105,7 @@ class KYCRecordViewSet(ModelViewSet):
 
         try:
             record = KYCRecord.objects.select_related("party__party_type").get(id=record_id)
-            create_signal(record, "verified_kyc_record", user_id=request.user.id)
+            create_signal(instance=record, signal_type_label="verified_kyc_record", metadata={"user_id":request.user.id})
         except KYCRecord.DoesNotExist:
             return Response(
                 {"error": "KYCRecord not found"},
@@ -130,7 +130,7 @@ class KYCRecordViewSet(ModelViewSet):
                 risk_label = risk_score.get("label", None)
                 if risk_label != None:
                     new_risk_score = RiskScore.create(kyc_record=record, label=risk_label)
-                    create_signal(new_risk_score, "new_risk_score_created")
+                    create_signal(instance=new_risk_score, signal_type_label="new_risk_score_created")
             record.save()
             return Response({"update": True})
         else:
@@ -563,7 +563,7 @@ class KycAnswerViewSet(ModelViewSet):
                 group = KycQuestionGroup.objects.prefetch_related("questions").get(pk=k)
                 for r_index in v:
                     self.validate_group(kyc_record, r_index, group)
-            create_signal(kyc_record, "kyc_record_submit")
+            create_signal(instance=kyc_record, signal_type_label="kyc_record_submit")
             return answer_ids
         except KYCRecord.DoesNotExist as e:
             self.__class__.logger.error(f"Unable to process due to inability to find KYC Record with primary key: {record_pk}\n\t{e}")

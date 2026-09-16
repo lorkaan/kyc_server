@@ -376,7 +376,7 @@ class KYCRecord(BaseModel):
             super().save(*args, **kwargs)
 
             if is_new_verification:
-                create_signal(self, "create_expiry_event")
+                create_signal(instance=self, signal_type_label="create_expiry_event")
 
             if self.verified_at is not None:
 
