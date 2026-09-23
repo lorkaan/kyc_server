@@ -164,7 +164,72 @@ class PartyRelationship(BaseModel):
 
     contact = models.BooleanField(default=False)
 
-    share_percentage = models.DecimalField(verbose_name="Percentage Of Shares", max_digits=7, decimal_places=4, default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["party", "target_party", "role", "start_date"],
+                name="unique_party_relationship"
+            ),
+            models.CheckConstraint(
+                condition=(models.Q(end_date__isnull=True) | models.Q(end_date__gte=models.F("start_date"))),
+                name="end_date_after_start_date"
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(party=models.F("target_party")),
+                name="prevent_self_relationship"
+            )
+        ]
+
+class PartyRelationshipCode(models.Model):
+    code = models.PositiveIntegerField(validators=[MinValueValidator(1)], unique=True)
+    label = models.CharField(max_length=255)
+    description = models.TextField()
 
     class Meta:
-        unique_together = ("party", "target_party", "role", "start_date")
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(code__gte=1),
+                name="code_gte_1"
+            )
+        ]
+
+@pghistory.track()
+class PartyRelationshipMetadata(BaseModel):
+    relationship = models.ForeignKey(
+        PartyRelationship,
+        on_delete=models.CASCADE,
+        related_name="metadata"
+    )
+
+    details = models.TextField(blank=True, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["relationship"],
+                name="unique_metadata_per_relationship"
+            )
+        ]
+
+@pghistory.track()
+class PartyRelationshipMetadataCode(BaseModel):
+    metadata = models.ForeignKey(
+        PartyRelationshipMetadata,
+        on_delete=models.CASCADE,
+        related_name="codes"
+    )
+
+    code = models.ForeignKey(
+        PartyRelationshipCode,
+        on_delete=models.CASCADE,
+        related_name="metadata_codes"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["metadata", "code"],
+                name="unique_metadata_code"
+            )
+        ]
+
