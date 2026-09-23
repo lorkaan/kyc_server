@@ -89,7 +89,7 @@ class Command(BaseCommand):
         # Helpers
         # -----------------------------
         def to_bool(v):
-            return str(v).lower() in ("1", "true", "yes", "y", "t")
+            return str(v).strip().lower() in ("1", "true", "yes", "y", "t")
 
         # -----------------------------
         # SignalType (optional)

@@ -157,7 +157,7 @@ class Command(BaseCommand):
         # -----------------------------
 
         def to_bool(v):
-            return str(v).lower() in (
+            return str(v).strip().lower() in (
                 "1", "true", "yes", "y", "t"
             )
 

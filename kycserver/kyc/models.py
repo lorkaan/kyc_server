@@ -404,6 +404,7 @@ class KycQuestionGroup(models.Model):
     order = models.PositiveIntegerField(default=0)
     required = models.BooleanField(default=True)
     is_repeatable = models.BooleanField(default=False)  # NEW: repeatable group
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.label
@@ -485,6 +486,7 @@ class KycQuestion(models.Model):
     requires_document = models.BooleanField(default=False)
     is_repeatable = models.BooleanField(default=False)  # NEW: repeatable question
     encrypt_type = models.ForeignKey(EncryptionType, on_delete=models.CASCADE, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.label

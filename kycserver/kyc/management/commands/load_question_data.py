@@ -157,7 +157,7 @@ class Command(BaseCommand):
         # -----------------------------
 
         def to_bool(v):
-            return str(v).lower() in (
+            return str(v).strip().lower() in (
                 "1", "true", "yes", "y", "t"
             )
 
@@ -179,6 +179,7 @@ class Command(BaseCommand):
                 "order": to_int(row["group_order"]),
                 "required": to_bool(row["group_required"]),
                 "is_repeatable": to_bool(row["group_repeatable"]),
+                "is_active": to_bool(row["group_active"])
             },
         )
 
@@ -242,5 +243,7 @@ class Command(BaseCommand):
                 ),
 
                 "reference_set": reference_set,
+
+                "is_active": to_bool(row["active"])
             },
         )
