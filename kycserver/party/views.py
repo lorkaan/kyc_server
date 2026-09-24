@@ -10,9 +10,11 @@ from django.db.models import Q
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated
 
-from .models import PartyType, Party, PartyRelationship
+from .models import PartyRelationshipMetadata, PartyType, Party, PartyRelationship
 from .serializers import (
     PartyGraphSerializer,
+    PartyRelationshipMetadataSerializer,
+    PartyRelationshipMetadataWriteSerializer,
     PartyRelationshipReadSerializer,
     PartyRelationshipUpdateSerializer,
     PartyTypeSerializer,
@@ -206,3 +208,98 @@ class PartyRelationshipUpdateViewSet(
     serializer_class = PartyRelationshipUpdateSerializer
 
     http_method_names = ["patch"]
+
+class PartyRelationshipMetadataReadViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = PartyRelationshipMetadataSerializer
+    permission_classes = [IsAuthenticated]  # optional
+
+    def get_queryset(self):
+        """
+        Optimized queryset with optional filtering by relationship.
+        """
+        queryset = (
+            PartyRelationshipMetadata.objects
+            .select_related("relationship")
+            .prefetch_related("codes__code")  # metadata -> codes -> code
+        )
+
+        relationship_id = self.request.query_params.get("relationship")
+
+        if relationship_id:
+            queryset = queryset.filter(relationship_id=relationship_id)
+
+        return queryset
+
+class PartyRelationshipMetadataWriteViewSet(viewsets.ModelViewSet):
+    serializer_class = PartyRelationshipMetadataWriteSerializer
+    queryset = PartyRelationshipMetadata.objects.all()
+
+    # Only allow write operations
+    http_method_names = ["post", "put", "patch", "delete"]
+
+    def get_queryset(self):
+        """
+        Optional: allow filtering by relationship
+        """
+        queryset = super().get_queryset()
+
+        relationship_id = self.request.query_params.get("relationship")
+        if relationship_id:
+            queryset = queryset.filter(relationship_id=relationship_id)
+
+        return queryset
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        """
+        Create metadata + associated codes
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+
+        return Response(
+            self.get_serializer(instance).data,
+            status=status.HTTP_201_CREATED
+        )
+
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        """
+        Full update (PUT)
+        """
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+
+        # Optional: prevent relationship changes
+        if "relationship" in serializer.validated_data:
+            serializer.validated_data.pop("relationship")
+
+        instance = serializer.save()
+
+        return Response(self.get_serializer(instance).data)
+
+    @transaction.atomic
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Partial update (PATCH)
+        """
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
+
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        """
+        Delete metadata (and cascade delete codes)
+        """
+        instance = self.get_object()
+        instance.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

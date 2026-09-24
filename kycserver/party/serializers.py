@@ -4,7 +4,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
 
-from .models import PartyType, Party, PartyRelationship
+from .models import PartyRelationshipCode, PartyRelationshipMetadata, PartyRelationshipMetadataCode, PartyType, Party, PartyRelationship
 
 
 # --- PartyType ---
@@ -298,5 +298,83 @@ class PartyGraphResponseSerializer(serializers.Serializer):
     relationships = PartyRelationshipSerializer(many=True)
     
 
+# Party MetaData
+
+# Read
+class PartyRelationshipCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PartyRelationshipCode
+        fields = ["id", "code", "label", "description"]
 
 
+# Read only
+class PartyRelationshipMetadataCodeSerializer(serializers.ModelSerializer):
+    code = PartyRelationshipCodeSerializer(read_only=True)
+
+    class Meta:
+        model = PartyRelationshipMetadataCode
+        fields = ["id", "code"]
+
+# Read only
+class PartyRelationshipMetadataSerializer(serializers.ModelSerializer):
+    codes = PartyRelationshipMetadataCodeSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = PartyRelationshipMetadata
+        fields = ["id", "relationship", "details", "codes"]
+
+# Write serializer
+class PartyRelationshipMetadataWriteSerializer(serializers.ModelSerializer):
+    code_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False
+    )
+
+    def validate_code_ids(self, value):
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError("Duplicate code IDs are not allowed.")
+
+        existing = set(
+            PartyRelationshipCode.objects.filter(id__in=value)
+            .values_list("id", flat=True)
+        )
+
+        missing = set(value) - existing
+        if missing:
+            raise serializers.ValidationError(f"Invalid code IDs: {missing}")
+
+        return value
+
+    def validate(self, attrs):
+        relationship = attrs.get("relationship")
+
+        if self.instance is None and relationship:
+            if PartyRelationshipMetadata.objects.filter(relationship=relationship).exists():
+                raise serializers.ValidationError(
+                    {"relationship": "Metadata already exists for this relationship."}
+                )
+
+        return attrs
+
+    @transaction.atomic
+    def create(self, validated_data):
+        code_ids = validated_data.pop("code_ids", [])
+
+        metadata = PartyRelationshipMetadata.objects.create(**validated_data)
+
+        self._set_codes(metadata, code_ids)
+
+        return metadata
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        code_ids = validated_data.pop("code_ids", None)
+
+        instance.details = validated_data.get("details", instance.details)
+        instance.save()
+
+        if code_ids is not None:
+            self._set_codes(instance, code_ids)
+
+        return instance
