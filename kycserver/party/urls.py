@@ -1,6 +1,7 @@
 from rest_framework.routers import DefaultRouter
 from .views import (
     PartyGraphViewSet,
+    PartyRelationshipCodeViewSet,
     PartyRelationshipMetadataReadViewSet,
     PartyRelationshipMetadataWriteViewSet,
     PartyRelationshipUpdateViewSet,
@@ -17,6 +18,7 @@ router.register(r'relationship-update', PartyRelationshipUpdateViewSet, basename
 router.register(r"party-graph", PartyGraphViewSet, basename="party-graph")
 router.register(r"relationship-metadata", PartyRelationshipMetadataReadViewSet, basename="relationship-metadata-read")
 router.register(r"relationship-metadata-write", PartyRelationshipMetadataWriteViewSet, basename="relationship-metadata-write")
+router.register(r"relationship-metadata-codes", PartyRelationshipCodeViewSet, basename="relationship-metadata-codes")
 
 
 urlpatterns = router.urls

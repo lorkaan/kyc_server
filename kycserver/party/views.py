@@ -10,9 +10,10 @@ from django.db.models import Q
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated
 
-from .models import PartyRelationshipMetadata, PartyType, Party, PartyRelationship
+from .models import PartyRelationshipCode, PartyRelationshipMetadata, PartyType, Party, PartyRelationship
 from .serializers import (
     PartyGraphSerializer,
+    PartyRelationshipCodeSerializer,
     PartyRelationshipMetadataSerializer,
     PartyRelationshipMetadataWriteSerializer,
     PartyRelationshipReadSerializer,
@@ -303,3 +304,9 @@ class PartyRelationshipMetadataWriteViewSet(viewsets.ModelViewSet):
         instance.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class PartyRelationshipCodeViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = PartyRelationshipCodeSerializer
+
+    def get_queryset(self):
+        return PartyRelationshipCode.objects.all().order_by("code")
