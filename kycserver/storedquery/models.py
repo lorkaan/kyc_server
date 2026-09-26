@@ -30,6 +30,8 @@ class SavedQuery(BaseModel):
         help_text="System-managed default query"
     )
 
+    order = models.IntegerField(default=0)
+
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -40,6 +42,7 @@ class SavedQuery(BaseModel):
                 name="system_queries_have_no_owner"
             )
         ]
+        ordering = ["order"]
 
     def to_ast_payload(self):
         return {

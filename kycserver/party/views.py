@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from base.views import BaseViewSet
-from kyc.models import KYCRecord
+from kyc.models import KYCRecord, KYCStatus
 from kyc.serializers import KYCRecordSerializer
 from utils.dict_utils import dictToStr
 from rest_framework import viewsets, mixins, status
@@ -24,6 +24,8 @@ from .serializers import (
     PartyRelationshipSerializer,
     PartyCreateSerializer,
 )
+import logging
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 class PartyTypeViewSet(BaseViewSet):
@@ -58,7 +60,8 @@ class PartyTypeViewSet(BaseViewSet):
             }
 
         return Response(schema)
-    
+
+_INITIAL_KYC_RECORD_STATUS = "created"
 class PartyViewSet(BaseViewSet):
     queryset = Party.objects.select_related("party_type", "content_type")
     serializer_class = PartySerializer
@@ -80,6 +83,43 @@ class PartyViewSet(BaseViewSet):
             queryset = queryset.filter(is_active=is_active.lower() == "true")
 
         return queryset
+
+    @action(detail=True, methods=["post"])
+    def create_kyc(self, request, pk=None):
+        instance = self.get_object()
+
+        try:
+            status_obj = KYCStatus.objects.get(code=_INITIAL_KYC_RECORD_STATUS)
+
+            record = KYCRecord.objects.create(
+                party=instance,
+                status=status_obj,
+            )
+
+            return Response(
+                {"id": record.id},
+                status=status.HTTP_201_CREATED
+            )
+
+        except KYCStatus.DoesNotExist:
+            msg = (
+                f"KYCStatus {_INITIAL_KYC_RECORD_STATUS} not found. "
+                f"Cannot create KYCRecord for Party {instance.id}"
+            )
+            logger.error(msg)
+
+            return Response(
+                {"error": msg},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        except Exception as err:
+            logger.exception("Unexpected error creating KYCRecord")
+
+            return Response(
+                {"error": str(err)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -134,8 +174,6 @@ class PartyViewSet(BaseViewSet):
             record.save()
             return Response({"update": True})
         else:
-            import logging
-            logger = logging.getLogger()
             logger.error(f"Party ID: {type(party_id)} -> {type(record.id)}")
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
@@ -179,18 +217,16 @@ class PartyRelationshipViewSet(BaseViewSet):
         return queryset
     
 # views.py
-import logging
 class PartyGraphViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
-    logger = logging.getLogger()
 
     @action(detail=False, methods=["post"], url_path="create-graph")
     def create_graph(self, request):
-        self.logger.error("Creating Graph Start")
+        logger.error("Creating Graph Start")
 
         serializer = PartyGraphSerializer(data=request.data)
         if not serializer.is_valid():
-            self.logger.error(f"Validation errors: {serializer.errors}")
+            logger.error(f"Validation errors: {serializer.errors}")
             return Response(serializer.errors, status=400)
 
         result = serializer.save()  # 🔥 ALL logic happens inside serializer
