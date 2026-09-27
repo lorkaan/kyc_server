@@ -382,3 +382,20 @@ class PartyRelationshipMetadataWriteSerializer(serializers.ModelSerializer):
             self._set_codes(instance, code_ids)
 
         return instance
+
+    def _set_codes(self, metadata, code_ids):
+        # Remove existing codes
+        PartyRelationshipMetadataCode.objects.filter(
+            metadata=metadata
+        ).delete()
+
+        # Add new ones
+        objs = [
+            PartyRelationshipMetadataCode(
+                metadata=metadata,
+                code_id=code_id
+            )
+            for code_id in code_ids
+        ]
+
+        PartyRelationshipMetadataCode.objects.bulk_create(objs)
