@@ -6,6 +6,8 @@ from django.db import transaction
 
 from .models import PartyRelationshipCode, PartyRelationshipMetadata, PartyRelationshipMetadataCode, PartyType, Party, PartyRelationship
 
+import logging
+logger = logging.getLogger()
 
 # --- PartyType ---
 class PartyTypeSerializer(serializers.ModelSerializer):
@@ -148,6 +150,11 @@ class PartyCreateSerializer(serializers.ModelSerializer):
         # Pop entity-specific data
         entity_data = validated_data.pop("data")
         party_type = validated_data["party_type"]
+
+        logger.error("This is the validated data")
+        for k, v in validated_data.items():
+            logger.error(f"{k} -> {v}")
+
         # Dynamically create the underlying entity
         entity = party_type.create_entity(entity_data)
 
