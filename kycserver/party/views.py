@@ -130,6 +130,9 @@ class PartyViewSet(BaseViewSet):
         """
         Override to return full PartySerializer after creation
         """
+        logger.error("This is the validated data")
+        for k, v in request.data.items():
+            logger.error(f"{k} -> {v}")
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         party = serializer.save()
