@@ -333,7 +333,7 @@ class PartyRelationshipMetadataWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PartyRelationshipMetadata
-        fields = ["id", "relationship", "details", "codes_ids"]
+        fields = ["id", "relationship", "details", "code_ids"]
 
     def validate_code_ids(self, value):
         if len(value) != len(set(value)):
