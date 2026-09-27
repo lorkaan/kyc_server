@@ -331,6 +331,10 @@ class PartyRelationshipMetadataWriteSerializer(serializers.ModelSerializer):
         required=False
     )
 
+    class Meta:
+        model = PartyRelationshipMetadata
+        fields = ["id", "relationship", "details", "codes_id"]
+
     def validate_code_ids(self, value):
         if len(value) != len(set(value)):
             raise serializers.ValidationError("Duplicate code IDs are not allowed.")
