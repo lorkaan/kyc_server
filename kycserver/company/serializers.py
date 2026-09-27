@@ -41,6 +41,5 @@ class CompanySerializer(KeyConversionSerializer):
             "id",
             "created_at",
             "updated_at",
-            "country",
-            "registration_number"
+            "country"
         ]
