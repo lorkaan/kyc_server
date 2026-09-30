@@ -195,7 +195,7 @@ class PartyRelationshipCode(models.Model):
 
 @pghistory.track()
 class PartyRelationshipMetadata(BaseModel):
-    relationship = models.ForeignKey(
+    relationship = models.ForeignKey( # This could potentially have multiple, watch out for that.
         PartyRelationship,
         on_delete=models.CASCADE,
         related_name="metadata"

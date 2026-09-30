@@ -1,4 +1,6 @@
-from django.db.models import F, Q, Exists, Model, OuterRef
+import re
+
+from django.db.models import F, Q, Exists, Model, OuterRef, Subquery
 
 from globalparams.models import GlobalParameter
 from party.models import Party, PartyRelationship
@@ -48,7 +50,8 @@ class QueryAstHandler(DslEvaluator):
         "gte": "__gte",
         "contains": "__icontains",
         "in": "__in",
-        "isnull": "__isnull"
+        "isnull": "__isnull",
+        #"non_empty": lambda v: isList(v) and bool(v)
     }
 
     ENTITY_REGISTRY = { # Unused as of this moment
@@ -290,6 +293,7 @@ class QueryAstHandler(DslEvaluator):
             elif not isinstance(value, bool):
                 raise ValueError("isnull must be boolean or null")
 
+
         # 🔥 THEN skip None for other operators
         elif value is None or (isinstance(value, str) and value.strip() == ""):
             return None
@@ -435,6 +439,41 @@ class FieldDefinitionInterface:
 
 class AnnotatedQueryAstHandler(QueryAstHandler):
 
+    ANSWER_PATTERN = re.compile(r"(?P<key>\w+)\[(?P<code>.+?)\]\.(?P<field>.+)")
+
+    ANSWER_PATH_REGISTRY = {
+        "answwer": {
+            "model": KycAnswer,
+            "configs": {
+                KYCRecord: {
+                    "join": {"kyc_record": OuterRef("pk")}
+                },
+                Party: {
+                    "join": {"kyc_record__party": OuterRef("pk")}
+                },
+                # extend as needed
+            }
+        },
+        "party_answer": {
+            "model": KycAnswer,
+            "configs": {
+                PartyRelationship: {
+                    "join": {"kyc_record__party__": OuterRef("party_id")}
+                }
+                # extend as needed
+            }
+        },
+        "target_party_answer": {
+            "model": KycAnswer,
+            "configs": {
+                PartyRelationship: {
+                    "join": {"kyc_record__party": OuterRef("target_party_id")}
+                }
+                # extend as needed
+            }
+        }
+    }
+
     path_splitter = "."
 
     field_def_key = f"query{path_splitter}fields"
@@ -559,14 +598,44 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             else:
                 continue
         return fields
-    
+
     @classmethod
-    def build_annotations(cls, field_defs):
+    def build_annotations(cls, root_model, field_defs): # root_model needs to be Actual Model Class Object
         annotations = {}
 
         for fd in field_defs:
             key = fd.custom_name or fd.field_path.replace("__", "_")
-            annotations[key] = F(fd.field_path)
+            path = fd.field_path
+
+            match = cls.ANSWER_PATTERN.match(path)
+
+            if match:
+                key = match.group("key")
+                question_code = match.group("code")
+                value_field = match.group("field")
+
+                config = cls.ANSWER_PATH_REGISTRY.get(key, None)
+                if not isDict(config, keys=["model", "config"]):
+                    raise ValueError(f"No config object for {key}")
+                config_model = cls.ANSWER_PATH_REGISTRY.get("model", None)
+                config_data = cls.ANSWER_PATH_REGISTRY.get("config", None)
+                if not config_model or not config_data:
+                    raise ValueError(f"No answer path configured for {root_model}")
+
+                filters = {
+                    **config_data["join"],
+                    "question__code": question_code,
+                    "repeat_index": 0
+                }
+
+                subquery = config_model.objects.filter(
+                    **filters
+                ).values(value_field)[:1]
+
+                annotations[key] = Subquery(subquery)
+
+            else:
+                annotations[key] = F(path)
 
         return annotations
 
@@ -587,6 +656,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         cls.logger.error(f"Kwargs: {dictToStr(kwargs, prefix="\t")}")
         annotateFlag = kwargs.pop(cls.annotate_flag_key, False)
         cls.logger.error(f"Annonate: {annotateFlag}")
+        base_model = "" # Find Base Model
         results = super().run(query_def, params, **kwargs)
         if annotateFlag:
             field_list = cls.getFields(cls.find_value_from_path(query_def, cls.field_def_key))
@@ -602,7 +672,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
                     results = results.select_related(*select_related_fields)
 
                 # Step 4: annotate fields
-                annotations = cls.build_annotations(db_fields)
+                annotations = cls.build_annotations(base_model, db_fields)
                 cls.logger.error(f"Annotations: {type(annotations)} --> {annotations}")
                 if annotations:
                     results = results.annotate(**annotations)

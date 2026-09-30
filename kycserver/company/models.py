@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 
 domestic_country_key = "Domestic"
 
+class CompanyType(models.Model):
+    code = models.CharField(max_length=50, unique=True, null=False, blank=False)
+    label = models.CharField(max_length=255, null=False, blank=False)
+
 @pghistory.track()
 class Company(ModelSchemaMixin, BaseModel):
     name = models.CharField(max_length=255)
@@ -27,6 +31,8 @@ class Company(ModelSchemaMixin, BaseModel):
         null=True,
         blank=True
     )
+
+    company_type = models.ForeignKey(CompanyType, on_delete=models.SET_NULL, null=True, blank=True)
 
     is_domestic = models.BooleanField(default=False)
 
