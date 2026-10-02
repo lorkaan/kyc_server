@@ -1,4 +1,7 @@
-from django.db import models
+from decimal import Decimal
+
+from django.db import models, transaction
+from django.db.models import Sum
 from django.utils import timezone
 from base.models import BaseModel, GenericTargetMixin, ModelSchemaMixin
 from django.utils.module_loading import import_string
@@ -203,13 +206,71 @@ class PartyRelationshipMetadata(BaseModel):
 
     details = models.TextField(blank=True, null=True)
 
+    share_percentage = models.DecimalField(
+        max_digits=7,          # supports up to 100.0000
+        decimal_places=4,
+        null=True, 
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(100),
+        ]
+    )
+
+    is_active = models.BooleanField(default=True)
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["relationship"],
-                name="unique_metadata_per_relationship"
+                condition=models.Q(is_active=True),
+                name="unique_active_metadata_per_relationship"
             )
         ]
+
+    def clean(self):
+        super().clean()
+
+        if self.share_percentage is None:
+            return
+
+        if not self.relationship_id:
+            return  # can't validate yet
+
+        total = (
+            self.__class__.objects
+            .filter(
+                relationship__target_party=self.relationship.target_party
+            )
+            .exclude(pk=self.pk)
+            .aggregate(total=Sum("share_percentage"))["total"]
+        ) or Decimal("0")
+
+        if total + self.share_percentage > Decimal("100"):
+            raise ValidationError(
+                "Total share percentage cannot exceed 100.0000"
+            )
+
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+
+            # If this is being saved as active
+            if self.is_active and self.relationship_id:
+
+                (
+                    self.__class__.objects
+                    .filter(
+                        relationship=self.relationship,
+                        is_active=True
+                    )
+                    .exclude(pk=self.pk)
+                    .update(is_active=False)
+                )
+
+            # Run validation AFTER deactivation to avoid constraint issues
+            self.full_clean()
+
+            super().save(*args, **kwargs)
 
 @pghistory.track()
 class PartyRelationshipMetadataCode(BaseModel):
