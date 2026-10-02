@@ -676,9 +676,9 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             key = fd.custom_name or fd.field_path.replace("__", "_")
             path = fd.field_path
 
-            if fd.compute:
-                annotations[key] = cls.build_computed(fd, root_model)
-                continue
+            #if fd.compute:
+            #    annotations[key] = cls.build_computed(fd, root_model)
+            #    continue
 
             annotations[key] = cls.resolve_expression(path, root_model)
         return annotations
