@@ -183,6 +183,10 @@ class PartyRelationship(BaseModel):
             )
         ]
 
+    @property
+    def active_metadata(self):
+        return self.metadata.filter(is_active=True).first()
+
 class PartyRelationshipCode(models.Model):
     code = models.PositiveIntegerField(validators=[MinValueValidator(1)], unique=True)
     label = models.CharField(max_length=255)
@@ -196,8 +200,49 @@ class PartyRelationshipCode(models.Model):
             )
         ]
 
+class PercentageValidationMixin:
+
+    PERCENTAGE_FIELDS = []
+
+    def get_percentage_scope(self):
+        raise NotImplementedError
+
+    @classmethod
+    def validate_percentage_total(cls, instance, field_name, scope_filter):
+        value = getattr(instance, field_name)
+
+        if value is None:
+            return
+
+        qs = instance.__class__.objects.filter(**scope_filter)
+
+        if instance.pk:
+            qs = qs.exclude(pk=instance.pk)
+
+        total = qs.aggregate(total=Sum(field_name))["total"] or Decimal("0")
+
+        if total + value > Decimal("100"):
+            raise ValidationError({
+                field_name: "Total cannot exceed 100.0000"
+            })
+
+    def validate_percentages(self):
+        if not self.pk and not getattr(self, "relationship_id", None):
+            return
+
+        scope = self.get_percentage_scope()
+
+        for field in self.PERCENTAGE_FIELDS:
+            self.__class__.validate_percentage_total(self, field, scope)
+
 @pghistory.track()
-class PartyRelationshipMetadata(BaseModel):
+class PartyRelationshipMetadata(BaseModel, PercentageValidationMixin):
+
+    PERCENTAGE_FIELDS = [
+        "share_percentage",
+        "voting_rights_percentage",
+    ]
+
     relationship = models.ForeignKey( # This could potentially have multiple, watch out for that.
         PartyRelationship,
         on_delete=models.CASCADE,
@@ -217,6 +262,17 @@ class PartyRelationshipMetadata(BaseModel):
         ]
     )
 
+    voting_rights_percentage = models.DecimalField(
+            max_digits=7,          # supports up to 100.0000
+            decimal_places=4,
+            null=True, 
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(100),
+            ]
+        )
+
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -228,28 +284,18 @@ class PartyRelationshipMetadata(BaseModel):
             )
         ]
 
+    def get_percentage_scope(self):
+        return {
+            "relationship__target_party": self.relationship.target_party
+        }
+    
     def clean(self):
         super().clean()
-
-        if self.share_percentage is None:
-            return
 
         if not self.relationship_id:
             return  # can't validate yet
 
-        total = (
-            self.__class__.objects
-            .filter(
-                relationship__target_party=self.relationship.target_party
-            )
-            .exclude(pk=self.pk)
-            .aggregate(total=Sum("share_percentage"))["total"]
-        ) or Decimal("0")
-
-        if total + self.share_percentage > Decimal("100"):
-            raise ValidationError(
-                "Total share percentage cannot exceed 100.0000"
-            )
+        self.validate_percentages()
 
     def save(self, *args, **kwargs):
         with transaction.atomic():

@@ -1,8 +1,8 @@
 import re
 
-from django.db.models import F, Q, Exists, Model, OuterRef, Subquery
+from django.db.models import F, Q, Exists, Model, OuterRef, Subquery, Value
 
-from globalparams.models import GlobalParameter
+from .compute_functions import COMPUTE_OPS
 from party.models import Party, PartyRelationship
 from utils.dsl_evaluator import DslEvaluator
 
@@ -600,6 +600,74 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         return fields
 
     @classmethod
+    def do_subquery_path(cls, root_model, match):
+        key = match.group("key")
+        question_code = match.group("code")
+        value_field = match.group("field")
+
+        config = cls.ANSWER_PATH_REGISTRY.get(key, None)
+        if not isDict(config, keys=["model", "configs"]):
+            raise ValueError(f"No config object for {key}")
+        config_model = config.get("model", None)
+        config_configs = config.get("configs")
+        if not config_model or not config_configs:
+            raise ValueError(f"Invalid config for {key}")
+
+        config_data = config_configs.get(root_model)
+
+        if not config_data:
+            raise ValueError(f"No answer path configured for {root_model}")
+
+        filters = {
+            **config_data["join"],
+            "question__code": question_code,
+            "repeat_index": 0
+        }
+
+        subquery = config_model.objects.filter(
+            **filters
+        ).values(value_field)[:1]
+
+        return subquery
+
+    @classmethod
+    def resolve_expression(cls, value, root_model):
+        # Nested compute
+        if isDict(value, keys=["op"]):
+            return cls.build_computed(value, root_model)
+
+        # Answer path (reuse your existing regex)
+        if isinstance(value, str):
+            match = cls.ANSWER_PATTERN.match(value)
+            if match:
+                return Subquery(cls.do_subquery_path(root_model, match))
+
+            return F(value)
+
+        # Literal
+        return Value(value)
+
+    @classmethod
+    def build_computed(cls, fd, root_model):
+
+        # Accept both FieldDefinition and raw dict
+        compute_def = fd.compute if hasattr(fd, "compute") else fd
+
+        op = compute_def.get("op")
+
+        if not op:
+            raise ValueError("Missing compute operation")
+
+        func = COMPUTE_OPS.get(op)
+
+        if not func:
+            raise ValueError(f"Unsupported compute op: {op}")
+
+        return func(compute_def, cls, root_model)
+
+    
+
+    @classmethod
     def build_annotations(cls, root_model, field_defs): # root_model needs to be Actual Model Class Object
         annotations = {}
 
@@ -607,35 +675,19 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             key = fd.custom_name or fd.field_path.replace("__", "_")
             path = fd.field_path
 
+            if fd.compute:
+                annotations[key] = cls.build_computed(fd, root_model)
+                continue
+
             match = cls.ANSWER_PATTERN.match(path)
 
             if match:
-                key = match.group("key")
-                question_code = match.group("code")
-                value_field = match.group("field")
-
-                config = cls.ANSWER_PATH_REGISTRY.get(key, None)
-                if not isDict(config, keys=["model", "config"]):
-                    raise ValueError(f"No config object for {key}")
-                config_model = cls.ANSWER_PATH_REGISTRY.get("model", None)
-                config_data = cls.ANSWER_PATH_REGISTRY.get("config", None)
-                if not config_model or not config_data:
-                    raise ValueError(f"No answer path configured for {root_model}")
-
-                filters = {
-                    **config_data["join"],
-                    "question__code": question_code,
-                    "repeat_index": 0
-                }
-
-                subquery = config_model.objects.filter(
-                    **filters
-                ).values(value_field)[:1]
-
-                annotations[key] = Subquery(subquery)
+                annotations[key] = Subquery(cls.do_subquery_path(root_model, match))
 
             else:
                 annotations[key] = F(path)
+
+            
 
         return annotations
 
