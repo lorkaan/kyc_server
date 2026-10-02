@@ -412,6 +412,7 @@ class FieldDefinitionInterface:
 
         field_path_key = "path"
         custom_name_key = "name"
+        compute = "compute"
 
         def __init__(self, field_path, custom_name=None):
             if isString(field_path):
@@ -679,16 +680,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
                 annotations[key] = cls.build_computed(fd, root_model)
                 continue
 
-            match = cls.ANSWER_PATTERN.match(path)
-
-            if match:
-                annotations[key] = Subquery(cls.do_subquery_path(root_model, match))
-
-            else:
-                annotations[key] = F(path)
-
-            
-
+            annotations[key] = cls.resolve_expression(path, root_model)
         return annotations
 
     # 🔥 Extract select_related paths
