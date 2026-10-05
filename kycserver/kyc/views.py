@@ -582,7 +582,7 @@ class KycAnswerViewSet(ModelViewSet):
 
             if not record_pk:
                 return Response(
-                    {"error": "record_pk missing in URL"},
+                    {"error": "Property record_pk missing in URL"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -593,7 +593,7 @@ class KycAnswerViewSet(ModelViewSet):
                 "answers": answer_rows
             })
 
-        except Exception:
+        except Exception as e:
 
             print("\n========== KYC SUBMIT ERROR ==========")
             print("URL record_pk:", record_pk)
@@ -602,7 +602,7 @@ class KycAnswerViewSet(ModelViewSet):
             print("======================================\n")
 
             return Response(
-                {"error": "internal server error"},
+                {"error": f"{e}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 # -------------------------------------------------

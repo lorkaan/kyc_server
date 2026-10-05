@@ -754,9 +754,9 @@ class KycAnswer(models.Model):
         # Repeat handling
         # -----------------------
 
-        if not question.is_repeatable and self.repeat_index != 0:
+        if self.repeat_index != 0 and not question.is_repeatable and not question.group.is_repeatable:
             raise ValidationError(
-                "This question does not allow multiple answers"
+                f"The question: '{question.label}' does not allow multiple answers\n{question.pk}\t{question.key}"
             )
 
         # -----------------------
@@ -766,7 +766,7 @@ class KycAnswer(models.Model):
         if question.requires_document:
             if not self.pk or not self.attachments.exists():
                 raise ValidationError(
-                    "Supporting document required"
+                    f"Supporting document required for question: '{question.label}'\n{question.pk}\t{question.key}"
                 )
 
         # -----------------------
@@ -781,7 +781,7 @@ class KycAnswer(models.Model):
 
         if question.required and not has_value:
             raise ValidationError(
-                "This question requires an answer."
+                f"The question '{question.label}' requires an answer.{question.pk}\t{question.key}"
             )
 
         # -----------------------
@@ -790,15 +790,15 @@ class KycAnswer(models.Model):
 
         if t == AnswerTypeEnum.NUMBER:
             if self.value_number is None:
-                raise ValidationError("Number answer required")
+                raise ValidationError(f"Question '{question.label}: Number answer required\n{question.pk}\t{question.key}")
 
         elif t == AnswerTypeEnum.TEXT or t == AnswerTypeEnum.TEXT_AREA:
             if not self.value_text:
-                raise ValidationError("Text answer required")
+                raise ValidationError(f"Question '{question.label}': Text answer required\n{question.pk}\t{question.key}")
 
         elif t == AnswerTypeEnum.BOOL:
             if self.value_bool is None:
-                raise ValidationError("Boolean answer required")
+                raise ValidationError(f"Question: '{question.label}': Boolean answer required\n{question.pk}\t{question.key}")
 
         # -----------------------
         # SINGLE
@@ -808,19 +808,19 @@ class KycAnswer(models.Model):
 
             if self.value_reference is None:
                 raise ValidationError(
-                    "Exactly one option must be selected"
+                    f"Question: '{question.label}': Exactly one option must be selected\n{question.pk}\t{question.key}"
                 )
 
             if has_multi:
                 raise ValidationError(
-                    "Single choice cannot have multiple options"
+                    f"Question: '{question.label}': Single choice cannot have multiple options\n{question.pk}\t{question.key}"
                 )
 
             # Validate reference set
             if question.reference_set:
                 if self.value_reference.reference_set_id != question.reference_set_id:
                     raise ValidationError(
-                        "Invalid reference value selected"
+                        f"Question: '{question.label}': Invalid reference value selected\n{question.pk}\t{question.key}"
                     )
 
         # -----------------------
@@ -831,12 +831,12 @@ class KycAnswer(models.Model):
 
             if self.value_reference is not None:
                 raise ValidationError(
-                    "Multi choice cannot use single reference"
+                    f"Question: '{question.label}': Multi choice cannot use single reference\n{question.pk}\t{question.key}"
                 )
 
             if question.required and not has_multi:
                 raise ValidationError(
-                    "At least one option must be selected"
+                    f"Question: '{question.label}': At least one option must be selected\n{question.pk}\t{question.key}"
                 )
 
             # Validate all selections
@@ -847,7 +847,7 @@ class KycAnswer(models.Model):
 
                 if invalid:
                     raise ValidationError(
-                        "One or more selected options are invalid"
+                        f"Question: '{question.label}': One or more selected options are invalid\n{question.pk}\t{question.key}"
                     )
 
         # -----------------------
@@ -857,7 +857,7 @@ class KycAnswer(models.Model):
         elif t == AnswerTypeEnum.DATE:
 
             if self.value_date is None:
-                raise ValidationError("Date required")
+                raise ValidationError(f"Question: '{question.label}': Date required\n{question.pk}\t{question.key}")
 
         # -----------------------
         # RANGE
@@ -866,11 +866,11 @@ class KycAnswer(models.Model):
         elif t == AnswerTypeEnum.RANGE:
 
             if not self.value_date_from or not self.value_date_to:
-                raise ValidationError("Date range required")
+                raise ValidationError(f"Question: '{question.label}': Date range required\n{question.pk}\t{question.key}")
 
             if self.value_date_from > self.value_date_to:
                 raise ValidationError(
-                    "Start date must be before end date"
+                    f"Question: '{question.label}': Start date must be before end date\n{question.pk}\t{question.key}"
                 )
 
         # -----------------------
@@ -880,7 +880,7 @@ class KycAnswer(models.Model):
         elif t == AnswerTypeEnum.PHONE:
 
             if not self.value_phone:
-                raise ValidationError("Phone number required")
+                raise ValidationError(f"Question: '{question.label}': Phone number required\n{question.pk}\t{question.key}")
 
         # -----------------------
         # EMAIL
@@ -889,7 +889,7 @@ class KycAnswer(models.Model):
         elif t == AnswerTypeEnum.EMAIL:
 
             if not self.value_email:
-                raise ValidationError("Email address required")
+                raise ValidationError(f"Question: '{question.label}': Email address required\n{question.pk}\t{question.key}")
 
         # -------------------------------------------------
         # Group-level validation
