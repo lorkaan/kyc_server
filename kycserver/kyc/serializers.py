@@ -35,16 +35,26 @@ class KYCStatusSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class KycAnswerOptionSerializer(serializers.ModelSerializer):
+    reference_value_id = serializers.IntegerField(
+        source="reference_value.id",
+        read_only=True
+    )
+
+    reference_value_code = serializers.CharField(
+        source="reference_value.code",
+        read_only=True
+    )
+
     class Meta:
         model = KycAnswerOption
-        fields = ["id", "option"]
+        fields = [
+            "id",
+            "reference_value_id",
+            "reference_value_code",
+        ]
 
 class KycAnswerSerializer(serializers.ModelSerializer):
-    selected_options = serializers.PrimaryKeyRelatedField(
-        queryset=ReferenceValue.objects.all(),
-        many=True,
-        required=False
-    )
+    selected_options = KycAnswerOptionSerializer(many=True, read_only=True)
 
     value_encrypt = EncryptionValueSerializer(read_only=True)
 
