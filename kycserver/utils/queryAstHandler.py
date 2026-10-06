@@ -117,7 +117,6 @@ class QueryAstHandler(DslEvaluator):
                     new_params[name] = value
             else:
                 new_params[name] = value
-        cls.logger.error(f"Cleaned Params: \n{dictToStr(new_params, prefix="\t")}")
         return new_params
 
     @classmethod
@@ -304,7 +303,6 @@ class QueryAstHandler(DslEvaluator):
             raise ValueError("Lookup path too deep")
 
         django_lookup = field + cls.OPS[op]
-        cls.logger.error(f"Django Lookup: {django_lookup}")
         q = Q(**{django_lookup: value})
 
         if op == "neq":
@@ -325,7 +323,6 @@ class QueryAstHandler(DslEvaluator):
         )
 
         django_lookup = lookup + cls.OPS[op]
-        cls.logger.error(f"Django Lookup: {django_lookup}")
 
         # correlated subquery
         sub_qs = final_model.objects.filter(
@@ -572,12 +569,10 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
     @classmethod
     def find_value_from_path(cls, obj, path):
         if not isString(path):
-            cls.logger.error(f"Path is: {type(path)} -> {path}")
             return None
         path_elems = path.split(cls.path_splitter)
         cur = obj
         for p in path_elems:
-            cls.logger.error(f"Cur Step: {dictToStr(cur, prefix="\t")}")
             if isDict(cur):
                 cur = cur.get(p, None)
             else:

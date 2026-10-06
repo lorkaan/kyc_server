@@ -11,9 +11,9 @@ def register_compute_op(name):
     return decorator
 
 @register_compute_op("case")
-def compute_case(fd, resolver):
-    conditions = fd.compute.get("conditions", [])
-    default = fd.compute.get("default")
+def compute_case(defn, resolver, root_model):
+    conditions = defn.get("conditions", [])
+    default = defn.get("default")
 
     whens = []
 
@@ -21,13 +21,12 @@ def compute_case(fd, resolver):
         when_clause = condition.get("when", {})
         then_value = condition.get("then")
 
-        # Resolve expressions properly
         resolved_when = {
-            key: resolver.resolve_expression(value)
+            key: resolver.resolve_expression(value, root_model)
             for key, value in when_clause.items()
         }
 
-        resolved_then = resolver.resolve_expression(then_value)
+        resolved_then = resolver.resolve_expression(then_value, root_model)
 
         whens.append(
             When(**resolved_when, then=resolved_then)
@@ -35,7 +34,7 @@ def compute_case(fd, resolver):
 
     return Case(
         *whens,
-        default=resolver.resolve_expression(default)
+        default=resolver.resolve_expression(default, root_model)
     )
 
 @register_compute_op("list")
