@@ -203,9 +203,12 @@ def manually_verify_record(results, config, context):
                     try:
                         kyc_status = KYCStatus.objects.get(code="approved")
                         target.status = kyc_status
+                        target.save()
                         target.verify_manual(user)
                     except KYCStatus.DoesNotExist as e:
                         logger.error(f"Can not get status pending for signal: {signal_obj.pk}")
+                    except Exception as e:
+                        logger.error(f"Unknown Error on signal {signal_obj.pk}: {e}")
                 except User.DoesNotExist as e:
                     logger.error(f"Can not find user for id: {user_id}")
                 return
