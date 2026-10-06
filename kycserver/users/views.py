@@ -46,6 +46,6 @@ def me(request):
         )
 
     return JsonResponse({
-        "id": request.user.id,
+        "id": request.user.id, # Auto converts to string
         "username": request.user.username
     })
