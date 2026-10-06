@@ -101,19 +101,22 @@ class KYCRecordViewSet(ModelViewSet):
                 {"error": "kyc_record_id is required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
+        signal_error = None
         try:
             record = KYCRecord.objects.select_related("party__party_type").get(id=record_id)
-            create_signal(instance=record, signal_type_label="manual_verify_kyc", metadata={"user_id":str(request.user.id)})
+            verify_signal = create_signal(instance=record, signal_type_label="manual_verify_kyc", metadata={"user_id":str(request.user.id)})
         except KYCRecord.DoesNotExist:
             return Response(
                 {"error": "KYCRecord not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
+        except Exception as e:
+            signal_error = f"Error: {e}"
         
         return Response({
-            "signal": "Sent",
-            "type": "manual_verify_kyc"
+            "signal": f"Sent: {verify_signal.id if verify_signal else None}",
+            "type": "manual_verify_kyc",
+            "error": signal_error
         })
 
     @action(detail=True, methods=["post"])
