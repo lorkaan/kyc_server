@@ -367,6 +367,16 @@ class KycAnswerViewSet(ModelViewSet):
     serializer_class = KycAnswerSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        kyc_id = self.kwargs.get("record_pk")
+
+        if kyc_id:
+            queryset = queryset.filter(kyc_record_id=kyc_id)
+
+        return queryset
+
     @action(detail=True, methods=["post"], parser_classes=[MultiPartParser])
     def upload(self, request, pk=None):
         """
