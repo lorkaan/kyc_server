@@ -104,7 +104,7 @@ class KYCRecordViewSet(ModelViewSet):
 
         try:
             record = KYCRecord.objects.select_related("party__party_type").get(id=record_id)
-            create_signal(instance=record, signal_type_label="verified_kyc_record", metadata={"user_id":str(request.user.id)})
+            create_signal(instance=record, signal_type_label="manual_verify_kyc", metadata={"user_id":str(request.user.id)})
         except KYCRecord.DoesNotExist:
             return Response(
                 {"error": "KYCRecord not found"},
@@ -113,7 +113,7 @@ class KYCRecordViewSet(ModelViewSet):
         
         return Response({
             "signal": "Sent",
-            "type": "verified_kyc_record"
+            "type": "manual_verify_kyc"
         })
 
     @action(detail=True, methods=["post"])

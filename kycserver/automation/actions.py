@@ -1,5 +1,6 @@
 
 import logging
+import uuid
 from kyc.models import KYCRecord, KYCStatus, RiskScore
 from globalparams.actions import getGlobalParamByName
 from agenda.models import AgendaEvent, AgendaEventType
@@ -17,7 +18,7 @@ from datetime import datetime, time
 logger = logging.getLogger(__name__)
 
 verify_signal_name = "verify_kyc_record"
-verified_signal_name = "verified_kyc_record"
+verified_signal_name = "verified_kyc_record" # Unused
 manual_verify_signal_name = "manual_verify_required_kyc_record"
 
 new_risk_score_signal_name = "new_risk_score_created"
@@ -191,7 +192,11 @@ def manually_verify_record(results, config, context):
     if signal_obj != None:
         target = signal_obj.content_object
         if isinstance(target, KYCRecord):
-            user_id = signal_obj.metadata.get("user_id", None)
+            user_id_str = signal_obj.metadata.get("user_id", None)
+            try:
+                user_id = uuid.UUID(user_id_str)
+            except ValueError:
+                user_id = None
             if user_id != None:
                 try:
                     user = User.objects.get(pk=user_id)
