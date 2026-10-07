@@ -188,10 +188,13 @@ def decline_verification_kyc(results, config, context):
 
 @ActionRunner.register("manual_verify_kyc")
 def manually_verify_record(results, config, context):
-    signal_obj = getSignal(context.get("signal_id", None))
+    logger = logging.getLogger()
+    signal_id = context.get("signal_id", None)
+    signal_obj = getSignal(signal_id)
     if signal_obj != None:
         target = signal_obj.content_object
         if isinstance(target, KYCRecord):
+            logger.error(f"Target is a Record: {target}")
             user_id_str = signal_obj.metadata.get("user_id", None)
             try:
                 user_id = uuid.UUID(user_id_str)
@@ -213,8 +216,10 @@ def manually_verify_record(results, config, context):
                     logger.error(f"Can not find user for id: {user_id}")
                 return
             else:
+                logger.error(f"{signal_id} - User ID is not found: {user_id_str}")
                 return
         else:
+            logger.error(f"{signal_id} - Target is not a KYC Record")
             return
     else:
         return
