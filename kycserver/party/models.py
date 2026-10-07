@@ -37,11 +37,11 @@ class PartyType(models.Model):
         from base.serializers import KeyConversionSerializer
 
         logger = logging.getLogger()
-        logger.error(f"Creating entity for {data}")
+        #logger.error(f"Creating entity for {data}")
 
         Serializer = self.get_serializer()
 
-        logger.error(f"\tUsing serializer for {Serializer}")
+        #logger.error(f"\tUsing serializer for {Serializer}")
 
         # ---------------------------------
         # Key conversion handling
@@ -52,12 +52,12 @@ class PartyType(models.Model):
             # avoid mutating original payload
             data = data.copy()
             for k, v in Serializer.CONVERSION_KEYS.items():
-                logger.error(f"Checking key: {k}")
+                #logger.error(f"Checking key: {k}")
                 # preserve existing behavior safely
                 if k in data:
                     data[v] = data.get(k, None)
                     del data[k]
-        logger.error(f"Transformed data for {data}")
+        #logger.error(f"Transformed data for {data}")
 
         # ---------------------------------
         # Serializer validation + save
@@ -69,9 +69,9 @@ class PartyType(models.Model):
             # IMPORTANT FIX:
             # raise validation errors properly
             serializer.is_valid(raise_exception=True)
-            logger.error(
-                f"Validated data: {serializer.validated_data}"
-            )
+            #logger.error(
+            #    f"Validated data: {serializer.validated_data}"
+            #)
             return serializer.save()
         except ValidationError as e:
             logger.error(

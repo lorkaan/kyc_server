@@ -174,9 +174,9 @@ class RiskScore(BaseModel):
             except GlobalParameter.DoesNotExist:
                 return default_score
             except Exception as e:
-                import logging
-                logger = logging.getLogger()
-                logger.error(e)
+                #import logging
+                #logger = logging.getLogger()
+                #logger.error(e)
                 return default_score
         else:
             raise TypeError(f"Expected a RiskCategory, but got: {type(score_catergory)} --> {score_catergory}")

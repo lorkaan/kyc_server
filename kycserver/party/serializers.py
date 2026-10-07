@@ -151,9 +151,9 @@ class PartyCreateSerializer(serializers.ModelSerializer):
         entity_data = validated_data.pop("data")
         party_type = validated_data["party_type"]
 
-        logger.error("This is the validated data")
-        for k, v in validated_data.items():
-            logger.error(f"{k} -> {v}")
+        #logger.error("This is the validated data")
+        #for k, v in validated_data.items():
+        #    logger.error(f"{k} -> {v}")
 
         # Dynamically create the underlying entity
         entity = party_type.create_entity(entity_data)

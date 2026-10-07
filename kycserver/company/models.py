@@ -63,7 +63,7 @@ class Company(ModelSchemaMixin, BaseModel):
         if self.is_domestic:
             domestic_country = self.__class__.get_domestic_country()
             if isinstance(domestic_country, ReferenceValue) and domestic_country.reference_set.key == "countries":
-                logger.error(f"----- Domestic {domestic_country}")
+                #logger.error(f"----- Domestic {domestic_country}")
                 if self.country == None:
                     # Set the domestic country
                     self.country = domestic_country
@@ -71,7 +71,7 @@ class Company(ModelSchemaMixin, BaseModel):
                     raise ValidationError(f"{self.country.code} is not the Domestic Country -> ({self.country.pk}, {self.country.code}) != ({domestic_country.pk}, {domestic_country.code})")
             else:
                 logger.error(f"##### No Domestic {domestic_country}")
-        logger.error(f"--- Is Domestic Flag {self.is_domestic}")
+        #logger.error(f"--- Is Domestic Flag {self.is_domestic}")
         if not isinstance(self.country, ReferenceValue) or self.country.reference_set.key != "countries":
             raise ValidationError("Country must come from 'countries' reference set")
 

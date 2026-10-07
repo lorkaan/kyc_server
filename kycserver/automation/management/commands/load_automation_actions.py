@@ -196,7 +196,7 @@ class Command(BaseCommand):
             raise ValueError("action_type is required")
 
         if action_type not in ActionRunner.REGISTRY:
-            self.__class__.logger.error(f"Action Type: {action_type} \n\t{ActionRunner.REGISTRY}")
+            #self.__class__.logger.error(f"Action Type: {action_type} \n\t{ActionRunner.REGISTRY}")
             raise ValueError(
                 f"Unknown action_type '{action_type}'"
             )

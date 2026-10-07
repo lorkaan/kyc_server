@@ -91,15 +91,15 @@ class GlobalParameter(NullableGenericTargetMixin):
         """
         import logging
         logger = logging.getLogger()
-        logger.error(f"### SELF ### -- {self}")
-        logger.error(f"### SELF CONTENT OBJECT ### -- {self.content_object}")
+        #logger.error(f"### SELF ### -- {self}")
+        #logger.error(f"### SELF CONTENT OBJECT ### -- {self.content_object}")
         if not self.content_object:
             return None
         if not isinstance(self.content_object, BaseValue):
             raise TypeError(f"{self.content_object} is not an accepted Value for a parameter")
 
         val = self.content_object.get_value()
-        logger.error(f"### SELF CONTENT VALUE ### -- {val}")
+        #logger.error(f"### SELF CONTENT VALUE ### -- {val}")
 
         # Map single-char codes to Python types
         expected_type = self.TYPE_MAP.get(self.type)

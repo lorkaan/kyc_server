@@ -29,7 +29,6 @@ def evaluate_signal(signal_id):
         trigger_type=TriggerTypes.SIGNAL,
         signal_type=signal.signal_type
     )
-    logger.error(f"Evaluating signal id: {signal_id}, which corresponds to {signal}")
     for trigger in triggers:
         run_trigger.delay(trigger.id, signal_id=signal.id)
 
@@ -59,7 +58,6 @@ def get_param_dict(param_def):
 @shared_task(bind=True, max_retries=5, default_retry_delay=60)
 def run_trigger(self, trigger_id, signal_id=None):
     now = timezone.now()
-    logger.error(f"Running Trigger: {trigger_id}")
     try:
         # Acquire a lock safely
         with transaction.atomic():
@@ -109,11 +107,8 @@ def run_trigger(self, trigger_id, signal_id=None):
             status=AutomationRun.RunStatus.RUNNING,
         )
 
-        logger.error(f"Excuting Actions")
-
         # Execute actions
         for action in trigger.actions.filter(is_active=True).order_by("order"):
-            logger.error(f"\tExcuting Action: {action}")
             should_run = True
             if action.condition:
                 should_run = BooleanAstHandler.run(
