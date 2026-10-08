@@ -1,5 +1,5 @@
 
-from django.db.models import Case, Value, When
+from django.db.models import Case, StringAgg, Value, When
 
 
 COMPUTE_OPS = {}
@@ -38,9 +38,24 @@ def compute_case(defn, resolver, root_model):
     )
 
 @register_compute_op("list")
-def compute_list(fd, resolver):
-    pass
+def compute_list(defn, resolver, root_model):
+    value = defn.get("value")
+    delimiter = defn.get("delimiter", ", ")
+
+    expression = resolver.resolve_expression(
+        value,
+        root_model,
+    )
+
+    return StringAgg(
+        expression,
+        delimiter=delimiter,
+    )
 
 @register_compute_op("null")
-def compute_null(fd, resolver):
-    pass
+def compute_null(defn, resolver, root_model):
+    return Value(None)
+
+@register_compute_op("literal")
+def compute_literal(defn, resolver, root_model):
+    return Value(defn.get("value"))
