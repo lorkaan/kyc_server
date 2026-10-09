@@ -831,9 +831,6 @@
         "query": {
             "model": "party.PartyRelationship",
             "params": {
-                "company_id": { "type": "uuid", "required": false },
-                "company_nickname": {"type": "string", "required": false},
-                "company_name": {"type": "string", "required": false},
                 "start_date_after": { "type": "date", "required": false },
                 "start_date_before": { "type": "date", "required": false },
                 "end_date_after": { "type": "date", "required": false },
