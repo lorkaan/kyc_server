@@ -824,5 +824,416 @@
             ]
         },
         "is_system": true
+    },
+    {
+        "name": "CTSP Benefical Owner Relationships",
+        "description": "A Query generate the CTSP Beneficial Owner Relationships",
+        "query": {
+            "model": "party.PartyRelationship",
+            "params": {
+                "company_id": { "type": "uuid", "required": false },
+                "company_nickname": {"type": "string", "required": false},
+                "company_name": {"type": "string", "required": false},
+                "start_date_after": { "type": "date", "required": false },
+                "start_date_before": { "type": "date", "required": false },
+                "end_date_after": { "type": "date", "required": false },
+                "end_date_before": { "type": "date", "required": false },
+                "primary_contact": {"type": "boolean", "required": false}
+            },
+            "query":{
+                "where":{
+                    "and": [
+                        {"field": "party__party_type__code", "op": "eq", "value": "person"},
+                        {"field": "target_party__party_type__code", "op": "eq", "value": "company"},
+                        {"field": "metadata__codes", "op": "isnull", "value": false},
+                        {"field": "role__code", "op": "in", "value": ["beneficial_owner", "owner", "director", "smo"]}
+                    ]
+                }
+            },
+            "fields": [
+                {
+                    "name": "FilingType",
+                    "compute": {
+                        "op": "null"
+                    }
+                },
+                {
+                    "name": "ChangeType",
+                    "compute": {
+                        "op": "null"
+                    }
+                },
+                {
+                    "name": "ChangeDescription",
+                    "compute": {
+                        "op": "null"
+                    }
+                },
+                {
+                    "name": "DateOfChange",
+                    "compute": {
+                        "op": "null"
+                    }
+                },
+                {
+                    "path": "target_party.target.name",
+                    "name": "EntityName"
+                },
+                {
+                    "path": "target_party.target.registration_number",
+                    "name": "EntityNumber"
+                },
+                {
+                    "path": "target_party.kyc_records.answers",
+                    "name": "EntityType"
+                },
+                {
+                    "path": "target_party_answer[company_activities_details].value_text",
+                    "name": "NatureOfBusiness"
+                },
+                {
+                    "path": "target_party.target.start_date",
+                    "name": "DateOfIncorporation"
+                },
+                {
+                    "path": "target_party.target.country.label",
+                    "name": "JurisdictionIncorpated"
+                },
+                {
+                    "path": "target_party_answer[company_address_line_1].value_text",
+                    "name": "RegOffice_AddressLine1"
+                },
+                {
+                    "path": "target_party_answer[company_address_line_2].value_text",
+                    "name": "RegOffice_AddressLine2"
+                },
+                {
+                    "path": "target_party_answer[company_address_city].value_text",
+                    "name": "RegOffice_City"
+                },
+                {
+                    "path": "target_party_answer[company_address_state].value_text",
+                    "name": "RegOffice_StateParish"
+                },
+                {
+                    "path": "target_party_answer[company_address_postalcode].value_text",
+                    "name": "RegOffice_PostalCode"
+                },
+                {
+                    "path": "target_party_answer[corporate_country].value_reference.label",
+                    "name": "RegOffice_Country"
+                },
+                {
+                    "path": "target_party_answer[company_tax_id].value_text",
+                    "name": "EntityTaxID"
+                },
+                {
+                    "name": "CorporateStructure",
+                    "compute": {
+                        "op": "null"
+                    }
+                },
+                {
+                    "name": "CanBOBeIdentified",
+                    "compute": {
+                        "op": "case",
+                        "conditions": [
+                        {
+                            "when": {
+                                "role__code__in": ["beneficial_owner", "owner", "director"]
+                            },
+                            "then": {
+                                "value": "Yes"
+                            }
+                        }
+                        ],
+                        "default": {
+                            "value": "No"
+                        }
+                    }
+                },
+                {
+                    "name": "ReasonBOCannotBeIdentified",
+                    "compute": {
+                        "op": "null"
+                    }
+                },
+                {
+                    "name": "SMOFlag",
+                    "compute": {
+                        "op": "case",
+                        "conditions": [
+                        {
+                            "when": {
+                                "role__code": ["smo"]
+                            },
+                            "then": {
+                                "value": "Yes"
+                            }
+                        }
+                        ],
+                        "default": {
+                            "value": "No"
+                        }
+                    }
+                },
+                {
+                    "path": "party.target.first_name",
+                    "name": "FirstName"
+                },
+                {
+                    "path": "party.target.first_name",
+                    "name": "FirstName"
+                },
+                {
+                    "path": "party.target.middle_name",
+                    "name": "MiddleName"
+                },
+                {
+                    "path": "party.target.last_name",
+                    "name": "LastName"
+                },
+                {
+                    "path": "party.target.date_of_birth",
+                    "name": "DateOfBirth"
+                },
+                {
+                    "path": "party_answer[nationality].value_reference.label",
+                    "name": "Nationality",
+                    "repeat_index": 0
+                },
+                {
+                    "path": "party_answer[current_residence_address].value_text",
+                    "name": "PrimaryAddress_Line1"
+                },
+                {
+                    "path": "party_answer[current_residence_address_2].value_text",
+                    "name": "PrimaryAddress_Line2"
+                },
+                {
+                    "path": "party_answer[current_residence_city].value_text",
+                    "name": "PrimaryAddress_City"
+                },
+                {
+                    "path": "party_answer[current_residence_state].value_text",
+                    "name": "PrimaryAddress_StateParish"
+                },
+                {
+                    "path": "party_answer[current_residence_postal_code].value_text",
+                    "name": "PrimaryAddress_PostalCode"
+                },
+                {
+                    "path": "party_answer[current_residence_country].value_reference.label",
+                    "name": "PrimaryAddress_Country"
+                },
+                {
+                    "name": "PrimaryAddress_OtherStateParish",
+                    "compute": {
+                        "op": "null"
+                    }
+                },
+                {
+                    "path": "party_answer[correspondence_residence_address].value_text",
+                    "name": "ServiceOfNotices_Line1"
+                },
+                {
+                    "path": "party_answer[correspondence_residence_address_2].value_text",
+                    "name": "ServiceOfNotices_Line2"
+                },
+                {
+                    "path": "party_answer[correspondence_residence_city].value_text",
+                    "name": "ServiceOfNotices_City"
+                },
+                {
+                    "path": "party_answer[correspondence_residence_state].value_text",
+                    "name": "ServiceOfNotices_StateParish"
+                },
+                {
+                    "path": "party_answer[correspondence_residence_postal_code].value_text",
+                    "name": "ServiceOfNotices_PostalCode"
+                },
+                {
+                    "path": "party_answer[correspondence_residence_country].value_reference.label",
+                    "name": "ServiceOfNotices_Country"
+                },
+                {
+                    "name": "Email",
+                    "path": "party_answer[contact_email_number].value_text",
+                    "repeat_index": 0
+                },
+                {
+                    "name": "Telephone",
+                    "path": "party_answer[contact_phone_number].value_text",
+                    "repeat_index": 0
+                },
+                {
+                    "name": "IsPPO",
+                    "path": "party_answer[reputation_political_ties].value_reference.label"
+                },
+                {
+                    "name": "PPODescription",
+                    "path": "party_answer[reputation_political_ties_details].value_text"
+                },
+                {
+                    "name": "BOTaxID",
+                    "path": "party_answer[personal_tax_number].value_text",
+                    "repeat_index": 0
+                },
+                {
+                    "name": "BOStatus",
+                    "compute": {
+                        "op": "case",
+                        "conditions": [
+                        {
+                            "when": {
+                                "end_date__isnull": false
+                            },
+                            "then": {
+                                "value": "Active"
+                            }
+                        }
+                        ],
+                        "default": {
+                            "value": "Ceased"
+                        }
+                    }
+                },
+                {
+                    "name": "DateBecameBO",
+                    "path": "start_date"
+                },
+                {
+                    "name": "DateCeasedBO",
+                    "path": "end_date"
+                },
+                {
+                    "name": "NatureOfOwnershipControl",
+                    "compute": {
+                        "op": "list",
+                        "value": "active_metadata__codes__code",
+                        "delimiter": ";"
+                    }
+                },
+                {
+                    "name": "OwnershipControlDescription",
+                    "compute": {
+                        "op": "null"
+                    }
+                },
+                {
+                    "name": "OwnershipPercentage",
+                    "path": "active_metadata.share_percentage"
+                },
+                {
+                    "name": "VotingRights",
+                    "path": "active_metadata.voting_rights_percentage"
+                },
+                {
+                    "name": "EffectiveDate",
+                    "compute": {
+                        "op": "null"
+                    }
+                },
+                {
+                    "name": "VotingArrangementFirstName",
+                    "compute": {
+                        "op": "null"
+                    }
+                },
+                {
+                    "name": "VotingArrangementLastName",
+                    "compute": {
+                        "op": "null"
+                    }
+                },
+                {
+                    "name": "IDType",
+                    "path": "party_answer[documents_id_other_type].value_reference.label"
+                },
+                {
+                    "name": "IDNumber",
+                    "path": "party_answer[documents_id_number].value_text"
+                },
+                {
+                    "name": "IDIssuingCountry",
+                    "path": "party_answer[documents_id_country].value_reference.label"
+                },
+                {
+                    "name": "IDDateIssue",
+                    "path": "party_answer[documents_id_date_issue].value_date"
+                },
+                {
+                    "name": "IDExpiryDate",
+                    "path": "party_answer[documents_id_date_expiry].value_date"
+                },
+                {
+                    "name": "ProofOfAddressType",
+                    "path": "party_answer[documents_proof_address_type].value_reference.label"
+                }
+            ],
+            "default_fields": [
+                "FilingType",
+                "ChangeType",
+                "ChangeDescription",
+                "DateOfChange",
+                "EntityName",
+                "EntityNumber",
+                "EntityType",
+                "NatureOfBusiness",
+                "DateOfIncorporation",
+                "JurisdictionIncorpated",
+                "RegOffice_AddressLine1",
+                "RegOffice_AddressLine2",
+                "RegOffice_City",
+                "RegOffice_StateParish",
+                "RegOffice_PostalCode",
+                "RegOffice_Country",
+                "EntityTaxID",
+                "CorporateStructure",
+                "CanBOBeIdentified",
+                "ReasonBOCannotBeIdentified",
+                "SMOFlag",
+                "FirstName",
+                "MiddleName",
+                "LastName",
+                "DateOfBirth",
+                "Nationality",
+                "PrimaryAddress_Line1",
+                "PrimaryAddress_Line2",
+                "PrimaryAddress_City",
+                "PrimaryAddress_StateParish",
+                "PrimaryAddress_PostalCode",
+                "PrimaryAddress_Country",
+                "PrimaryAddress_OtherStateParish",
+                "ServiceOfNotices_Line1",
+                "ServiceOfNotices_Line2",
+                "ServiceOfNotices_City",
+                "ServiceOfNotices_StateParish",
+                "ServiceOfNotices_PostalCode",
+                "ServiceOfNotices_Country",
+                "Email",
+                "Telephone",
+                "IsPPO",
+                "PPODescription",
+                "BOTaxID",
+                "BOStatus",
+                "DateBecameBO",
+                "DateCeasedBO",
+                "NatureOfOwnershipControl",
+                 "OwnershipControlDescription",
+                "OwnershipPercentage",
+                "VotingRights",
+                "EffectiveDate",
+                "VotingArrangementFirstName",
+                "VotingArrangementLastName",
+                "IDType",
+                "IDNumber",
+                "IDIssuingCountry",
+                "IDDateIssue",
+                "IDExpiryDate",
+                "ProofOfAddressType"
+            ]
+        },
+        "is_system": true
     }
 ]
