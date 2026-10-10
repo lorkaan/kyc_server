@@ -225,11 +225,11 @@ class PartyGraphViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=["post"], url_path="create-graph")
     def create_graph(self, request):
-        logger.error("Creating Graph Start")
+        #logger.error("Creating Graph Start")
 
         serializer = PartyGraphSerializer(data=request.data)
         if not serializer.is_valid():
-            logger.error(f"Validation errors: {serializer.errors}")
+            #logger.error(f"Validation errors: {serializer.errors}")
             return Response(serializer.errors, status=400)
 
         result = serializer.save()  # 🔥 ALL logic happens inside serializer
