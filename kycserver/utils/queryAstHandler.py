@@ -706,7 +706,6 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
     @classmethod
     def run(cls, query_def, params={}, **kwargs):
         annotateFlag = kwargs.pop(cls.annotate_flag_key, False)
-        base_model = "" # Find Base Model
         results = super().run(query_def, params, **kwargs)
         if annotateFlag:
             field_list = cls.getFields(cls.find_value_from_path(query_def, cls.field_def_key))
@@ -719,7 +718,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
                     results = results.select_related(*select_related_fields)
 
                 # Step 4: annotate fields
-                annotations = cls.build_annotations(base_model, db_fields)
+                annotations = cls.build_annotations(results.model, db_fields)
                 if annotations:
                     results = results.annotate(**annotations)
                 results._virtual_fields = virtual_fields
