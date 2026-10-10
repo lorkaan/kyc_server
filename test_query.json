@@ -889,7 +889,7 @@
                     "name": "NatureOfBusiness"
                 },
                 {
-                    "path": "target_party.target.start_date",
+                    "path": "target_party.target.opening_date",
                     "name": "DateOfIncorporation"
                 },
                 {

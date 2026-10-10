@@ -440,7 +440,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
     ANSWER_PATTERN = re.compile(r"(?P<key>\w+)\[(?P<code>.+?)\]\.(?P<field>.+)")
 
     ANSWER_PATH_REGISTRY = {
-        "answwer": {
+        "answer": {
             "model": KycAnswer,
             "configs": {
                 KYCRecord: {
@@ -456,7 +456,11 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             "model": KycAnswer,
             "configs": {
                 PartyRelationship: {
-                    "join": {"kyc_record__party__": OuterRef("party_id")}
+                    "join": {"kyc_record__party__": OuterRef("party_id")},
+                    "filters": {
+                        "question__is_active": True,
+                        "repeat_index": 0
+                    }
                 }
                 # extend as needed
             }
@@ -465,7 +469,11 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             "model": KycAnswer,
             "configs": {
                 PartyRelationship: {
-                    "join": {"kyc_record__party": OuterRef("target_party_id")}
+                    "join": {"kyc_record__party": OuterRef("target_party_id")},
+                    "filters": {
+                        "question__is_active": True,
+                        "repeat_index": 0
+                    }
                 }
                 # extend as needed
             }
@@ -481,7 +489,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
     def split_fields(cls, field_defs):
         """
         Separates field definitions into:
-        - db_fields: handled by ORM (__ paths)
+        - db_fields: handled by ORM (__ paths) or answer-path subqueries
         - virtual_fields: handled in Python (. paths)
         """
         db_fields = []
@@ -494,8 +502,13 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             if not fd or not isString(fd.field_path):
                 continue
 
-            if "." in fd.field_path:
+            # Answer paths use [code].field notation and require ORM Subqueries.
+            if cls.ANSWER_PATTERN.fullmatch(fd.field_path):
+                db_fields.append(fd)
+
+            elif "." in fd.field_path:
                 virtual_fields.append(fd)
+
             else:
                 db_fields.append(fd)
 
@@ -616,8 +629,8 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
 
         filters = {
             **config_data["join"],
-            "question__code": question_code,
-            "repeat_index": 0
+            **config_data["filters"],
+            "question__code": question_code
         }
 
         subquery = config_model.objects.filter(
