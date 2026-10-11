@@ -630,7 +630,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         filters = {
             **config_data["join"],
             **config_data["filters"],
-            "question__code": question_code
+            "question__key": question_code
         }
 
         subquery = config_model.objects.filter(
