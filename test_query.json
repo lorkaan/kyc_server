@@ -917,7 +917,7 @@
                     "name": "RegOffice_PostalCode"
                 },
                 {
-                    "path": "target_party_answer[corporate_country]__value_reference.label",
+                    "path": "target_party_answer[corporate_country].value_reference.label",
                     "name": "RegOffice_Country"
                 },
                 {
