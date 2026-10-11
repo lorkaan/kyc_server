@@ -237,6 +237,7 @@ class KYCRecordSerializer(serializers.ModelSerializer):
             "expiry_date",
             "is_current"
         ]
+        ordering = ["-created_at"]
 
     # -------------------------
     # CREATE
