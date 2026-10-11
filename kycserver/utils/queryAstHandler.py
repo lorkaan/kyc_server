@@ -458,7 +458,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
                 PartyRelationship: {
                     "join": {"kyc_record__party": OuterRef("party_id")},
                     "filters": {
-                        "kyc_record__is_active": True,
+                        "kyc_record__is_current": True,
                         "repeat_index": 0
                     }
                 }
@@ -471,7 +471,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
                 PartyRelationship: {
                     "join": {"kyc_record__party": OuterRef("target_party_id")},
                     "filters": {
-                        "kyc_record__is_active": True,
+                        "kyc_record__is_current": True,
                         "repeat_index": 0
                     }
                 }
