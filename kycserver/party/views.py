@@ -183,6 +183,23 @@ class PartyViewSet(BaseViewSet):
     @action(detail=True, methods=["get"])
     def kyc(self, request, pk=None):
         party = self.get_object()
+        active_record = KYCRecord.objects.filter(party=party, is_current=True).order_by("-created_at").first()
+        if active_record is None:
+            record = KYCRecord.objects.filter(party=party).order_by("-created_at").first()
+        else:
+            record = active_record
+        if record is None:
+            return Response(
+                {"detail": "No KYC record found for this party"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        else:
+            output_serializer = KYCRecordSerializer(record)
+            return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"])
+    def latest_kyc(self, request, pk=None):
+        party = self.get_object()
         record = KYCRecord.objects.filter(party=party).order_by("-created_at").first()
         if record is None:
             return Response(
