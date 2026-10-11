@@ -456,7 +456,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             "model": KycAnswer,
             "configs": {
                 PartyRelationship: {
-                    "join": {"kyc_record__party__": OuterRef("party_id")},
+                    "join": {"kyc_record__party": OuterRef("party_id")},
                     "filters": {
                         "question__is_active": True,
                         "repeat_index": 0
