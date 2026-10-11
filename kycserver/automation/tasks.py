@@ -69,7 +69,7 @@ def run_trigger(self, trigger_id, signal_id=None):
                 )
             except OperationalError as e:
                 # Row is locked by another worker → skip
-                logger.error(f"Signal ID: {signal_id}\Trigger ID: {trigger_id}\n\t{e}")
+                logger.error(f"Signal ID: {signal_id}\tTrigger ID: {trigger_id}\n\t{e}")
                 return
 
             # Skip if a fresh lock exists

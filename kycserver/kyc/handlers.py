@@ -120,7 +120,7 @@ class AnswerHandler:
         if isinstance(questionObj, KycQuestion) and isinstance(answer, KycAnswer) and value != None:
             handler = ANSWER_HANDLERS.get(questionObj.answer_type)
             if not handler or not callable(handler):
-                cls.logger.error(f"Handler {handler} -> {questionObj.answer_type}")
+                #cls.logger.error(f"Handler {handler} -> {questionObj.answer_type}")
                 raise ValidationError(f"Unsupported answer type: \n\tQuestion: {questionObj}\n\tType: {questionObj.answer_type}\n\tValue Type: {type(value)}\n\tValue: {value}")
             else:
                 if questionObj.encrypt_type == None:
