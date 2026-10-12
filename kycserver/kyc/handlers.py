@@ -98,6 +98,9 @@ def handle_phone(answer, value, question):
 def handle_email(answer, value, question):
     answer.value_email = str(value)
 
+def handle_file(answer, value, question):
+    answer.value_filename = str(value)
+
 ANSWER_HANDLERS = {
     AnswerTypeEnum.NUMBER: handle_number,
     AnswerTypeEnum.TEXT: handle_text,
@@ -109,6 +112,7 @@ ANSWER_HANDLERS = {
     AnswerTypeEnum.RANGE: handle_range,
     AnswerTypeEnum.PHONE: handle_phone,
     AnswerTypeEnum.EMAIL: handle_email,
+    AnswerTypeEnum.FILE: handle_file
 }
 
 class AnswerHandler:

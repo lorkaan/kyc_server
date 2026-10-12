@@ -700,6 +700,13 @@ class KycAnswer(models.Model):
 
     value_encrypt = models.ForeignKey(EncryptionValue, on_delete=models.CASCADE, null=True, blank=True)
 
+    value_filename = models.CharField(
+        max_length=500,
+        null=True,
+        blank=True,
+        help_text="Please Enter File Path"
+    )
+
     # -----------------------
 
     class Meta:
@@ -733,6 +740,7 @@ class KycAnswer(models.Model):
             has_multi,
             bool(self.value_email),
             bool(self.value_phone),
+            bool(self.value_filename)
         ])
 
     # -------------------------------------------------
