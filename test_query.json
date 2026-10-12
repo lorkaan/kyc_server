@@ -917,7 +917,7 @@
                     "name": "RegOffice_PostalCode"
                 },
                 {
-                    "path": "target_party_answer[corporate_country].value_reference",
+                    "path": "target_party_answer[corporate_country]__value_reference.label",
                     "name": "RegOffice_Country"
                 },
                 {
@@ -995,7 +995,7 @@
                     "name": "DateOfBirth"
                 },
                 {
-                    "path": "party_answer[nationality].value_reference",
+                    "path": "party_answer[nationality]__value_reference.label",
                     "name": "Nationality",
                     "repeat_index": 0
                 },
@@ -1020,7 +1020,7 @@
                     "name": "PrimaryAddress_PostalCode"
                 },
                 {
-                    "path": "party_answer[current_residence_country].value_reference",
+                    "path": "party_answer[current_residence_country]__value_reference.label",
                     "name": "PrimaryAddress_Country"
                 },
                 {
@@ -1050,7 +1050,7 @@
                     "name": "ServiceOfNotices_PostalCode"
                 },
                 {
-                    "path": "party_answer[correspondence_residence_country].value_reference",
+                    "path": "party_answer[correspondence_residence_country]__value_reference.label",
                     "name": "ServiceOfNotices_Country"
                 },
                 {
@@ -1065,7 +1065,7 @@
                 },
                 {
                     "name": "IsPPO",
-                    "path": "party_answer[reputation_political_ties].value_reference"
+                    "path": "party_answer[reputation_political_ties]__value_reference.label"
                 },
                 {
                     "name": "PPODescription",
@@ -1145,7 +1145,7 @@
                 },
                 {
                     "name": "IDType",
-                    "path": "party_answer[documents_id_other_type].value_reference"
+                    "path": "party_answer[documents_id_other_type]__value_reference.label"
                 },
                 {
                     "name": "IDNumber",
@@ -1153,7 +1153,7 @@
                 },
                 {
                     "name": "IDIssuingCountry",
-                    "path": "party_answer[documents_id_country].value_reference"
+                    "path": "party_answer[documents_id_country]__value_reference.label"
                 },
                 {
                     "name": "IDDateIssue",
@@ -1165,7 +1165,7 @@
                 },
                 {
                     "name": "ProofOfAddressType",
-                    "path": "party_answer[documents_proof_address_type].value_reference"
+                    "path": "party_answer[documents_proof_address_type]__value_reference.label"
                 }
             ],
             "default_fields": [
