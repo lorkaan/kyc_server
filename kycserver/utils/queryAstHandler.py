@@ -692,12 +692,14 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             annotations[key] = cls.resolve_expression(path, root_model)
         return annotations
 
-    # 🔥 Extract select_related paths
     @classmethod
     def get_select_related_fields(cls, field_defs):
         related = set()
 
         for fd in field_defs:
+            if cls.ANSWER_PATTERN.fullmatch(fd.field_path):
+                continue
+
             parts = fd.field_path.split("__")[:-1]
             if parts:
                 related.add("__".join(parts))
