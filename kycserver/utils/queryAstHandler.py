@@ -437,7 +437,7 @@ class FieldDefinitionInterface:
 
 class AnnotatedQueryAstHandler(QueryAstHandler):
 
-    ANSWER_PATTERN = re.compile(r"(?P<key>\w+)\[(?P<code>.+?)\]\.(?P<field>.+)")
+    ANSWER_PATTERN = re.compile(r"(?P<key>\w+)\[(?P<code>.+?)\](__(?P<extra_key>\w+))?\.(?P<field>.+)")
 
     ANSWER_PATH_REGISTRY = {
         "answer": {
@@ -613,6 +613,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         key = match.group("key")
         question_code = match.group("code")
         value_field = match.group("field")
+        extra_key = match.group("extra_key")
 
         config = cls.ANSWER_PATH_REGISTRY.get(key, None)
         if not isDict(config, keys=["model", "configs"]):
@@ -635,7 +636,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
 
         subquery = config_model.objects.filter(
             **filters
-        ).values(value_field)[:1]
+        ).values(f"{extra_key.lstrip('_')}__{value_field}" if extra_key else value_field)[:1]
 
         return subquery
 
