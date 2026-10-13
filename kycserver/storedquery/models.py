@@ -32,6 +32,8 @@ class SavedQuery(BaseModel):
 
     order = models.IntegerField(default=0)
 
+    prettifyHeaders = models.BooleanField(default=True)
+
     class Meta:
         constraints = [
             models.CheckConstraint(

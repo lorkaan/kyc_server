@@ -149,6 +149,7 @@ class SavedQueryViewSet(ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def download(self, request, pk=None):
+        query = self.get_object()
         rows = self.execute_query(request)
         name = request.data.get("name", "Untitled")
         timestamp = timezone.localtime().strftime("%Y%m%d_%H%M%S")
@@ -159,10 +160,13 @@ class SavedQueryViewSet(ModelViewSet):
                 selected_fields = list(rows[0].keys())
             from modellabels.utils import get_field_label
             model_class = self.get_object().get_model_class()  # You should have a method returning the Django model for this query
-            headers = [
-                get_field_label(model_class, f, override=field_labels_override)
-                for f in selected_fields
-            ]
+            if query.prettifyHeaders:
+                headers = [
+                    get_field_label(model_class, f, override=field_labels_override)
+                    for f in selected_fields
+                ]
+            else:
+                headers = selected_fields
 
             response = HttpResponse(
                 content_type="text/csv"

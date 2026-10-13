@@ -48,6 +48,7 @@ class SavedQuerySerializer(serializers.ModelSerializer):
             "permissions",
             "created_at",
             "updated_at",
+            "prettifyHeaders"
         ]
 
     def validate(self, data):

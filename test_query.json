@@ -934,16 +934,18 @@
                     "compute": {
                         "op": "case",
                         "conditions": [
-                        {
-                            "when": {
-                                "role__code__in": ["beneficial_owner", "owner", "director"]
-                            },
-                            "then": {
-                                "value": "Yes"
+                            {
+                                "when": {
+                                    "role__code__in": ["beneficial_owner", "owner", "director"]
+                                },
+                                "then": {
+                                    "op": "literal",
+                                    "value": "Yes"
+                                }
                             }
-                        }
                         ],
                         "default": {
+                            "op": "literal",
                             "value": "No"
                         }
                     }
@@ -959,16 +961,18 @@
                     "compute": {
                         "op": "case",
                         "conditions": [
-                        {
-                            "when": {
-                                "role__code": ["smo"]
-                            },
-                            "then": {
-                                "value": "Yes"
+                            {
+                                "when": {
+                                    "role__code": ["smo"]
+                                },
+                                "then": {
+                                    "op": "literal",
+                                    "value": "Yes"
+                                }
                             }
-                        }
                         ],
                         "default": {
+                            "op": "literal",
                             "value": "No"
                         }
                     }
@@ -1085,11 +1089,13 @@
                                 "end_date__isnull": false
                             },
                             "then": {
+                                "op": "literal",
                                 "value": "Active"
                             }
                         }
                         ],
                         "default": {
+                            "op": "literal",
                             "value": "Ceased"
                         }
                     }
@@ -1346,11 +1352,13 @@
                                 "role__code__in": ["beneficial_owner", "owner", "director"]
                             },
                             "then": {
+                                "op": "literal",
                                 "value": "Yes"
                             }
                         }
                         ],
                         "default": {
+                            "op": "literal",
                             "value": "No"
                         }
                     }
@@ -1371,11 +1379,13 @@
                                 "role__code": ["smo"]
                             },
                             "then": {
+                                "op": "literal",
                                 "value": "Yes"
                             }
                         }
                         ],
                         "default": {
+                            "op": "literal",
                             "value": "No"
                         }
                     }
@@ -1492,11 +1502,13 @@
                                 "end_date__isnull": false
                             },
                             "then": {
+                                "op": "literal",
                                 "value": "Active"
                             }
                         }
                         ],
                         "default": {
+                            "op": "literal",
                             "value": "Ceased"
                         }
                     }
