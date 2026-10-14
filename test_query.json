@@ -1563,7 +1563,7 @@
                 },
                 {
                     "name": "IDType",
-                    "path": "target_party_answer[documents_id_other_type]__value_reference.label"
+                    "path": "target_party_answer[documents_identification_type]__value_reference.label"
                 },
                 {
                     "name": "IDNumber",
