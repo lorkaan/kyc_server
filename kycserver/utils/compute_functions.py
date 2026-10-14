@@ -32,6 +32,10 @@ def compute_case(defn, resolver, root_model):
             When(**resolved_when, then=resolved_then)
         )
 
+    print("DEFAULT DEFINITION:", default)
+    resolved_default = resolver.resolve_expression(default, root_model)
+    print("RESOLVED DEFAULT:", repr(resolved_default))
+
     return Case(
         *whens,
         default=resolver.resolve_expression(default, root_model)
