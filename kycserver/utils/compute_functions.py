@@ -12,6 +12,7 @@ def register_compute_op(name):
 
 @register_compute_op("case")
 def compute_case(defn, resolver, root_model):
+    print(" COMPUTE_CASE EXECUTED", flush=True)
     conditions = defn.get("conditions", [])
     default = defn.get("default")
 
