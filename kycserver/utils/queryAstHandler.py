@@ -412,22 +412,28 @@ class FieldDefinitionInterface:
         custom_name_key = "name"
         compute = "compute"
 
-        def __init__(self, field_path, custom_name=None):
+        def __init__(self, field_path = None, custom_name=None, compute=None):
             if isString(field_path):
                 self.field_path = field_path
             else:
-                raise ValueError(f"{field_path} is not a valid path to a field")
+                self.field_path = None
             if isString(custom_name):
                 self.custom_name = custom_name
             else:
                 self.custom_name = None
+            if isDict(compute, keys=["op"]):
+                self.compute = compute
+            else:
+                self.compute = None
+            
 
         @classmethod
         def create(cls, **kwargs):
             fp = kwargs.get(cls.field_path_key, None)
             name = kwargs.get(cls.custom_name_key, None)
+            compute = kwargs.get(cls.compute, None)
             try:
-                newObj = cls(fp, name)
+                newObj = cls(fp, name, compute)
             except ValueError:
                 newObj = None
             except Exception as e:
@@ -692,6 +698,10 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             key = fd.custom_name or fd.field_path.replace("__", "_")
             compute_def = fd.compute or None
             path = fd.field_path
+
+            if compute_def:
+                annotations[key] = cls.build_computed(fd, root_model)
+                continue
 
             annotations[key] = cls.resolve_expression(path, root_model)
         return annotations
