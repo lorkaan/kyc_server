@@ -24,6 +24,7 @@ from django.db import models
 from copy import deepcopy
 from datetime import date, datetime, timedelta
 import uuid
+import logging
 
 class QueryAstHandler(DslEvaluator):
 
@@ -437,6 +438,8 @@ class FieldDefinitionInterface:
 
 class AnnotatedQueryAstHandler(QueryAstHandler):
 
+    logger = logging.getLogger()
+
     ANSWER_PATTERN = re.compile(r"(?P<key>\w+)\[(?P<code>.+?)\](__(?P<extra_key>\w+))?\.(?P<field>.+)")
 
     ANSWER_PATH_REGISTRY = {
@@ -665,8 +668,8 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
 
         op = compute_def.get("op")
 
-        print(f"OP: {op}")
-        print(f"Compute DEF: {compute_def}")
+        cls.logger.error(f"OP: {op}")
+        cls.logger.error(f"Compute DEF: {compute_def}")
 
         if not op:
             raise ValueError("Missing compute operation")
