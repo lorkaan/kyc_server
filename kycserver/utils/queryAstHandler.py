@@ -646,6 +646,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
     @classmethod
     def resolve_expression(cls, value, root_model):
         # Nested compute
+        cls.logger.error(f"Compute DEF: {value}")
         if isDict(value, keys=["op"]):
             return cls.build_computed(value, root_model)
 
@@ -689,6 +690,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
 
         for fd in field_defs:
             key = fd.custom_name or fd.field_path.replace("__", "_")
+            compute_def = fd.compute or None
             path = fd.field_path
 
             annotations[key] = cls.resolve_expression(path, root_model)
@@ -718,6 +720,12 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
                 return results
             else:
                 db_fields, virtual_fields = cls.split_fields(field_list)
+                if field_list:
+                    db_field_set = set(db_fields)
+                    virtual_field_set = set(virtual_fields)
+                    full_field_set = set(field_list)
+                    left_over_fields = full_field_set - db_field_set - virtual_field_set
+                    cls.logger.error(f"Compute Fields: {[f for f in list(left_over_fields)]}")
                 select_related_fields = cls.get_select_related_fields(db_fields)
                 if select_related_fields:
                     results = results.select_related(*select_related_fields)
