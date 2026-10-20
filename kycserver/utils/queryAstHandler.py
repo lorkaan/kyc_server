@@ -678,18 +678,31 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
     
 
     @classmethod
-    def build_annotations(cls, root_model, field_defs): # root_model needs to be Actual Model Class Object
+    def build_annotations(cls, root_model, field_defs):
         annotations = {}
 
         for fd in field_defs:
+            print(
+                "FIELD DEF:",
+                repr(fd),
+                flush=True
+            )
+            print(
+                "COMPUTE:",
+                repr(getattr(fd, "compute", None)),
+                "TYPE:",
+                type(getattr(fd, "compute", None)),
+                flush=True
+            )
+
             key = fd.custom_name or fd.field_path.replace("__", "_")
-            path = fd.field_path
 
             if fd.compute:
                 annotations[key] = cls.build_computed(fd, root_model)
                 continue
 
-            annotations[key] = cls.resolve_expression(path, root_model)
+            annotations[key] = cls.resolve_expression(fd.field_path, root_model)
+
         return annotations
 
     @classmethod
