@@ -1,6 +1,7 @@
 
 from django.db import models
 from django.db.models import Q, Case, StringAgg, Value, When
+from django.db.models.functions import Cast
 
 
 COMPUTE_OPS = {}
@@ -41,22 +42,18 @@ def compute_case(defn, resolver, root_model):
 def compute_list(defn, resolver, root_model):
     value = defn.get("value")
     delimiter = defn.get("delimiter", ", ")
-    filters = defn.get("filters", None)
+    filters = defn.get("filters")
 
-    print("LIST DEF:", repr(defn), flush=True)
-    print("VALUE:", repr(value), flush=True)
-    print("FILTERS:", repr(filters), flush=True)
+    expression = resolver.resolve_expression(value, root_model)
 
-    expression = resolver.resolve_expression(
-        value,
-        root_model,
-        filters
-    )
+    # PostgreSQL STRING_AGG requires a text expression.
+    expression = Cast(expression, output_field=models.CharField())
 
     return StringAgg(
         expression,
-        delimiter=Value(delimiter),
-        filter=Q(**filters) if filters else None
+        delimiter=delimiter,
+        filter=Q(**filters) if filters else None,
+        output_field=models.TextField(),
     )
 
 @register_compute_op("null")
