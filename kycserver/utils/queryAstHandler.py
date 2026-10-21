@@ -408,6 +408,8 @@ class QueryAstHandler(DslEvaluator):
 
 class FieldDefinitionInterface:
 
+        logger = logging.getLogger()
+
         field_path_key = "path"
         custom_name_key = "name"
         compute = "compute"
@@ -424,6 +426,7 @@ class FieldDefinitionInterface:
             if isDict(compute, keys=["op"]):
                 self.compute = compute
             else:
+                self.__class__.logger.error(f"Can not do COMPUTE: {type(compute)}, {compute}")
                 self.compute = None
             
 
@@ -695,7 +698,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
 
         for fd in field_defs:
             key = fd.custom_name or fd.field_path.replace("__", "_")
-            compute_def = fd.compute or None
+            compute_def = fd.compute
             path = fd.field_path
 
             if compute_def:
