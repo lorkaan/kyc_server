@@ -728,10 +728,21 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         related = set()
 
         for fd in field_defs:
-            if cls.ANSWER_PATTERN.fullmatch(fd.field_path):
+            path = getattr(fd, "field_path", None)
+            compute = getattr(fd, "compute", None)
+
+            # Computed fields don't necessarily have a field_path.
+            if isDict(compute, keys=["op"]):
                 continue
 
-            parts = fd.field_path.split("__")[:-1]
+            if not isinstance(path, str) or not path.strip():
+                continue
+
+            # Answer paths are handled by subqueries, not select_related.
+            if cls.ANSWER_PATTERN.fullmatch(path):
+                continue
+
+            parts = path.split("__")[:-1]
             if parts:
                 related.add("__".join(parts))
 
