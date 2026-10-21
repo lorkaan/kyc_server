@@ -13,30 +13,29 @@ def register_compute_op(name):
 
 @register_compute_op("case")
 def compute_case(defn, resolver, root_model):
-    conditions = defn.get("conditions", [])
-    default = defn.get("default")
-
     whens = []
 
-    for condition in conditions:
+    for condition in defn.get("conditions", []):
         when_clause = condition.get("when", {})
         then_value = condition.get("then")
 
-        resolved_when = {
-            key: resolver.resolve_expression(value, root_model)
-            for key, value in when_clause.items()
-        }
-
-        resolved_then = resolver.resolve_expression(then_value, root_model)
-
         whens.append(
-            When(**resolved_when, then=resolved_then)
+            When(
+                **when_clause,
+                then=resolver.resolve_expression(then_value, root_model),
+            )
         )
+
+    default = resolver.resolve_expression(
+        defn.get("default"), root_model
+    )
 
     return Case(
         *whens,
-        default=resolver.resolve_expression(default, root_model)
+        default=default,
+        output_field=models.CharField(null=True),
     )
+
 
 @register_compute_op("list")
 def compute_list(defn, resolver, root_model):
