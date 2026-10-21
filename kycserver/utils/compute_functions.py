@@ -51,7 +51,7 @@ def compute_list(defn, resolver, root_model):
 
     return StringAgg(
         expression,
-        delimiter=delimiter,
+        delimiter=Value(delimiter),
         filter=Q(**filters) if filters else None,
         output_field=models.TextField(),
     )
