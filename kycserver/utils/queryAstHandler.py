@@ -504,8 +504,8 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
     def split_fields(cls, field_defs):
         """
         Separates field definitions into:
-        - db_fields: handled by ORM (__ paths) or answer-path subqueries
-        - virtual_fields: handled in Python (. paths)
+        - db_fields: ORM paths, answer-path subqueries, and computed fields
+        - virtual_fields: Python-resolved dot paths
         """
         db_fields = []
         virtual_fields = []
@@ -514,16 +514,28 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             return db_fields, virtual_fields
 
         for fd in field_defs:
-            if not fd or (not isString(fd.field_path) and not isDict(fd.compute, keys=["op"])):
+            if not fd:
                 continue
 
-            # Answer paths use [code].field notation and require ORM Subqueries.
-            if cls.ANSWER_PATTERN.fullmatch(fd.field_path):
+            path = getattr(fd, "field_path", None)
+            compute = getattr(fd, "compute", None)
+
+            # Keep valid computed fields, even if they have no field_path.
+            is_computed = isDict(compute, keys=["op"])
+
+            if is_computed:
                 db_fields.append(fd)
+                continue
 
-            elif "." in fd.field_path:
+            # Non-computed fields must have a valid string path.
+            if not isString(path) or not path.strip():
+                continue
+
+            # Answer paths require ORM subqueries.
+            if cls.ANSWER_PATTERN.fullmatch(path):
+                db_fields.append(fd)
+            elif "." in path:
                 virtual_fields.append(fd)
-
             else:
                 db_fields.append(fd)
 
