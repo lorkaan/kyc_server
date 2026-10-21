@@ -43,6 +43,10 @@ def compute_list(defn, resolver, root_model):
     delimiter = defn.get("delimiter", ", ")
     filters = defn.get("filters", None)
 
+    print("LIST DEF:", repr(defn), flush=True)
+    print("VALUE:", repr(value), flush=True)
+    print("FILTERS:", repr(filters), flush=True)
+
     expression = resolver.resolve_expression(
         value,
         root_model,
@@ -51,7 +55,8 @@ def compute_list(defn, resolver, root_model):
 
     return StringAgg(
         expression,
-        delimiter=delimiter
+        delimiter=delimiter,
+        filter=Q(**filters) if filters else None
     )
 
 @register_compute_op("null")
