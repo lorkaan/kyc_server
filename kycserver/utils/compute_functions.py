@@ -46,12 +46,12 @@ def compute_list(defn, resolver, root_model):
     expression = resolver.resolve_expression(
         value,
         root_model,
+        filters
     )
 
     return StringAgg(
         expression,
-        delimiter=delimiter,
-        filter=Q(**filters)
+        delimiter=delimiter
     )
 
 @register_compute_op("null")
