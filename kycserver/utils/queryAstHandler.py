@@ -426,7 +426,6 @@ class FieldDefinitionInterface:
             if isDict(compute, keys=["op"]):
                 self.compute = compute
             else:
-                self.__class__.logger.error(f"Can not do COMPUTE: {type(compute)}, {compute}")
                 self.compute = None
             
 
@@ -437,7 +436,8 @@ class FieldDefinitionInterface:
             compute = kwargs.get(cls.compute, None)
             try:
                 newObj = cls(fp, name, compute)
-            except ValueError:
+            except ValueError as e:
+                cls.logger.error(f"ValueError Create Error: {e}")
                 newObj = None
             except Exception as e:
                 cls.logger.error(f"FieldDefinition Create Error: {e}")
@@ -514,7 +514,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             return db_fields, virtual_fields
 
         for fd in field_defs:
-            if not fd or not isString(fd.field_path):
+            if not fd or (not isString(fd.field_path) and not isDict(fd.compute, keys=["op"])):
                 continue
 
             # Answer paths use [code].field notation and require ORM Subqueries.
