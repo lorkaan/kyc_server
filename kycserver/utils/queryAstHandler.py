@@ -442,6 +442,9 @@ class FieldDefinitionInterface:
             finally:
                 return newObj
 
+        def __str__(self):
+            return f"{self.custom_name}"
+
 class AnnotatedQueryAstHandler(QueryAstHandler):
 
     logger = logging.getLogger()
