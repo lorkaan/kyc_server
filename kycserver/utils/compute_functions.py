@@ -1,5 +1,5 @@
 
-from django.db.models import Case, StringAgg, Value, When
+from django.db.models import Q, Case, StringAgg, Value, When
 
 
 COMPUTE_OPS = {}
@@ -12,7 +12,6 @@ def register_compute_op(name):
 
 @register_compute_op("case")
 def compute_case(defn, resolver, root_model):
-    print(" COMPUTE_CASE EXECUTED", flush=True)
     conditions = defn.get("conditions", [])
     default = defn.get("default")
 
@@ -33,10 +32,6 @@ def compute_case(defn, resolver, root_model):
             When(**resolved_when, then=resolved_then)
         )
 
-    print("DEFAULT DEFINITION:", default, flush=True)
-    resolved_default = resolver.resolve_expression(default, root_model)
-    print("RESOLVED DEFAULT:", repr(resolved_default), flush=True)
-
     return Case(
         *whens,
         default=resolver.resolve_expression(default, root_model)
@@ -46,6 +41,7 @@ def compute_case(defn, resolver, root_model):
 def compute_list(defn, resolver, root_model):
     value = defn.get("value")
     delimiter = defn.get("delimiter", ", ")
+    filters = defn.get("filters", None)
 
     expression = resolver.resolve_expression(
         value,
@@ -55,6 +51,7 @@ def compute_list(defn, resolver, root_model):
     return StringAgg(
         expression,
         delimiter=delimiter,
+        filter=Q(**filters)
     )
 
 @register_compute_op("null")

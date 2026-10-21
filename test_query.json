@@ -1112,8 +1112,11 @@
                     "name": "NatureOfOwnershipControl",
                     "compute": {
                         "op": "list",
-                        "value": "active_metadata__codes__code",
-                        "delimiter": ";"
+                        "value": "metadata__codes__code",
+                        "delimiter": ";",
+                        "filters": {
+                            "metadata__is_active": true
+                        }
                     }
                 },
                 {
@@ -1124,11 +1127,17 @@
                 },
                 {
                     "name": "OwnershipPercentage",
-                    "path": "active_metadata.share_percentage"
+                    "path": "metadata.share_percentage",
+                    "filters": {
+                        "metadata__is_active": true
+                    }
                 },
                 {
                     "name": "VotingRights",
-                    "path": "active_metadata.voting_rights_percentage"
+                    "path": "metadata.voting_rights_percentage",
+                    "filters": {
+                        "metadata__is_active": true
+                    }
                 },
                 {
                     "name": "EffectiveDate",
@@ -1525,8 +1534,11 @@
                     "name": "NatureOfOwnershipControl",
                     "compute": {
                         "op": "list",
-                        "value": "active_metadata__codes__code",
-                        "delimiter": ";"
+                        "value": "metadata__codes__code",
+                        "delimiter": ";",
+                        "filters": {
+                            "metadata__is_active": true
+                        }
                     }
                 },
                 {
@@ -1537,11 +1549,17 @@
                 },
                 {
                     "name": "OwnershipPercentage",
-                    "path": "active_metadata.share_percentage"
+                    "path": "metadata.share_percentage",
+                    "filters": {
+                        "metadata__is_active": true
+                    }
                 },
                 {
                     "name": "VotingRights",
-                    "path": "active_metadata.voting_rights_percentage"
+                    "path": "metadata.voting_rights_percentage",
+                    "filters": {
+                        "metadata__is_active": true
+                    }
                 },
                 {
                     "name": "EffectiveDate",

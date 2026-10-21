@@ -413,8 +413,9 @@ class FieldDefinitionInterface:
         field_path_key = "path"
         custom_name_key = "name"
         compute = "compute"
+        filters_key = "filters"
 
-        def __init__(self, field_path = None, custom_name=None, compute=None):
+        def __init__(self, field_path = None, custom_name=None, compute=None, filters=None):
             if isString(field_path):
                 self.field_path = field_path
             else:
@@ -427,6 +428,10 @@ class FieldDefinitionInterface:
                 self.compute = compute
             else:
                 self.compute = None
+            if isDict(filters):
+                self.filters = filters
+            else:
+                self.filters = None
             
 
         @classmethod
@@ -434,8 +439,9 @@ class FieldDefinitionInterface:
             fp = kwargs.get(cls.field_path_key, None)
             name = kwargs.get(cls.custom_name_key, None)
             compute = kwargs.get(cls.compute, None)
+            filters = kwargs.get(cls.filters_key, None)
             try:
-                newObj = cls(fp, name, compute)
+                newObj = cls(fp, name, compute, filters)
             except ValueError as e:
                 cls.logger.error(f"ValueError Create Error: {e}")
                 newObj = None
@@ -670,18 +676,36 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         return subquery
 
     @classmethod
-    def resolve_expression(cls, value, root_model):
+    def resolve_expression(cls, value, root_model, filters=None):
         # Nested compute
         if isDict(value, keys=["op"]):
             return cls.build_computed(value, root_model)
 
-        # Answer path (reuse your existing regex)
+        # Answer path
         if isinstance(value, str):
             match = cls.ANSWER_PATTERN.match(value)
-            if match:
-                return Subquery(cls.do_subquery_path(root_model, match))
 
-            return F(value)
+            if match:
+                queryset = cls.do_subquery_path(root_model, match)
+
+                if filters:
+                    queryset = queryset.filter(**filters)
+
+                return Subquery(queryset)
+
+            # No filters: normal field reference
+            if not filters:
+                return F(value.replace(".", "__"))
+
+            # Filters supplied: query the root model, correlated to this row
+            queryset = (
+                root_model.objects
+                .filter(pk=OuterRef("pk"), **filters)
+                .order_by()
+                .values(value.replace(".", "__"))[:1]
+            )
+
+            return Subquery(queryset)
 
         # Literal
         return Value(value)
@@ -714,13 +738,14 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             key = fd.custom_name or fd.field_path.replace("__", "_")
             compute_def = fd.compute
             path = fd.field_path
+            filters = fd.filters
 
             if compute_def:
                 cls.logger.error(f"Compute DEF: {str(fd)}")
                 annotations[key] = cls.build_computed(fd, root_model)
                 continue
 
-            annotations[key] = cls.resolve_expression(path, root_model)
+            annotations[key] = cls.resolve_expression(path, root_model, filters)
         return annotations
 
     @classmethod
