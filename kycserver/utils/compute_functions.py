@@ -1,4 +1,5 @@
 
+from django.db import models
 from django.db.models import Q, Case, StringAgg, Value, When
 
 
@@ -61,7 +62,7 @@ def compute_list(defn, resolver, root_model):
 
 @register_compute_op("null")
 def compute_null(defn, resolver, root_model):
-    return Value(None)
+    return Value(None, output_field=models.CharField(null=True))
 
 @register_compute_op("literal")
 def compute_literal(defn, resolver, root_model):
