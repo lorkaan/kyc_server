@@ -414,9 +414,8 @@ class FieldDefinitionInterface:
         custom_name_key = "name"
         compute = "compute"
         filters_key = "filters"
-        index_key = "index"
 
-        def __init__(self, field_path = None, custom_name=None, compute=None, filters=None, index=None):
+        def __init__(self, field_path = None, custom_name=None, compute=None, filters=None):
             if isString(field_path):
                 self.field_path = field_path
             else:
@@ -433,10 +432,6 @@ class FieldDefinitionInterface:
                 self.filters = filters
             else:
                 self.filters = None
-            if isInteger(index):
-                self.index = index
-            else:
-                self.index = None
             
 
         @classmethod
@@ -682,7 +677,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         return subquery
 
     @classmethod
-    def resolve_expression(cls, value, root_model, filters=None, index=None):
+    def resolve_expression(cls, value, root_model, filters=None):
         # Nested compute
         if isDict(value, keys=["op"]):
             return cls.build_computed(value, root_model)
@@ -696,12 +691,6 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
 
                 if filters:
                     queryset = queryset.filter(**filters)
-
-                cls.logger.error(f"Index is: {index}")
-                cls.logger.error(f"QuerySet Count: {queryset.count()}")
-                if isInteger(index):
-                    queryset = queryset[index:index + 1]
-                    cls.logger.error(f"############### After Index: QuerySet Count: {queryset.count()}")
 
                 return Subquery(queryset)
 
@@ -751,14 +740,13 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             compute_def = fd.compute
             path = fd.field_path
             filters = fd.filters
-            index = fd.index
 
             if compute_def:
                 cls.logger.error(f"Compute DEF: {str(fd)}")
                 annotations[key] = cls.build_computed(fd, root_model)
                 continue
 
-            annotations[key] = cls.resolve_expression(path, root_model, filters, index)
+            annotations[key] = cls.resolve_expression(path, root_model, filters)
         return annotations
 
     @classmethod
