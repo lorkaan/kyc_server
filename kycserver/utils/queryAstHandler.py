@@ -440,9 +440,9 @@ class FieldDefinitionInterface:
             name = kwargs.get(cls.custom_name_key, None)
             compute = kwargs.get(cls.compute, None)
             filters = kwargs.get(cls.filters_key, None)
-            index = kwargs.get(cls.index_key, None)
+
             try:
-                newObj = cls(fp, name, compute, filters, index)
+                newObj = cls(fp, name, compute, filters)
             except ValueError as e:
                 cls.logger.error(f"ValueError Create Error: {e}")
                 newObj = None
