@@ -697,8 +697,11 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
                 if filters:
                     queryset = queryset.filter(**filters)
 
+                cls.logger.error(f"Index is: {index}")
+                cls.logger.error(f"QuerySet Count: {queryset.count()}")
                 if isInteger(index):
                     queryset = queryset[index:index + 1]
+                    cls.logger.error(f"############### After Index: QuerySet Count: {queryset.count()}")
 
                 return Subquery(queryset)
 
