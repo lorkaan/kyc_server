@@ -1512,13 +1512,13 @@
                             },
                             "then": {
                                 "op": "literal",
-                                "value": "Active"
+                                "value": "Ceased"
                             }
                         }
                         ],
                         "default": {
                             "op": "literal",
-                            "value": "Ceased"
+                            "value": "Active"
                         }
                     }
                 },

@@ -414,8 +414,9 @@ class FieldDefinitionInterface:
         custom_name_key = "name"
         compute = "compute"
         filters_key = "filters"
+        index_key = "index"
 
-        def __init__(self, field_path = None, custom_name=None, compute=None, filters=None):
+        def __init__(self, field_path = None, custom_name=None, compute=None, filters=None, index=None):
             if isString(field_path):
                 self.field_path = field_path
             else:
@@ -432,6 +433,10 @@ class FieldDefinitionInterface:
                 self.filters = filters
             else:
                 self.filters = None
+            if isInteger(index):
+                self.index = index
+            else:
+                self.index = None
             
 
         @classmethod
@@ -440,8 +445,9 @@ class FieldDefinitionInterface:
             name = kwargs.get(cls.custom_name_key, None)
             compute = kwargs.get(cls.compute, None)
             filters = kwargs.get(cls.filters_key, None)
+            index = kwargs.get(cls.index_key, None)
             try:
-                newObj = cls(fp, name, compute, filters)
+                newObj = cls(fp, name, compute, filters, index)
             except ValueError as e:
                 cls.logger.error(f"ValueError Create Error: {e}")
                 newObj = None
@@ -676,7 +682,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         return subquery
 
     @classmethod
-    def resolve_expression(cls, value, root_model, filters=None):
+    def resolve_expression(cls, value, root_model, filters=None, index=None):
         # Nested compute
         if isDict(value, keys=["op"]):
             return cls.build_computed(value, root_model)
@@ -691,6 +697,9 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
                 if filters:
                     queryset = queryset.filter(**filters)
 
+                if isInteger(index):
+                    queryset = queryset[index:index + 1]
+
                 return Subquery(queryset)
 
             # No filters: normal field reference
@@ -704,7 +713,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
                 .order_by()
                 .values(value.replace(".", "__"))[:1]
             )
-
+            
             return Subquery(queryset)
 
         # Literal
@@ -739,13 +748,14 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             compute_def = fd.compute
             path = fd.field_path
             filters = fd.filters
+            index = fd.index
 
             if compute_def:
                 cls.logger.error(f"Compute DEF: {str(fd)}")
                 annotations[key] = cls.build_computed(fd, root_model)
                 continue
 
-            annotations[key] = cls.resolve_expression(path, root_model, filters)
+            annotations[key] = cls.resolve_expression(path, root_model, filters, index)
         return annotations
 
     @classmethod
