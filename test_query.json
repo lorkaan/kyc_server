@@ -999,10 +999,7 @@
                 },
                 {
                     "path": "party_answer[nationality]__value_reference.label",
-                    "name": "Nationality",
-                    "filters": {
-                        "repeat_index": 0
-                    }
+                    "name": "Nationality"
                 },
                 {
                     "path": "party_answer[current_residence_address].value_text",
@@ -1060,17 +1057,11 @@
                 },
                 {
                     "name": "Email",
-                    "path": "party_answer[contact_email_number].value_email",
-                    "filters": {
-                        "repeat_index": 0
-                    }
+                    "path": "party_answer[contact_email_number].value_email"
                 },
                 {
                     "name": "Telephone",
-                    "path": "party_answer[contact_phone_number].value_phone",
-                    "filters": {
-                        "repeat_index": 0
-                    }
+                    "path": "party_answer[contact_phone_number].value_phone"
                 },
                 {
                     "name": "IsPPO",
@@ -1082,10 +1073,7 @@
                 },
                 {
                     "name": "BOTaxID",
-                    "path": "party_answer[personal_tax_number].value_text",
-                    "filters": {
-                        "repeat_index": 0
-                    }
+                    "path": "party_answer[personal_tax_number].value_text"
                 },
                 {
                     "name": "BOStatus",
@@ -1429,10 +1417,7 @@
                 },
                 {
                     "path": "party_answer[nationality]__value_reference.label",
-                    "name": "Nationality",
-                    "filters": {
-                        "repeat_index": 0
-                    }
+                    "name": "Nationality"
                 },
                 {
                     "path": "target_party_answer[current_residence_address].value_text",
@@ -1490,17 +1475,11 @@
                 },
                 {
                     "name": "Email",
-                    "path": "target_party_answer[contact_email_number].value_email",
-                    "filters": {
-                        "repeat_index": 0
-                    }
+                    "path": "target_party_answer[contact_email_number].value_email"
                 },
                 {
                     "name": "Telephone",
-                    "path": "target_party_answer[contact_phone_number].value_phone",
-                    "filters": {
-                        "repeat_index": 0
-                    }
+                    "path": "target_party_answer[contact_phone_number].value_phone"
                 },
                 {
                     "name": "IsPPO",
@@ -1512,10 +1491,7 @@
                 },
                 {
                     "name": "BOTaxID",
-                    "path": "target_party_answer[personal_tax_number].value_text",
-                    "filters": {
-                        "repeat_index": 0
-                    }
+                    "path": "target_party_answer[personal_tax_number].value_text"
                 },
                 {
                     "name": "BOStatus",

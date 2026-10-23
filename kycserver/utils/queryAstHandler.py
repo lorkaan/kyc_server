@@ -672,7 +672,7 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
 
         subquery = config_model.objects.filter(
             **filters
-        ).values(f"{extra_key.lstrip('_')}__{value_field}" if extra_key else value_field)
+        ).values(f"{extra_key.lstrip('_')}__{value_field}" if extra_key else value_field)[:1]
 
         return subquery
 
