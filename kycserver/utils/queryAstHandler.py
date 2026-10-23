@@ -633,8 +633,6 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
         fields = []
         for field_def in fields_defs:
             if isDict(field_def):
-                for k, v in field_def.items():
-                    cls.logger.error(f"Key: {k}\tValue: {v}")
                 cur_def = FieldDefinitionInterface.create(**field_def)
                 if cur_def == None:
                     continue
@@ -742,7 +740,6 @@ class AnnotatedQueryAstHandler(QueryAstHandler):
             filters = fd.filters
 
             if compute_def:
-                cls.logger.error(f"Compute DEF: {str(fd)}")
                 annotations[key] = cls.build_computed(fd, root_model)
                 continue
 
