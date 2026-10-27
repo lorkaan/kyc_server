@@ -86,6 +86,13 @@ class PartyViewSet(BaseViewSet):
 
     @action(detail=True, methods=["post"])
     def create_kyc(self, request, pk=None):
+
+        if not request.user.is_authenticated:
+            return Response(
+                {"error": self.stringifyRequest(request)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
         instance = self.get_object()
 
         try:
