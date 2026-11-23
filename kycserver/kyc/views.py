@@ -78,12 +78,17 @@ class KYCRecordViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         party_id = request.data.get("party_id")
-        if not party_id or party_id <= 0:
+        if not party_id:
             return Response(
                 {"error": "Valid Party ID not received"},
                 status=status.HTTP_400_BAD_REQUEST
             )
         record = KYCRecord.objects.filter(party_id=party_id).order_by("-created_at").first()
+        if record == None:
+            return Response(
+                {"error": f"The Party with ID: {party_id} does not have any KYC Records"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         if record.id == record_id:
             if record.status.code == _INITIAL_KYC_RECORD_STATUS:
                 return record.id
