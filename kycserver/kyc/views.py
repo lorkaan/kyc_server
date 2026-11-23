@@ -57,6 +57,8 @@ class EventStreamRenderer(BaseRenderer):
     def render(self, data, media_type=None, renderer_context=None):
         return data  # Already bytes or string
 
+_INITIAL_KYC_RECORD_STATUS = "created"
+
 # -------------------------------------------------
 # KYC Record ViewSet
 # -------------------------------------------------
@@ -66,6 +68,47 @@ class KYCRecordViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     logger = logging.getLogger()
+
+    @action(detail=False, methods=["POST"])
+    def getKycRecordId(self, request):
+        record_id = request.data.get("kyc_record_id")
+        if not record_id:
+            return Response(
+                {"error": "kyc_record_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        party_id = request.data.get("party_id")
+        if not party_id or party_id <= 0:
+            return Response(
+                {"error": "Valid Party ID not received"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        record = KYCRecord.objects.filter(party_id=party_id).order_by("-created_at").first()
+        if record.id == record_id:
+            if record.status.code == _INITIAL_KYC_RECORD_STATUS:
+                return record.id
+            else:
+                # Create new KYC Record
+                record = KYCRecord.objects.create(
+                    party__id=party_id,
+                    status__code=_INITIAL_KYC_RECORD_STATUS,
+                )
+    
+                return Response(
+                    {"id": record.id},
+                    status=status.HTTP_201_CREATED
+                )
+        else:
+            # Create new KYC Record
+            record = KYCRecord.objects.create(
+                party__id=party_id,
+                status__code=_INITIAL_KYC_RECORD_STATUS,
+            )
+
+            return Response(
+                {"id": record.id},
+                status=status.HTTP_201_CREATED
+            )
 
     @action(detail=False, methods=["post"])
     def verify_decline(self, request):
