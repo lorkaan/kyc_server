@@ -93,10 +93,20 @@ class KYCRecordViewSet(ModelViewSet):
             if record.status.code == _INITIAL_KYC_RECORD_STATUS:
                 return record.id
             else:
+
+                try:
+                    status_obj = KYCStatus.objects.get(code=_INITIAL_KYC_RECORD_STATUS)
+                except KYCStatus.DoesNotExist as e:
+                    self.__class__.logger.error(f"Error with KYCStatus Retrieval in Create: {e}")
+                    return Response(
+                        {"error": f"KYC Status with status code: {_INITIAL_KYC_RECORD_STATUS} does not exist."},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+
                 # Create new KYC Record
                 record = KYCRecord.objects.create(
-                    party__id=party_id,
-                    status__code=_INITIAL_KYC_RECORD_STATUS,
+                    party_id=party_id,
+                    status=status_obj,
                 )
     
                 return Response(
@@ -104,10 +114,19 @@ class KYCRecordViewSet(ModelViewSet):
                     status=status.HTTP_201_CREATED
                 )
         else:
+
+            try:
+                status_obj = KYCStatus.objects.get(code=_INITIAL_KYC_RECORD_STATUS)
+            except KYCStatus.DoesNotExist as e:
+                self.__class__.logger.error(f"Error with KYCStatus Retrieval in Create: {e}")
+                return Response(
+                    {"error": f"KYC Status with status code: {_INITIAL_KYC_RECORD_STATUS} does not exist."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
             # Create new KYC Record
             record = KYCRecord.objects.create(
-                party__id=party_id,
-                status__code=_INITIAL_KYC_RECORD_STATUS,
+                party_id=party_id,
+                status=status_obj,
             )
 
             return Response(
