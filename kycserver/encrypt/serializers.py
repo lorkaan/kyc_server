@@ -1,4 +1,5 @@
 from kyc.models import KycQuestion
+from ..utils.type_utils import isString
 
 from .cipherpol import CipherPol, CipherPolAgent
 from .handlers import DekHandler
@@ -45,9 +46,14 @@ class EncryptionValueSerializer(serializers.ModelSerializer):
         """Decrypt the ciphertext using the DEK."""
         ret = super().to_representation(instance)
 
-        if instance.dek:
+        if instance.dek and instance.encrypt_type:
             dek = DekHandler.decrypt_dek(instance.dek)
-            algo_class = CipherPol.get(instance.encrypt_type)   # encrypt_type evaluates to the algorithm type
+            if isinstance(instance.encrypt_type, EncryptionType):
+                algo_class = CipherPol.get(instance.encrypt_type.algorithm)
+            elif isString(instance.encrypt_type):   # encrypt_type evaluates to the algorithm type
+                algo_class = CipherPol.get(instance.encrypt_type)
+            else:
+                raise TypeError(f"Expected an EncryptionType object, or a non-empty string, instead got: {type(instance.encrypt_type)} --> {instance.encrypt.type}")
             if issubclass(algo_class, CipherPolAgent):
                 ret["plaintext"] = algo_class.decrypt(instance.ciphertext, dek)
             else:

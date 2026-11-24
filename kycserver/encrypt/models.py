@@ -47,7 +47,7 @@ class EncryptionType(BaseModel):
 
 @pghistory.track()
 class EncryptionValue(BaseModel):
-    encrypt_type = models.ForeignKey(EncryptionType, on_delete=models.CASCADE, null=True)
+    encrypt_type = models.ForeignKey(EncryptionType, on_delete=models.PROTECT, null=True)
     ciphertext = models.TextField()
     data_type = models.CharField(max_length=1, choices=get_allowed_data_type_choices(), default=AnswerTypeEnum.TEXT)
     dek = models.TextField()
