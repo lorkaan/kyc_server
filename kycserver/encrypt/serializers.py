@@ -1,5 +1,5 @@
 from kyc.models import KycQuestion
-from ..utils.type_utils import isString
+from utils.type_utils import isString
 
 from .cipherpol import CipherPol, CipherPolAgent
 from .handlers import DekHandler
