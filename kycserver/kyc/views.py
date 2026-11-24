@@ -1,4 +1,5 @@
 import traceback
+import uuid
 
 from django.db import models
 
@@ -89,7 +90,14 @@ class KYCRecordViewSet(ModelViewSet):
                 {"error": f"The Party with ID: {party_id} does not have any KYC Records"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        if record.id == record_id:
+        try:
+            record_id_uuid = uuid.uuid4()
+        except Exception as e:
+            return Response(
+                {"error": f"kyc_record_id is not a Valid UUID: {record_id} --> {type(record_id)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if record.id == record_id_uuid:
             if record.status.code == _INITIAL_KYC_RECORD_STATUS:
                 return record.id
             else:
@@ -599,11 +607,10 @@ class KycAnswerViewSet(ModelViewSet):
             return answer.id
 
     @transaction.atomic
-    def bulk_add_answers(self, record_pk, answers_data):
+    def bulk_add_answers(self, kyc_record, answers_data):
         answer_ids = []
         group_index = {}
         try:
-            kyc_record = KYCRecord.objects.get(pk=record_pk)
             for item in answers_data:
                 question = item["question"]
                 repeat_index = item.get("repeat_index", 0)
@@ -644,9 +651,6 @@ class KycAnswerViewSet(ModelViewSet):
                     self.validate_group(kyc_record, r_index, group)
             create_signal(instance=kyc_record, signal_type_label="kyc_record_submit")
             return answer_ids
-        except KYCRecord.DoesNotExist as e:
-            self.__class__.logger.error(f"Unable to process due to inability to find KYC Record with primary key: {record_pk}\n\t{e}")
-            raise # Important to stop the transaction
         except (ValidationError, Exception) as e:
             self.__class__.logger.error(f"{e}")
             raise # Important to stop the transaction
@@ -660,13 +664,31 @@ class KycAnswerViewSet(ModelViewSet):
             payload = request.data
             answers_data = payload.get("answers", [])
 
+            user = request.user
+
+            if not user or not user.is_authenticated or not user.is_active:
+                return Response(
+                    {"error": "A valid authenticated user is required to submit answers."},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
             if not record_pk:
                 return Response(
                     {"error": "Property record_pk missing in URL"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+            try:
+                record_obj = KYCRecord.objects.get(pk=record_pk)
+            except KYCRecord.DoesNotExist as e:
+                return Response(
+                    {"error": f"Record ID given: {record_pk} does not exist."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-            answer_rows = self.bulk_add_answers(record_pk, answers_data)
+            answer_rows = self.bulk_add_answers(record_obj, answers_data)
+            record_obj.submitted_by = user
+            record_obj.save()
+
 
             return Response({
                 "status": "saved",

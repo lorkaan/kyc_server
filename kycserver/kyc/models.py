@@ -155,6 +155,9 @@ class RiskScore(BaseModel):
 
     label = models.CharField(max_length=1, choices=RiskCategory.choices, default=RiskCategory.HIGH)
 
+    # Added a created by User to ensure that Risk Scores are validated by user
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="risk_scores_created")
+
     class Meta:
         ordering = ["-created_at"]
 
@@ -260,7 +263,7 @@ class KYCRecord(BaseModel):
 
     notes = models.TextField(blank=True)
     verified_at = models.DateTimeField(null=True, blank=True)
-    verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    verified_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="verified_kyc_records")
 
     expiry_date = models.DateField(null=True, blank=True)
 
@@ -271,6 +274,8 @@ class KYCRecord(BaseModel):
         choices=VerificationType.choices,
         default=VerificationType.NOT_SET
     )
+
+    submitted_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="submitted_kyc_records")
 
     @property
     def risk_score(self):
@@ -304,6 +309,7 @@ class KYCRecord(BaseModel):
                 name="one_current_kyc_per_party"
             )
         ]
+        ordering = ["-created_at"]
 
     @classmethod
     def get_days_til_expiry_from_global(cls):

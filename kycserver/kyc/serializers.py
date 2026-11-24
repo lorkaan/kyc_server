@@ -160,15 +160,29 @@ class RiskScoreSerializer(serializers.ModelSerializer):
 
     label_choices = serializers.SerializerMethodField()
 
+    created_by = serializers.SerializerMethodField()
+
     class Meta:
         model = RiskScore
-        fields = ["id", "score", "label", "label_choices"]
+        fields = ["id", "score", "label", "label_choices", "created_by"]
 
     def get_label_choices(self, obj):
         return [
             {"value": value, "label": label}
             for value, label in RiskScore.RiskCategory.choices
         ]
+
+    def get_created_by(self, obj):
+        return self.get_user_display_name(obj.created_by)
+    
+    @staticmethod
+    def get_user_display_name(user):
+        if not user:
+            return None
+
+        full_name = f'{user.first_name or ""} {user.last_name or ""}'.strip()
+
+        return full_name or user.username
 
 class RiskScoreWriteSerializer(serializers.Serializer):
     score = serializers.IntegerField(required=False)
@@ -213,11 +227,29 @@ class KYCRecordSerializer(serializers.ModelSerializer):
 
     risk_categories = serializers.SerializerMethodField()
 
+    verified_by = serializers.SerializerMethodField()
+    submitted_by = serializers.SerializerMethodField()
+
     def get_risk_categories(self, obj):
         return [
             {"value": choice.value, "label": choice.label}
             for choice in RiskScore.RiskCategory
         ]
+
+    def get_verified_by(self, obj):
+        return self.get_user_display_name(obj.verified_by)
+
+    def get_submitted_by(self, obj):
+        return self.get_user_display_name(obj.submitted_by)
+
+    @staticmethod
+    def get_user_display_name(user):
+        if not user:
+            return None
+
+        full_name = f'{user.first_name or ""} {user.last_name or ""}'.strip()
+
+        return full_name or user.username
 
     class Meta:
         model = KYCRecord
@@ -235,21 +267,40 @@ class KYCRecordSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "expiry_date",
-            "is_current"
+            "is_current",
+            "verified_by",
+            "submitted_by"
         ]
-        ordering = ["-created_at"]
+
+    def get_submitted_by(self):
+        request = self.context.get("request")
+
+        if request and request.user.is_authenticated:
+            return request.user
+
+        return None
 
     # -------------------------
     # CREATE
     # -------------------------
     def create(self, validated_data):
         risk_data = validated_data.pop("risk_score_input", None)
+        validated_data.pop("submitted_by", None)
+        validated_data.pop("verified_by", None)
+
+        user = self.get_submitted_by()
+
+        if user is None:
+            raise serializers.ValidationError(
+                {"risk_score_input": "Authentication is required to submit a risk score."}
+            )
 
         kyc = KYCRecord.objects.create(**validated_data)
 
         if risk_data:
             RiskScore.objects.create(
                 kyc_record=kyc,
+                created_by=user,
                 score=risk_data["score"],
                 label=risk_data.get("label")
             )
@@ -261,6 +312,15 @@ class KYCRecordSerializer(serializers.ModelSerializer):
     # -------------------------
     def update(self, instance, validated_data):
         risk_data = validated_data.pop("risk_score_input", None)
+        validated_data.pop("submitted_by", None)
+        validated_data.pop("verified_by", None)
+
+        user = self.get_submitted_by()
+
+        if user is None:
+            raise serializers.ValidationError(
+                {"risk_score_input": "Authentication is required to submit a risk score."}
+            )
 
         instance = super().update(instance, validated_data)
 
@@ -268,6 +328,7 @@ class KYCRecordSerializer(serializers.ModelSerializer):
             RiskScore.objects.create(
                 kyc_record=instance,
                 score=risk_data["score"],
+                created_by=user,
                 label=risk_data.get("label")
             )
 
