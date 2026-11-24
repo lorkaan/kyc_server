@@ -46,7 +46,7 @@ class EncryptionValueSerializer(serializers.ModelSerializer):
         ret = super().to_representation(instance)
 
         if instance.dek:
-            dek = DekHandler.decrypt_dek(dek)
+            dek = DekHandler.decrypt_dek(instance.dek)
             algo_class = CipherPol.get(instance.encrypt_type)   # encrypt_type evaluates to the algorithm type
             if issubclass(algo_class, CipherPolAgent):
                 ret["plaintext"] = algo_class.decrypt(instance.ciphertext, dek)
