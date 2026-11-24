@@ -91,7 +91,7 @@ class KYCRecordViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         try:
-            record_id_uuid = uuid.uuid4()
+            record_id_uuid = uuid.UUID(record_id)
         except Exception as e:
             return Response(
                 {"error": f"kyc_record_id is not a Valid UUID: {record_id} --> {type(record_id)}"},
