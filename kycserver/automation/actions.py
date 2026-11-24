@@ -1,6 +1,7 @@
 
 import logging
 import uuid
+from django.db import transaction
 from kyc.models import KYCRecord, KYCStatus, RiskScore
 from globalparams.actions import getGlobalParamByName
 from agenda.models import AgendaEvent, AgendaEventType
@@ -188,39 +189,49 @@ def decline_verification_kyc(results, config, context):
 
 @ActionRunner.register("manual_verify_kyc")
 def manually_verify_record(results, config, context):
-    signal_id = context.get("signal_id", None)
+    signal_id = context.get("signal_id")
     signal_obj = getSignal(signal_id)
-    if signal_obj != None:
-        target = signal_obj.content_object
-        if isinstance(target, KYCRecord):
-            user_id_str = signal_obj.metadata.get("user_id", None)
-            try:
-                user_id = uuid.UUID(user_id_str)
-            except ValueError:
-                user_id = None
-            if user_id != None:
-                try:
-                    user = User.objects.get(pk=user_id)
-                    try:
-                        kyc_status = KYCStatus.objects.get(code="approved")
-                        target.status = kyc_status
-                        target.save()
-                        target.verify_manual(user)
-                    except KYCStatus.DoesNotExist as e:
-                        logger.error(f"Can not get status pending for signal: {signal_obj.pk}")
-                    except Exception as e:
-                        logger.error(f"Unknown Error on signal {signal_obj.pk}: {e}")
-                except User.DoesNotExist as e:
-                    logger.error(f"Can not find user for id: {user_id}")
-                return
-            else:
-                logger.error(f"{signal_id} - User ID is not found: {user_id_str}")
-                return
-        else:
-            logger.error(f"{signal_id} - Target is not a KYC Record")
-            return
-    else:
+
+    if signal_obj is None:
         return
+
+    target = signal_obj.content_object
+
+    if not isinstance(target, KYCRecord):
+        logger.error(f"{signal_id} - Target is not a KYC Record")
+        return
+
+    user_id_str = signal_obj.metadata.get("user_id")
+
+    if not user_id_str:
+        logger.error(f"{signal_id} - User ID is missing")
+        return
+
+    try:
+        user_id = uuid.UUID(str(user_id_str))
+    except (ValueError, TypeError, AttributeError):
+        logger.error(f"{signal_id} - Invalid User ID: {user_id_str}")
+        return
+
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        logger.error(f"{signal_id} - Cannot find user: {user_id}")
+        return
+
+    try:
+        kyc_status = KYCStatus.objects.get(code="approved")
+    except KYCStatus.DoesNotExist:
+        logger.error(f"{signal_id} - Cannot get status approved")
+        return
+
+    try:
+        with transaction.atomic():
+            target.status = kyc_status
+            target.verify_manual(user)
+
+    except Exception:
+        logger.exception(f"Error manually verifying KYC record for signal {signal_id}")
     
 def check_risk_score(risk_score_value):
     if isNumber(risk_score_value, lambda x: x > 0):
