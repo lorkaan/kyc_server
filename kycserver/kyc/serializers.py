@@ -180,7 +180,7 @@ class RiskScoreSerializer(serializers.ModelSerializer):
         if not user:
             return None
 
-        full_name = f'{user.first_name or ""} {user.last_name or ""}'.strip()
+        full_name = f'{user.full_name or ""}'.strip()
 
         return full_name or user.username
 
@@ -247,7 +247,7 @@ class KYCRecordSerializer(serializers.ModelSerializer):
         if not user:
             return None
 
-        full_name = f'{user.first_name or ""} {user.last_name or ""}'.strip()
+        full_name = f'{user.full_name or ""}'.strip()
 
         return full_name or user.username
 
