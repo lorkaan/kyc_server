@@ -97,8 +97,11 @@ class KYCRecordViewSet(ModelViewSet):
                 {"error": f"kyc_record_id is not a Valid UUID: {record_id} --> {type(record_id)}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        self.__class__.logger.error(f"####### Record ID Checking ##########\n\tRecord PK: {type(record.id)} --> {record.id}\n\tIncoming Record ID: {type(record_id_uuid)} --> {record_id_uuid}")
         if record.id == record_id_uuid:
+            self.__class__.logger.error(f"####### Checked Status ###########\n\tRecord Status: {record.status}\n\tStatus Code: {record.status.code}")
             if record.status.code == _INITIAL_KYC_RECORD_STATUS:
+
                 return record.id
             else:
 
