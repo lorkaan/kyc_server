@@ -10,14 +10,14 @@ from .models import EncryptionValue
 class EncryptionValueSerializer(serializers.ModelSerializer):
     class Meta:
         model = EncryptionValue
-        fields = ["ciphertext", "encrypted_dek", "algorithm", "data_type"]
+        fields = ["ciphertext", "dek", "algorithm", "data_type"]
 
     def to_representation(self, instance):
         """Decrypt the ciphertext using the DEK."""
         ret = super().to_representation(instance)
 
-        if instance.encrypted_dek:
-            dek = DekHandler.decrypt_dek(instance.encrypted_dek)
+        if instance.dek:
+            dek = DekHandler.decrypt_dek(dek)
             algo_class = CipherPol.get(instance.algorithm)
             if issubclass(algo_class, CipherPolAgent):
                 ret["plaintext"] = algo_class.decrypt(instance.ciphertext, dek)
