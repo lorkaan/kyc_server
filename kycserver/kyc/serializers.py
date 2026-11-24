@@ -272,7 +272,7 @@ class KYCRecordSerializer(serializers.ModelSerializer):
             "submitted_by"
         ]
 
-    def get_submitted_by(self):
+    def provide_user_for_request(self):
         request = self.context.get("request")
 
         if request and request.user.is_authenticated:
@@ -288,7 +288,7 @@ class KYCRecordSerializer(serializers.ModelSerializer):
         validated_data.pop("submitted_by", None)
         validated_data.pop("verified_by", None)
 
-        user = self.get_submitted_by()
+        user = self.provide_user_for_request()
 
         if user is None:
             raise serializers.ValidationError(
