@@ -29,7 +29,7 @@ class DekHandler:
     def decrypt_dek(encrypted_dek: str) -> str:
         res = requests.post(settings.DECRYPT_SERVICE_URL, 
                 json={"encrypted_dek": encrypted_dek},
-                verify="/certs/services/django/ca.crt",
+                verify="/certs/ca/ca.crt",
                 cert=(
                     "/certs/services/django/server.crt",   # Django's cert
                     "/certs/services/django/server.key"
