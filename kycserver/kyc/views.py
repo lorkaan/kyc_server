@@ -102,7 +102,9 @@ class KYCRecordViewSet(ModelViewSet):
             self.__class__.logger.error(f"####### Checked Status ###########\n\tRecord Status: {record.status}\n\tStatus Code: {record.status.code}")
             if record.status.code == _INITIAL_KYC_RECORD_STATUS:
 
-                return record.id
+                return Response(
+                    {"id": record_id}
+                )
             else:
 
                 try:
@@ -115,13 +117,13 @@ class KYCRecordViewSet(ModelViewSet):
                     )
 
                 # Create new KYC Record
-                record = KYCRecord.objects.create(
+                new_record = KYCRecord.objects.create(
                     party_id=party_id,
                     status=status_obj,
                 )
     
                 return Response(
-                    {"id": record.id},
+                    {"id": str(new_record.id)},
                     status=status.HTTP_201_CREATED
                 )
         else:
@@ -135,13 +137,13 @@ class KYCRecordViewSet(ModelViewSet):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             # Create new KYC Record
-            record = KYCRecord.objects.create(
+            new_record = KYCRecord.objects.create(
                 party_id=party_id,
                 status=status_obj,
             )
 
             return Response(
-                {"id": record.id},
+                {"id": str(new_record.id)},
                 status=status.HTTP_201_CREATED
             )
 
