@@ -375,7 +375,7 @@ class KYCRecord(BaseModel):
 
             if is_new_verification:
                 days_til_expiry = self.__class__.get_days_til_expiry_from_global()
-                doc_expiry_date_answer = KycAnswer.objects.filter(kyc_record=self, question__code=self.__class__._document_expiry_question_code).first()
+                doc_expiry_date_answer = KycAnswer.objects.filter(kyc_record=self, question__key=self.__class__._document_expiry_question_code).first()
                 expiry_date_set_flag = False
                 if isinstance(doc_expiry_date_answer, KycAnswer):
                     doc_expiry = doc_expiry_date_answer.value_date
