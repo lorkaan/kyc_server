@@ -245,6 +245,8 @@ _kyc_expiry_global_key = "kyc_expiry"
 @pghistory.track()
 class KYCRecord(BaseModel):
 
+    _document_expiry_question_code = "documents_id_date_expiry"
+
     class VerificationType(models.TextChoices):
         MANUAL = 'M', "Manual"
         SYSTEM = 'S', "System"
@@ -373,7 +375,16 @@ class KYCRecord(BaseModel):
 
             if is_new_verification:
                 days_til_expiry = self.__class__.get_days_til_expiry_from_global()
-                self.expiry_date = (self.verified_at + timedelta(days=days_til_expiry)).date()
+                doc_expiry_date_answer = KycAnswer.objects.filter(kyc_record=self, question__code=self.__class__._document_expiry_question_code).first()
+                expiry_date_set_flag = False
+                if isinstance(doc_expiry_date_answer, KycAnswer):
+                    doc_expiry = doc_expiry_date_answer.value_date
+                    if doc_expiry != None and doc_expiry >= self.verified_at and (doc_expiry - self.verified_at.date()).days < days_til_expiry:
+                        self.expiry_date = doc_expiry
+                        expiry_date_set_flag = True
+
+                if not expiry_date_set_flag:
+                    self.expiry_date = (self.verified_at + timedelta(days=days_til_expiry)).date()
 
             super().save(*args, **kwargs)
 

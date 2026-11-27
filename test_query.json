@@ -113,7 +113,7 @@
             "fields": [
                 {
                     "path": "party__name",
-                    "name": "NickName"
+                    "name": "Display_Name"
                 },
                 {
                     "path": "status__name",
@@ -126,7 +126,7 @@
             ],
             "default_fields": [
                 "Name",
-                "NickName",
+                "Display_Name",
                 "Status",
                 "notes",
                 "is_current",
@@ -207,7 +207,7 @@
             "fields": [
                 {
                     "path": "party__name",
-                    "name": "NickName"
+                    "name": "Display_Name"
                 },
                 {
                     "path": "status__name",
@@ -220,7 +220,7 @@
             ],
             "default_fields": [
                 "Name",
-                "NickName",
+                "Display_Name",
                 "Status",
                 "notes",
                 "is_current",
@@ -312,7 +312,7 @@
             "fields": [
                 {
                     "path": "party__name",
-                    "name": "NickName"
+                    "name": "Display_Name"
                 },
                 {
                     "path": "status__name",
@@ -329,7 +329,7 @@
             ],
             "default_fields": [
                 "Name",
-                "NickName",
+                "Display_Name",
                 "Status",
                 "notes",
                 "is_current",
@@ -421,7 +421,7 @@
             "fields": [
                 {
                     "path": "party__name",
-                    "name": "NickName"
+                    "name": "Display_Name"
                 },
                 {
                     "path": "status__name",
@@ -434,7 +434,7 @@
             ],
             "default_fields": [
                 "Company_Name",
-                "NickName",
+                "Display_Name",
                 "Status",
                 "notes",
                 "is_current",
@@ -463,7 +463,7 @@
             "fields": [
                 {
                     "path": "party__name",
-                    "name": "NickName"
+                    "name": "Display_Name"
                 },
                 {
                     "path": "status__name",
@@ -476,7 +476,7 @@
             ],
             "default_fields": [
                 "Company_Name",
-                "NickName",
+                "Display_Name",
                 "Status",
                 "notes",
                 "is_current",
@@ -510,37 +510,41 @@
                         {"field": "id", "op": "eq", "value": {"$param": "company_id"}},
                         {"field": "party_type__code", "op": "eq", "value": "company"},
                         {"field": "name", "op": "contains", "value": {"$param": "company_nickname"}},
-                        {"field": "content_object__name", "op": "contains", "value": {"$param": "company_name"}},
-                        {"field": "content_object__registration_number", "op": "contains", "value": {"$param": "registration_number"}},
+                        {"field": "name", "op": "contains", "value": {"$param": "company_name"}, "fk_model": "company.Company"},
+                        {"field": "registration_number", "op": "contains", "value": {"$param": "registration_number"}, "fk_model": "company.Company"},
                         {
-                            "field": "content_object__opening_date",
+                            "field": "opening_date",
                             "op": "gte",
-                            "value": { "$param": "opening_date_after" }
+                            "value": { "$param": "opening_date_after" },
+                            "fk_model": "company.Company"
                         },
                         {
-                            "field": "content_object__opening_date",
+                            "field": "opening_date",
                             "op": "lte",
-                            "value": { "$param": "opening_date_before" }
+                            "value": { "$param": "opening_date_before" },
+                            "fk_model": "company.Company"
                         },
                         {
-                            "field": "content_object__closing_date",
+                            "field": "closing_date",
                             "op": "gte",
-                            "value": { "$param": "closing_date_after" }
+                            "value": { "$param": "closing_date_after" },
+                            "fk_model": "company.Company"
                         },
                         {
-                            "field": "content_object__closing_date",
+                            "field": "closing_date",
                             "op": "lte",
-                            "value": { "$param": "closing_date_before" }
+                            "value": { "$param": "closing_date_before" },
+                            "fk_model": "company.Company"
                         },
-                        {"field": "content_object__is_active", "op": "eq", "value": {"$param": "is_active"}},
-                        {"field": "content_object__country__label", "op": "contains", "value": {"$param": "country_name"}}
+                        {"field": "is_active", "op": "eq", "value": {"$param": "is_active"}, "fk_model": "company.Company"},
+                        {"field": "country__label", "op": "contains", "value": {"$param": "country_name"}, "fk_model": "company.Company"}
                     ]
                 }
             },
             "fields": [
                 {
                     "path": "name",
-                    "name": "NickName"
+                    "name": "Display_Name"
                 },
                 {
                     "path": "target.name",
@@ -564,7 +568,7 @@
                 }
             ],
             "default_fields": [
-                "NickName",
+                "Display_Name",
                 "Company_Name",
                 "Country",
                 "Opening_Date",
@@ -595,27 +599,31 @@
                         {"field": "id", "op": "eq", "value": {"$param": "person_id"}},
                         {"field": "party_type__code", "op": "eq", "value": "person"},
                         {"field": "name", "op": "contains", "value": {"$param": "party_nickname"}},
-                        {"field": "content_object__first_name", "op": "contains", "value": {"$param": "person_first_name"}},
-                        {"field": "content_object__last_name", "op": "contains", "value": {"$param": "person_last_name"}},
+                        {"field": "first_name", "op": "contains", "value": {"$param": "person_first_name"}, "fk_model": "person.Person"},
+                        {"field": "last_name", "op": "contains", "value": {"$param": "person_last_name"}, "fk_model": "person.Person"},
                         {
-                            "field": "content_object__date_of_birth",
+                            "field": "date_of_birth",
                             "op": "gte",
-                            "value": { "$param": "date_of_birth_after" }
+                            "value": { "$param": "date_of_birth_after" },
+                            "fk_model": "person.Person"
                         },
                         {
-                            "field": "content_object__date_of_birth",
+                            "field": "date_of_birth",
                             "op": "lte",
-                            "value": { "$param": "date_of_birth_before" }
+                            "value": { "$param": "date_of_birth_before" },
+                            "fk_model": "person.Person"
                         },
                         {
-                            "field": "content_object__date_of_death",
+                            "field": "date_of_death",
                             "op": "gte",
-                            "value": { "$param": "date_of_death_after" }
+                            "value": { "$param": "date_of_death_after" },
+                            "fk_model": "person.Person"
                         },
                         {
-                            "field": "content_object__date_of_death",
+                            "field": "date_of_death",
                             "op": "lte",
-                            "value": { "$param": "date_of_death_before" }
+                            "value": { "$param": "date_of_death_before" },
+                            "fk_model": "person.Person"
                         }
                     ]
                 }
@@ -623,7 +631,7 @@
             "fields": [
                 {
                     "path": "name",
-                    "name": "NickName"
+                    "name": "Display_Name"
                 },
                 {
                     "path": "target.name",
@@ -639,7 +647,7 @@
                 }
             ],
             "default_fields": [
-                "NickName",
+                "Display_Name",
                 "Name",
                 "Date_of_Birth",
                 "Date_of_Death"
@@ -669,8 +677,8 @@
                         {"field": "party__id", "op": "eq", "value": {"$param": "person_id"}},
                         {"field": "party__party_type__code", "op": "eq", "value": "person"},
                         {"field": "party__name", "op": "contains", "value": {"$param": "party_nickname"}},
-                        {"field": "party__content_object__first_name", "op": "contains", "value": {"$param": "person_first_name"}},
-                        {"field": "party__content_object__last_name", "op": "contains", "value": {"$param": "person_last_name"}},
+                        {"field": "party:first_name", "op": "contains", "value": {"$param": "person_first_name"}, "fk":"person.Person"},
+                        {"field": "party:last_name", "op": "contains", "value": {"$param": "person_last_name"}, "fk":"person.Person"},
                         {
                             "field": "start_date",
                             "op": "gte",
@@ -698,7 +706,7 @@
             "fields": [
                 {
                     "path": "party__name",
-                    "name": "NickName"
+                    "name": "Display_Name"
                 },
                 {
                     "path": "party.target.name",
@@ -726,7 +734,7 @@
                 }
             ],
             "default_fields": [
-                "NickName",
+                "Display_Name",
                 "Name",
                 "Role",
                 "Target_Name",
@@ -758,7 +766,7 @@
                         {"field": "target_party__id", "op": "eq", "value": {"$param": "company_id"}},
                         {"field": "target_party__party_type__code", "op": "eq", "value": "company"},
                         {"field": "target_party__name", "op": "contains", "value": {"$param": "company_nickname"}},
-                        {"field": "target_party__content_object__name", "op": "contains", "value": {"$param": "company_name"}},
+                        {"field": "target_party:name", "op": "contains", "value": {"$param": "company_name"}, "fk":"company.Company"},
                         {
                             "field": "start_date",
                             "op": "gte",
@@ -786,7 +794,7 @@
             "fields": [
                 {
                     "path": "party__name",
-                    "name": "NickName"
+                    "name": "Display_Name"
                 },
                 {
                     "path": "party.target.name",
@@ -814,7 +822,7 @@
                 }
             ],
             "default_fields": [
-                "NickName",
+                "Display_Name",
                 "Name",
                 "Role",
                 "Target_Name",

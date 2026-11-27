@@ -1,6 +1,7 @@
 import re
 
 from django.db.models import F, Q, Exists, Model, OuterRef, Subquery, Value
+from django.contrib.contenttypes.models import ContentType
 
 from .compute_functions import COMPUTE_OPS
 from party.models import Party, PartyRelationship
@@ -282,6 +283,15 @@ class QueryAstHandler(DslEvaluator):
         field = spec["field"]
         op = spec["op"]
         value = spec.get("value")
+        target_model = spec.get("fk_model", None) #handle generic foreign key
+
+        # Separate the fields from each other
+        root_field = None
+        fields = field.split(":", 1)
+        if len(fields) == 2:
+            root_field = fields[0]
+            field = fields[1]
+            
 
         if op not in cls.OPS:
             raise ValueError(f"Unsupported operator: {op}")
@@ -298,18 +308,58 @@ class QueryAstHandler(DslEvaluator):
         elif value is None or (isinstance(value, str) and value.strip() == ""):
             return None
 
-        final_model, lookup = cls._resolve_lookup_path(root_model, field)
+        # This seems unused. But it might still be required.
+        #final_model, lookup = cls._resolve_lookup_path(root_model, field)
 
         if field.count("__") > cls.MAX_DEPTH:
             raise ValueError("Lookup path too deep")
 
+        if isString(root_field):
+            if root_field.count("__") > cls.MAX_DEPTH:
+                raise ValueError("Lookup path for root model field path is too deep")
+
         django_lookup = field + cls.OPS[op]
-        q = Q(**{django_lookup: value})
 
-        if op == "neq":
-            q = ~q
+        if target_model is not None: # Handle generic foreign key
+            if isString(target_model):
+                target_model = apps.get_model(target_model)
 
-        return q
+            if not isinstance(target_model, type) or not issubclass(target_model, Model):
+                raise TypeError("target_model must be a Django Model class or model string.")
+
+            content_type = ContentType.objects.get_for_model(target_model)
+
+            target_queryset = target_model._base_manager.all()
+
+            if op == "neq":
+                target_queryset = target_queryset.exclude(
+                    **{django_lookup: value}
+                )
+            else:
+                target_queryset = target_queryset.filter(
+                    **{django_lookup: value}
+                )
+
+            if isString(root_field): # Handle when there is a field pointing to a model that has a Generic Foreign Key
+                final_model, lookup = cls._resolve_lookup_path(root_model, root_field)
+                model_ids = final_model.objects.filter(
+                    content_type=content_type,
+                    object_id__in=target_queryset.values_list("pk", flat=True)
+                ).values_list("pk", flat=True)
+
+                return Q(**{f"{root_field}__in": model_ids})
+            else: # root_model is the model with the Generic Foreign Key
+                return Q(
+                    content_type=content_type,
+                    object_id__in=target_queryset.values_list("pk", flat=True)
+                )
+        else:
+            q = Q(**{django_lookup: value})
+
+            if op == "neq":
+                q = ~q
+
+            return q
 
     @classmethod
     def _compile_exists(cls, root_model, spec):

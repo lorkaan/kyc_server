@@ -408,3 +408,4 @@ class PartyRelationshipMetadataWriteSerializer(serializers.ModelSerializer):
         ]
 
         PartyRelationshipMetadataCode.objects.bulk_create(objs)
+

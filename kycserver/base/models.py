@@ -2,6 +2,9 @@ from django.db import models
 import uuid
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.apps import apps
+
+from utils.type_utils import isString
 
 
 # Create your models here.
@@ -14,6 +17,24 @@ class BaseModel(models.Model):
     class Meta:
         abstract = True
 
+class GenericTargetQuerySet(models.QuerySet):
+
+    def target_filter(self, model, **kwargs):
+
+        if isString(model):
+            model = apps.get_model(model)
+
+        content_type = ContentType.objects.get_for_model(model)
+
+        target_ids = model.objects.filter(
+            **kwargs
+        ).values("pk")
+
+        return self.filter(
+            content_type=content_type,
+            object_id__in=target_ids
+        )
+
 class GenericTargetMixin(models.Model):
     content_type = models.ForeignKey(
         ContentType,
@@ -25,6 +46,8 @@ class GenericTargetMixin(models.Model):
         'content_type',
         'object_id'
     )
+
+    objects = GenericTargetQuerySet.as_manager()
 
     class Meta:
         abstract = True
