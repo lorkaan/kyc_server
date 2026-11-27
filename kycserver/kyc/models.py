@@ -379,7 +379,7 @@ class KYCRecord(BaseModel):
                 expiry_date_set_flag = False
                 if isinstance(doc_expiry_date_answer, KycAnswer):
                     doc_expiry = doc_expiry_date_answer.value_date
-                    if doc_expiry != None and doc_expiry >= self.verified_at and (doc_expiry - self.verified_at.date()).days < days_til_expiry:
+                    if doc_expiry != None and doc_expiry >= self.verified_at.date() and (doc_expiry - self.verified_at.date()).days < days_til_expiry:
                         self.expiry_date = doc_expiry
                         expiry_date_set_flag = True
 
