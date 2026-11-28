@@ -342,6 +342,7 @@ class QueryAstHandler(DslEvaluator):
 
             if isString(root_field): # Handle when there is a field pointing to a model that has a Generic Foreign Key
                 final_model, lookup = cls._resolve_lookup_path(root_model, root_field)
+                cls.logger.error(f"### Final Model: {final_model}\n\tRoot Model: {root_model}\n\tRoot Field: {root_field}\n\tLookup: {lookup}")
                 model_ids = final_model.objects.filter(
                     content_type=content_type,
                     object_id__in=target_queryset.values_list("pk", flat=True)
