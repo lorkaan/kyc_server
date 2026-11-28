@@ -677,8 +677,8 @@
                         {"field": "party__id", "op": "eq", "value": {"$param": "person_id"}},
                         {"field": "party__party_type__code", "op": "eq", "value": "person"},
                         {"field": "party__name", "op": "contains", "value": {"$param": "party_nickname"}},
-                        {"field": "party:first_name", "op": "contains", "value": {"$param": "person_first_name"}, "fk":"person.Person"},
-                        {"field": "party:last_name", "op": "contains", "value": {"$param": "person_last_name"}, "fk":"person.Person"},
+                        {"field": "party:first_name", "op": "contains", "value": {"$param": "person_first_name"}, "fk_model":"person.Person"},
+                        {"field": "party:last_name", "op": "contains", "value": {"$param": "person_last_name"}, "fk_model":"person.Person"},
                         {
                             "field": "start_date",
                             "op": "gte",
@@ -766,7 +766,7 @@
                         {"field": "target_party__id", "op": "eq", "value": {"$param": "company_id"}},
                         {"field": "target_party__party_type__code", "op": "eq", "value": "company"},
                         {"field": "target_party__name", "op": "contains", "value": {"$param": "company_nickname"}},
-                        {"field": "target_party:name", "op": "contains", "value": {"$param": "company_name"}, "fk":"company.Company"},
+                        {"field": "target_party:name", "op": "contains", "value": {"$param": "company_name"}, "fk_model":"company.Company"},
                         {
                             "field": "start_date",
                             "op": "gte",
