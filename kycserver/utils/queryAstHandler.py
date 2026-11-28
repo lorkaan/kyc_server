@@ -228,7 +228,8 @@ class QueryAstHandler(DslEvaluator):
         for i, part in enumerate(parts):
             try:
                 field = current_model._meta.get_field(part)
-            except Exception:
+            except Exception as err:
+                cls.logger.error(f"{type(err)} => {err}")
                 # Remaining parts are lookup operators (icontains, in, etc)
                 return current_model, "__".join(parts[i:])
 
@@ -326,34 +327,38 @@ class QueryAstHandler(DslEvaluator):
 
             if not isinstance(target_model, type) or not issubclass(target_model, Model):
                 raise TypeError("target_model must be a Django Model class or model string.")
+            final_model = None
+            lookup = None
+            try:
+                content_type = ContentType.objects.get_for_model(target_model)
 
-            content_type = ContentType.objects.get_for_model(target_model)
+                target_queryset = target_model._base_manager.all()
 
-            target_queryset = target_model._base_manager.all()
+                if op == "neq":
+                    target_queryset = target_queryset.exclude(
+                        **{django_lookup: value}
+                    )
+                else:
+                    target_queryset = target_queryset.filter(
+                        **{django_lookup: value}
+                    )
 
-            if op == "neq":
-                target_queryset = target_queryset.exclude(
-                    **{django_lookup: value}
-                )
-            else:
-                target_queryset = target_queryset.filter(
-                    **{django_lookup: value}
-                )
+                if isString(root_field): # Handle when there is a field pointing to a model that has a Generic Foreign Key
+                    final_model, lookup = cls._resolve_lookup_path(root_model, root_field)
+                    model_ids = final_model.objects.filter(
+                        content_type=content_type,
+                        object_id__in=target_queryset.values_list("pk", flat=True)
+                    ).values_list("pk", flat=True)
 
-            if isString(root_field): # Handle when there is a field pointing to a model that has a Generic Foreign Key
-                final_model, lookup = cls._resolve_lookup_path(root_model, root_field)
+                    return Q(**{f"{root_field}__in": model_ids})
+                else: # root_model is the model with the Generic Foreign Key
+                    return Q(
+                        content_type=content_type,
+                        object_id__in=target_queryset.values_list("pk", flat=True)
+                    )
+            except Exception as e:
+                cls.logger.error(f"### Error in field: {e}")
                 cls.logger.error(f"### Final Model: {final_model}\n\tRoot Model: {root_model}\n\tRoot Field: {root_field}\n\tLookup: {lookup}")
-                model_ids = final_model.objects.filter(
-                    content_type=content_type,
-                    object_id__in=target_queryset.values_list("pk", flat=True)
-                ).values_list("pk", flat=True)
-
-                return Q(**{f"{root_field}__in": model_ids})
-            else: # root_model is the model with the Generic Foreign Key
-                return Q(
-                    content_type=content_type,
-                    object_id__in=target_queryset.values_list("pk", flat=True)
-                )
         else:
             q = Q(**{django_lookup: value})
 
